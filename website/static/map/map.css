@@ -31,6 +31,7 @@
   --place-dot: var(--m-grey-1);
   --halo: var(--m-white);
   --hatch: rgba(142, 142, 147, 0.20);
+  --hatch-gap: rgba(142, 142, 147, 0.35);   /* the pictures' no-coverage stripes (gridded.HATCH); the picture does not change with the theme */
   --hatch-out: rgba(142, 142, 147, 0.18);   /* outside the pictures' box: faint hairlines (map.html #hatch), like the reference */
 
   /* glass and ink */
@@ -80,6 +81,26 @@
   --banner-sample: #111c28;
   --on-banner-sample: var(--m-white);
 
+  /* roads, building outlines and address dots (B3; map.js b3Tokens): a dot is hazard-free, and every colour carries its word */
+  --hail-road: #aab2bc;
+  --hail-road-major: #6e7a87;
+  --hail-bldg: rgba(74, 98, 122, 0.20);
+  --hail-bldg-line: rgba(58, 72, 90, 0.62);
+  --hail-dot: #1f4e79;                 /* a building outline's dot */
+  --hail-dot-address: var(--m-grey-3); /* an address no outline holds: a neutral grey, 3.3:1 on white and 2.7:1 from the outline dot (not a hazard colour) */
+  --hail-dot-ring: var(--m-white);
+  --hail-name: var(--m-ink);
+  --hail-name-halo: var(--m-white);
+  --hail-hairline: 0.5px;
+  --hail-emphasis: 1.25px;
+  --hail-dot-ring-w: 1px;
+  --hail-halo: 3px;
+  --hail-name-size: 12px;
+  --hail-name-weight: 700;
+  --hail-count-size: 12px;
+  --hail-count-weight: 700;
+  --hail-count-pad: 5px;
+
   /* type, space, shape */
   --font: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
   --edge: 12px;
@@ -116,6 +137,7 @@
     --place-dot: #c9ccd1;
     --halo: #121417;
     --hatch: rgba(142, 142, 147, 0.16);
+    --hatch-gap: rgba(142, 142, 147, 0.35);   /* the same stripes in the dark theme: the picture is the same */
     --hatch-out: rgba(174, 174, 178, 0.10);   /* about the light mode's weight (1.16:1 on the land) */
 
     --glass: rgba(28, 28, 30, 0.72);
@@ -156,6 +178,15 @@
     --warn-text: #ff9b92;
     --banner-sample: #efcd5d;
     --on-banner-sample: #0f151c;
+    --hail-road: #5b6470;
+    --hail-road-major: #9aa5b1;
+    --hail-bldg: rgba(150, 178, 206, 0.22);
+    --hail-bldg-line: rgba(200, 218, 236, 0.50);
+    --hail-dot: #bcd7f2;
+    --hail-dot-address: var(--m-grey-2);   /* 3.3:1 on the dark map, 3.4:1 from the outline dot */
+    --hail-dot-ring: #121417;
+    --hail-name: #f2f2f7;
+    --hail-name-halo: #121417;
   }
 }
 
@@ -251,7 +282,8 @@ a { color: inherit; }
 .banner a { font-weight: 700; }
 
 @media (min-width: 900px) {
-  .banners { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: min(560px, 100% - 2 * 220px); }
+  /* the find panel (#find) is not positioned, so the positioned banner row paints above it where they overlap */
+  .banners { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: min(560px, 100% - 2 * 220px); z-index: 1; }
 }
 
 /* the map data didn't load: keep the close button and the banner, drop what needs data */
@@ -283,13 +315,17 @@ a { color: inherit; }
 }
 .legend-note { margin-top: 2px; font-size: 11.5px; line-height: 1.3; color: var(--ink-2); }
 .legend-note:empty { display: none; }
+.legend-uncoloured { margin-top: 3px; font-size: 11.5px; line-height: 1.3; color: var(--ink-2); }
+.legend-uncoloured:empty { display: none; }
 .legend-keys { display: grid; gap: 4px; margin-top: 8px; font-size: 11.5px; line-height: 1.25; color: var(--ink-2); }
 .legend-keys:empty { display: none; }
 .legend-keys li { display: flex; align-items: center; gap: 6px; }
 .key { flex: none; width: 14px; height: 14px; border-radius: 4px; }
 .key-bubble { border-radius: 50%; background: var(--bubble); box-shadow: 0 0 0 1px var(--bubble-ring); }
-.key-hatch { background: repeating-linear-gradient(45deg, var(--hatch) 0 2px, transparent 2px 5px); border: 1px solid var(--hairline); }
-.key-hatch-out { background: repeating-linear-gradient(45deg, var(--hatch) 0 1px, transparent 1px 4px); border: 1px solid var(--hairline); }
+/* the keys' stripes run "/" like the pictures' hatch (gridded.hatch_mask: constant along x + y) and the band's pattern
+   (map.html #hatch: rotate(45) on vertical lines); -45deg draws that (45deg draws "\" and would mirror them) */
+.key-hatch { background: repeating-linear-gradient(-45deg, var(--hatch-gap) 0 1px, transparent 1px 5px); border: 1px solid var(--hairline); }
+.key-hatch-out { background: repeating-linear-gradient(-45deg, var(--hatch-out) 0 1px, transparent 1px 6px); border: 1px solid var(--hairline); }
 .key-ring { border-radius: 50%; background: var(--bubble); box-shadow: 0 0 0 2px var(--over); width: 12px; height: 12px; margin: 1px; }
 .key-here { border-radius: 50%; background: var(--bubble); box-shadow: 0 0 0 2px var(--loc); width: 12px; height: 12px; margin: 1px; }
 /* alerts with no outline: the row is a button to the List, marked with the List button's lines */
@@ -497,7 +533,7 @@ a { color: inherit; }
 .legend-2col .legend { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 14px;
   max-width: calc(100vw - var(--safe-l) - var(--safe-r) - 2 * var(--edge) - var(--btn) - 2 * var(--gap)); }
 .legend-2col .legend { padding-top: 8px; padding-bottom: 8px; }
-.legend-2col .legend-head, .legend-2col .legend-note { grid-column: 1 / -1; }
+.legend-2col .legend-head, .legend-2col .legend-note, .legend-2col .legend-uncoloured { grid-column: 1 / -1; }
 .legend-2col .legend-scale { width: var(--scale-w, 96px); margin: 10px 0 6px; }
 .legend-2col .legend-keys { grid-column: 2; grid-row: 2; align-self: start; margin-top: 10px; gap: 2px; }
 /* "Map data" moves up into the title row, left of the (i) button: 38 px more for Montana */
@@ -510,6 +546,10 @@ a { color: inherit; }
   .legend-info { display: grid; place-items: center; }
   .legend:not(.show-note) .legend-note { display: none; }
 }
+/* hail layers (B4): the kind sentence and the uncoloured sentence are the legend's own words, so they stay in view on
+   phones and short screens; the (i) button does not hide them. The folded landscape state below keeps them behind (i).
+   .legend-uncoloured is outside the two rules above, so it is always in view when it has text. */
+.legend.swath-words .legend-note:not(:empty) { display: block; }
 
 /* short landscape screens: the legend is a column on the left (it scrolls if all its keys can't
    fit) and the timeline starts right of it instead of covering it, and stops short of the
@@ -537,6 +577,8 @@ a { color: inherit; }
   html:not(.is-card) .corner-left { flex-direction: row; align-items: flex-start; }
   html:not(.is-card) .legend:not(.show-note) .legend-scale,
   html:not(.is-card) .legend:not(.show-note) .legend-keys { display: none !important; }
+  html:not(.is-card) .legend:not(.show-note) .legend-note,
+  html:not(.is-card) .legend:not(.show-note) .legend-uncoloured { display: none !important; }
   html:not(.is-card) .legend:not(.show-note) .legend-head { padding-bottom: 0; border-bottom: 0; }
   html:not(.is-card) .legend:not(.show-note) + .mapdata { display: none; }
   html:not(.is-card) .top:has(.legend.show-note) { z-index: 25; }
@@ -719,6 +761,55 @@ a { color: inherit; }
   .scrim { background: transparent; }
 }
 
+/* ---------------------------------------------------------------- roads, building outlines and addresses (B3) */
+/* the canvas map.js draws in the hail pane (Leaflet positions it; the pane passes no pointer events) */
+.hail-canvas { position: absolute; left: 0; top: 0; pointer-events: none; }
+/* the source lines of the layers (map.js b3Credits): Leaflet's attribution line, bottom right, wrapped to the screen width and to
+   560 px, so it stays right of the "Map data" link and the legend column (at 1280 px it starts at x 720). map.js b3Lift sets
+   --credit-lift: the line sits just above the bottom band (the note, toast, chip and timeline), not on top of it */
+.leaflet-container .leaflet-control-attribution { white-space: normal; max-width: min(560px, calc(100% - 16px)); font-size: 11px; line-height: 1.35; margin-bottom: var(--credit-lift, 0px); }
+
+/* find an address (map.html #find, map.js b3Search): a glass panel with one field and a button, 44 px to tap */
+.find { display: grid; gap: 6px; padding: 10px 12px; border-radius: 16px; pointer-events: auto; font-size: 14px; }
+.find-title { margin: 0; font-size: 13px; font-weight: 700; color: var(--ink-2); letter-spacing: 0.02em; }
+.find-form { display: flex; gap: 6px; align-items: center; }
+/* 16 px type in the field: a phone does not zoom in on focus */
+.find-input { flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 0 12px; border: 0; border-radius: 12px;
+  background: var(--fill-ctl); color: var(--ink); font: inherit; font-size: 16px; }
+.find-input::placeholder { color: var(--ink-2); opacity: 1; }
+.find-input:focus-visible, .find-go:focus-visible, .find-row:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.find-go { flex: none; min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--bubble);
+  color: var(--bubble-text); font: inherit; font-size: 15px; font-weight: 700; }
+.find-privacy { margin: 0; font-size: 12px; line-height: 1.3; color: var(--ink-2); }
+.find-status { margin: 0; font-size: 13px; line-height: 1.3; color: var(--ink-2); }
+.find-status[hidden], .find-results[hidden] { display: none; }
+.find .sample-tag { justify-self: start; display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12.5px;
+  font-weight: 700; background: var(--banner-sample); color: var(--on-banner-sample); }
+.find-results { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; max-height: 40vh; overflow: auto;
+  overscroll-behavior: contain; }
+.find-results li { margin: 0; }
+.find-row { display: block; width: 100%; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 12px;
+  background: var(--fill-ctl); color: var(--ink); font: inherit; font-size: 15px; line-height: 1.3; text-align: left; }
+.find-row:hover { background: var(--fill-ctl-hover); }
+/* a phone with the results open: the legend card steps aside (map.js b3Search sets .results-open on #top), so up to 20 rows do not
+   push it under the attribution lines and the timeline. The legend comes back when the list closes. */
+@media (max-width: 520px) { .top.results-open .legend-wrap { display: none; } }
+/* phones: the find panel sits behind the Find an address button (#btn-find, in the right column), so the legend card keeps
+   the map's centre (D43). While the panel is open (map.js b3FindOpen sets .find-shown on #top) the legend steps aside, as
+   it does for the results. Wider screens show the panel as before, and the button is not drawn. */
+.icon-btn.find-open { display: none; }
+@media (max-width: 520px) {
+  .icon-btn.find-open { display: grid; }
+  .top:not(.find-shown) > #find { display: none; }
+  .top.find-shown .legend-wrap { display: none; }
+}
+
+/* the address block at the top of a hail sheet (map.html #address-sec): the lines, then the notes */
+.sheet-body .addr-lines { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.sheet-body .addr-lines li { padding: 10px 12px; border-radius: 14px; background: var(--fill-ctl); font-size: 16px; font-weight: 700;
+  line-height: 1.3; overflow-wrap: anywhere; }
+.sheet-body .addr-sec > .muted { margin: 8px 0 0; }
+
 /* ---------------------------------------------------------------- card mode (?card=1) */
 .card-ui { display: none; }
 .is-card .card-ui { display: block; }
@@ -771,4 +862,51 @@ a { color: inherit; }
 }
 @media print {
   .top .corner-right, .timeline, .popover { display: none !important; }
+}
+
+/* the List's lines: a gap between the paragraphs of one section (B4 live-12; map.css resets p margins to 0, and the map page does not load style.css, so the token is not there) */
+.storm-sec p + p { margin-top: 8px; }
+
+/* the five-season table (B5, the sheet's first block of history): a table on wide screens; under 521 px each row is a card with
+   its label first and each season's cell labelled by its column head, so nothing scrolls sideways */
+.sum { margin-top: 14px; }
+.sum-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.sum-table th, .sum-table td { text-align: left; vertical-align: top; padding: 6px 8px; border-bottom: 1px solid var(--edge);
+  overflow-wrap: anywhere; }
+.sum-table thead th { font-size: 12px; color: var(--ink-2); font-weight: 700; }
+.sum-table .sum-label { font-weight: 700; }
+.sum-table .sum-kind, .sum-table .sum-cover { display: block; color: var(--ink-2); font-size: 12.5px; font-weight: 400; }
+.sum-partial { font-size: 14px; }
+.sum-notes { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--ink-2); }
+.sum-notes li { margin: 2px 0; }
+/* the sections under the table (B5 R11, D79(c)): the table's type and spacing; headings in sentence case, not capitals */
+.sheet-body .sum h3, .sheet-body .hist-sec h3, .sheet-body .hist-group { text-transform: none; letter-spacing: 0; }
+.sheet-body .sum h3 { font-size: 15px; margin: 0 0 4px; color: inherit; }
+.sheet-body .hist { margin-top: 18px; }
+.sheet-body .hist-notice { margin: 10px 0 0; }
+.sheet-body .hist-sec { margin-top: 22px; overflow-wrap: anywhere; }
+.sheet-body .hist-sec .hist-sample { margin: 0 0 8px; }
+.sheet-body .hist-sec h3 { font-size: 15px; margin: 0 0 4px; color: inherit; }
+.sheet-body .hist-lead { margin: 0 0 8px; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
+.sheet-body .hist-rows { margin: 8px 0 0; padding-left: 20px; font-size: 14px; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.sheet-body .hist-rows li { margin: 0 0 8px; }
+.sheet-body .hist-label { font-weight: 700; }
+.sheet-body .hist-note { display: block; color: var(--ink-2); font-size: 12.5px; }
+.sheet-body .hist-more summary { cursor: pointer; margin: 8px 0 0; color: var(--ink-2); font-size: 14px; }
+.sheet-body .hist-group { font-size: 14px; font-weight: 700; color: inherit; margin: 14px 0 4px; }
+.sheet-body .hist-lines, .sheet-body .hist-refs, .sheet-body .hist-held { margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.4; }
+.sheet-body .hist-lines li, .sheet-body .hist-refs li, .sheet-body .hist-held li { margin: 0 0 8px; }
+.sheet-body .hist-sec .sum-notes { margin-top: 10px; }
+@media (min-width: 760px) { .sheet.sheet-wide { width: min(640px, 60vw); } }   /* the five-season table (B5-11) */
+/* the desktop table (the sheet is at most 640 px): fixed columns, so every season column gets the same width and the first row's
+   long partial-season words wrap as little as they can; the first row must sit inside the first screen (D79(c)) */
+@media (min-width: 760px) { .sheet-wide .sum-table { table-layout: fixed; font-size: 13px; } }
+@media (min-width: 760px) { .sheet-wide .sum-table th, .sheet-wide .sum-table td { padding: 5px 4px; } }
+@media (min-width: 760px) { .sheet-wide .sum-table th[scope="row"] { width: 20%; } }
+@media (max-width: 520px) {
+  .sum-table thead { display: none; }
+  .sum-table, .sum-table tbody, .sum-table tr, .sum-table th, .sum-table td { display: block; width: 100%; }
+  .sum-table tr { padding: 8px 0; border-bottom: 1px solid var(--edge); }
+  .sum-table th, .sum-table td { border: 0; padding: 2px 0; }
+  .sum-table td::before { content: attr(data-label) ": "; color: var(--ink-2); font-size: 12.5px; }
 }

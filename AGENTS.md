@@ -25,20 +25,30 @@ shipped. Its rules below (1–3) apply only if work on it resumes.
 ## Layout
 ```
 website/   the product. sources.py (NWS/SPC feeds, parsers, feed contracts) · gridded.py (MRMS radar
-           + HRRR model → map frames) · storm.py and satellite.py (radar echo tops and the GOES
-           band 13 picture, both behind --storm-layers) · build.py (collect → frames + data/map.json →
+           + HRRR model → map frames) · storm.py, satellite.py and swath.py (radar echo tops, the GOES
+           band 13 picture and the MRMS hail swath, all behind --storm-layers) · build.py (collect → frames + data/map.json →
            pages) · sample.py (labelled sample data) · towns.json · templates/ · static/ (style, Leaflet,
            fonts, map/ = map.js, map.css, basemap.json)
            hail.py (hail history: grid, size words, store readers, daily build; --hail-history) · hail_fixture_data.py (the
-           SAMPLE store's events) · data/hail-fixture/ (the SAMPLE store)
+           SAMPLE store's events) · data/hail-fixture/ (the SAMPLE store) · joins.py (the hail history joins, B2, D35:
+           reports, official records, radar detections, warnings, zone products and red flag warnings by fire weather
+           zone, station gusts; pyshp imported lazily) · addresses.py (B3, D36: the State Library address points as
+           dots, the search index and its verify; pyproj imported lazily; the job only) · streets.py (B3, D25, D33: the
+           State Library roads, the Census fallback, the street shards; pyproj lazily) · buildings.py (B3, D14, D15, D32,
+           D34: the FEMA and ORNL building outlines, one dot each, the address join; pyogrio imported lazily) · climate.py
+           (the past weather, B5, D38: the NOAA nClimGrid daily grid per cell, the backfill once and its release archive,
+           hail/c/; h5py imported lazily) · stations.py (GHCN-Daily station readings and the station rule, D5 and D18; the pool of stations in Montana and the neighbouring states, D62; the tile lists with their rejected candidates, D61 to D69;
+           hail/sd/) · snowgrid.py (the NOHRSC season snowfall grid and its unit check, D7; hail/n/) · gauges.py (NWS
+           flood stages and USGS annual peaks, the nearest gauge within 10 miles, D6; hail/g/) · summary.py (the
+           five-season table that leads the sheet and the roof lines, B5; its words are Python's)
 tools/     build_basemap.py (rebuilds static/map/basemap.json from Natural Earth + Census; by hand)
 .github/workflows/website.yml   build every 10 min from main → GitHub Pages; branch pushes = live check
-.github/workflows/hail-store.yml   daily 12:43 UTC: build the hail store, verify it, publish the release asset (D34)
+.github/workflows/hail-store.yml   daily 12:43 UTC: build the hail store, join its sources (website/joins.py), add the B5 weather parts (climate, stations, NOHRSC, gauges; non-fatal steps with timeouts) and verify them, build and check the address, street and outline steps (B3, D36; each non-fatal), pack and publish the release assets; a plan job starts the monthly job (the first of the month, or by input) in its own job, and the once-only backfill runs by input (D34, D35, D36, D38, D42)
 payload/   the parked app — updates itself. app.py (routes) · weather.py (feeds, evidence, alert matching,
            rules, targeting, feed contracts) · store.py (SQLite) · maps.py (Folium) · templates/
 desktop/   the shell — changes only with a new installer. launcher.py (window, local server,
            notifications, recovery page) · updater.py (GitHub updates, self-test, rollback)
-tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py, test_hail.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
+tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py, test_hail.py, test_joins.py, test_addresses.py, test_streets.py, test_buildings.py, test_swath.py, test_climate.py, test_stations.py, test_snowgrid.py, test_gauges.py, test_summary.py, test_words_rules.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
            update channel vs fake GitHub
 build.py   PyInstaller build      ship.py   test → bump version → commit → push
 ```
@@ -48,18 +58,37 @@ build.py   PyInstaller build      ship.py   test → bump version → commit →
 pip install requests jinja2 pillow numpy pygrib h5py tzdata     # enough for the website
 python -m website.build --out _site --sample             # labelled sample data, no network
 python -m website.build --out _site --hail-history       # the five-year hail history (D34; on main at the owner's decision of 2026-10-21)
+python -m website.build --out _site --hail-history --hail-store store   # a local store folder or hail-store.tar.gz instead of the download (D59)
+python -m website.build --out _site --storm-layers       # B4, B5: the radar echo tops, the GOES picture and the MRMS hail swath (behind the flag; off on main)
+python -m website.joins build --store store --cache joins-cache   # the hail joins (D35); needs pyshp
+python -m website.joins verify store                     # check the hail joins
+python -m website.build --out _site --sample --hail-history --hail-addresses   # the address dots, streets and outlines (D36); off by default
+python -m website.build --out _site --sample --hail-history --hail-addresses --address-text off   # the same with no address text (D35)
+pip install pyproj~=3.8 pyogrio~=0.13                   # the job's address, street and outline steps only (compatible releases)
+python -m website.addresses build --store store --cache structures   # the address points (job); verify with: python -m website.addresses verify store
+python -m website.streets build --store store --cache roads --roads-source msl   # the streets (job); --roads-source tiger is the fallback
+python -m website.buildings build --store store --cache structures-fema --counties-cache counties   # the outlines and their dots (job)
+python -m website.climate backfill --cache climate-cache   # B5, once: the 63 scaled months into aggregates (D38; 222 s measured)
+python -m website.climate update --cache climate-cache     # B5 daily: prelim days (and a new scaled month when one appears)
+python -m website.climate build --store store --cache climate-cache   # then: stations, snowgrid, gauges (the same store)
+python -m website.stations build --store store --cache b5-cache --scope daily   # --scope monthly for the whole union
+python -m website.stations verify --store store   # check the station figures and gates (exit 1 on a failure)
+python -m website.snowgrid build --store store --cache b5-cache --offline       # drop --offline to check NOAA (monthly)
+python -m website.gauges build --store store --cache b5-cache                   # --refresh for the monthly read
 python -m website.build --out _site --require-live       # live data; exit 1 if any source failed
 python -m http.server -d _site 8000                      # then open http://localhost:8000
 pip install -r requirements.txt                          # the parked desktop app
+pip install pyyaml                                       # test-only: the workflow-file tests read YAML (not in requirements.txt)
 python desktop/launcher.py                      # native window (--browser, or --headless --offline for tests)
 python desktop/launcher.py --selftest payload   # the check installed apps run before accepting an update
 python -m unittest discover -s tests -v         # offline; must pass before any merge
+python tools/smoke_map.py _site --history --store store   # B5: the sheet's summary words from a store folder or hail-store.tar.gz (the build passed --hail-history)
 python ship.py "one-line note" [--minor]        # ships to users — only when the owner asks
 ```
 
 ## Hard rules
 1. **Shipping.** Website: merging to `main` publishes. Keep `main` green; push to a branch first
-   (the Website workflow builds branch pushes against live data) and check the pages in a browser.
+   (the Website workflow builds branch pushes against live data) and check the pages in a browser. The hail history flag `--hail-history` is on for the public site from `main` (the owner's decision of 2026-10-21); `--hail-addresses` stays off on `main` until the owner approves its terms and counsel answers them (D34, D36).
    Parked app: users get a change only when `payload/manifest.json` `version` increases on `main`;
    don't bump it unless the owner asked to ship; never lower it; use `ship.py`.
 2. **Payload contract (SHELL_API 1).** The shell imports `payload/` as a package: `app.py` exposes
@@ -101,6 +130,8 @@ python ship.py "one-line note" [--minor]        # ships to users — only when t
 - Store UTC. Show a job's NWS time zone (or the company zone). SPC dates follow 12:00–11:59 UTC
   reporting days. Hail sizes in SPC CSVs are hundredths of an inch; `UNK` wind stays unknown.
 - Hail history sizes (D34): to the hundredth of an inch, rounded down, with the millimetres exact beside them; the classes use the exact tenths.
+- Building words (D34, D36): a dot is a building outline, never a house. Site words never say house, home, residence or dwelling. Owner and parcel appear only in the About sentence "Owner names and parcel identifiers are never read, stored or shown." (D8, gate B3-5) and in the Parcel placement phrase "at the parcel" (D32). "structure" appears only inside the two proper names. A dot's placement is said where the file did not place it on the building (D32).
+- Hail history kinds (D35): every section names its kind, and every row starts with its kind label (D3: "Report:", "Record:", "Detection:", "Warning:", "Zone product:", "Station:"); a report is not an inspection; a detection is not hail on the ground; a warning's tags are the forecast threat; a zone product covers its whole zone; a station reading is at the station; NCEI times are MST-7 local, shown as Montana time; "damage" appears only as the NWS damage threat tag, in a quoted remark or as a source's type word (D4).
 - Add or update tests with every behavior change.
 
 ## Owner's working preferences

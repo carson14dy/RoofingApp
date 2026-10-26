@@ -35,7 +35,7 @@
   {% set good = status.values()|selectattr('ok')|map(attribute='label')|list %}
   {% set bad = status.values()|rejectattr('ok')|list %}
   <p class="sources">{% if good %}Loaded: {{ good|join(', ') }}.{% endif %}
-  {% for s in bad %} <span class="bad">{{ s.label }} problem: {{ s.detail }}.</span>{% endfor %}</p>
+  {% for s in bad %} <span class="bad">{{ s.label }} problem: {{ s.detail }}.{% if s.words %} {{ s.words }}{% endif %}</span>{% endfor %}</p>
 </div>
 <main id="main" class="wrap">
 {% block content %}{% endblock %}

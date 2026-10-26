@@ -90,12 +90,19 @@ SAT_STOPS = ((195, "#ff6a3d", 0.95), (205, "#c42fa0", 0.90), (215, "#7b3fd6", 0.
              (225, "#3b4fc9", 0.80), (240, "#5c6b8a", 0.70), (255, "#8e9299", 0.60), (275, "#c9ccd1", 0.45),
              (290, "#e6e8eb", 0.20), (300, "#e6e8eb", 0.0))
 
+# Hail swath (B4, website/swath.py): the B1 size classes as flat bands of colour, in mm, one band per class of
+# hail.CLASSES. A band's two edges are the class's first and last tenth of a mm, so no colour blends across a band.
+# swath.py picks one palette level inside each band; uncoloured and hatched cells are palette indices 0 and 1.
+HAIL_SWATH_BANDS = ((6.4, 19.0, "#f9d65c", 0.80), (19.1, 25.3, "#f5a524", 0.85), (25.4, 38.0, "#e8600f", 0.88),
+                    (38.1, 50.7, "#d1283b", 0.90), (50.8, 69.8, "#9b1fa3", 0.90), (69.9, 110.0, "#4b1c8c", 0.92))
+HAIL_SWATH_STOPS = tuple(stop for lo, hi, colour, a in HAIL_SWATH_BANDS for stop in ((lo, colour, a), (hi, colour, a)))
+
 # Layer -> (stops, log scale, colour levels). Palette index 0 is transparent, 1 the hatch, 2.. one
 # entry per level. 48 log levels for precipitation (16 % steps; 254 looked the same at half the
 # file size on a rainy day), 1 °F steps for temperature (-20..105), 1 mph steps for gusts (0..75),
-# 1 K steps for the satellite picture (195..300).
+# 1 K steps for the satellite picture (195..300), 254 levels across the hail bands (mm, 6.4 to 110).
 STYLE = {"precip": (PRECIP_STOPS, True, 48), "temp": (TEMP_STOPS, False, 126), "wind": (WIND_STOPS, False, 76),
-         "satellite": (SAT_STOPS, False, 106)}
+         "satellite": (SAT_STOPS, False, 106), "hail_swath": (HAIL_SWATH_STOPS, False, 254)}
 SMOOTH_PX = 1.0                           # Gaussian sigma before colouring: soft edges, smaller files
 LAYER_TEXT = {
     "precip": {"title": "Precipitation", "unit": "in/h",
@@ -406,9 +413,35 @@ def _sig1(x: float) -> float:
     return round(x, -int(math.floor(math.log10(abs(x)))))
 
 
+def _hail_legend() -> tuple[list[dict], str]:
+    """The hail swath's legend (B4): one entry per B1 size class, top first, with the class word and its inch range.
+    The bar is one equal band per class, so it shows the classes and no blends between them."""
+    from . import hail                      # the size classes and their words (B1); hail.py imports nothing from here
+    n = len(HAIL_SWATH_BANDS)
+    if n != len(hail.CLASSES):
+        raise AssertionError("the hail swath bands and the B1 size classes differ in number")
+    entries = []
+    for k in range(n):                      # k = 0 is the top entry
+        i = n - 1 - k
+        _lo, _hi, colour, alpha = HAIL_SWATH_BANDS[i]
+        cls = hail.CLASSES[i]
+        span = (f"{cls['min_in']:.2f} in or more" if cls["max_in"] is None
+                else f"{cls['min_in']:.2f} to {cls['max_in']:.2f} in")
+        entries.append({"label": cls["word"], "range": span, "value": cls["min_in"], "color": colour,
+                        "alpha": alpha, "pos": round(1 - (k + 0.5) / n, 4), "severe": cls["severe"]})
+    css = []
+    for i, (_lo, _hi, colour, alpha) in enumerate(HAIL_SWATH_BANDS):
+        r, g, b = _hex(colour)
+        css.append(f"rgba({r},{g},{b},{alpha:g}) {100 * i / n:.2f}%")
+        css.append(f"rgba({r},{g},{b},{alpha:g}) {100 * (i + 1) / n:.2f}%")
+    return entries, "linear-gradient(to top, " + ", ".join(css) + ")"
+
+
 def legend(layer: str) -> tuple[list[dict], str]:
     """Legend entries (top of the bar first) and a CSS gradient for the bar, from the same stops
     the pictures use. `pos` is where an entry's colour sits on the bar (0 bottom, 1 top)."""
+    if layer == "hail_swath":
+        return _hail_legend()
     stops, log, _n = STYLE[layer]
     if layer == "precip":
         points = [(label, mm, _sig1(mm / MM_PER_INCH)) for label, mm in PRECIP_CLASSES]

@@ -15,11 +15,6 @@
 <link rel="stylesheet" href="{{ root }}static/map/map.css?v={{ asset_v['map/map.css'] }}">
 {% if hail_history %}<style>
 /* ---------------------------------------------------------------- hail history at a spot (--hail-history builds) */
-/* the sheet's day list: one card per day, on the sheet's figure colour; a list the script hid stays hidden (:not) */
-.sheet-body .hail-days:not([hidden]) { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.sheet-body .hail-days li { padding: 10px 12px; border-radius: 14px; background: var(--fill-ctl); line-height: 1.35;
-  font-variant-numeric: tabular-nums; }
-.sheet-body .hail-classes { margin: 0; padding-left: 20px; color: var(--ink-2); font-size: 14px; }
 /* the legend's line under the keys (map.html); full width in the two-column legend (portrait phones) */
 .legend-tap { margin: 8px 0 0; font-size: 11.5px; line-height: 1.3; color: var(--ink-2); }
 .legend-2col .legend-tap { grid-column: 1 / -1; margin: 0; line-height: 1.2; }   /* keeps the phone legend within its height */
@@ -58,15 +53,16 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
       <p class="banner banner-sample" role="note"><strong>Sample data.</strong> Everything here is invented to review the layout. It is not weather.</p>
       {% endif %}
       {% set problems = [] %}
-      {% for key in ['alerts', 'radar', 'forecast', 'forecasts', 'storm', 'satellite', 'hail_history'] %}{% if status[key] and not status[key].ok %}{% set _ = problems.append(key) %}{% endif %}{% endfor %}
-      {% set names = {'alerts': 'NWS alerts', 'radar': 'radar', 'forecast': 'model forecast', 'forecasts': 'NWS town forecasts', 'storm': 'radar echo tops', 'satellite': 'satellite picture', 'hail_history': 'hail history'} %}
+      {% for key in ['alerts', 'radar', 'forecast', 'forecasts', 'storm', 'satellite', 'hail_swath', 'hail_history'] %}{% if status[key] and not status[key].ok %}{% set _ = problems.append(key) %}{% endif %}{% endfor %}
+      {% set names = {'alerts': 'NWS alerts', 'radar': 'radar', 'forecast': 'model forecast', 'forecasts': 'NWS town forecasts', 'storm': 'radar echo tops', 'satellite': 'satellite picture', 'hail_swath': 'hail swath', 'hail_history': 'hail history'} %}
       {% macro problem_line(key) %}{% set s = status[key] %}
         {%- if key == 'alerts' %}<strong>NWS alerts didn't load</strong> at {{ s.when|t }} ({{ s.detail }}). Warnings may be missing.<span class="last-known"></span>
         {%- elif key == 'radar' %}<strong>Radar problem</strong> at {{ s.when|t }}: {{ s.detail }}.
         {%- elif key == 'forecast' %}<strong>Model forecast problem</strong> at {{ s.when|t }}: {{ s.detail }}.
         {%- elif key == 'storm' %}<strong>Radar echo tops problem</strong> at {{ s.when|t }}: {{ s.detail }}.
         {%- elif key == 'satellite' %}<strong>Satellite picture problem</strong> at {{ s.when|t }}: {{ s.detail }}.
-        {%- elif key == 'hail_history' %}<strong>Hail history didn't load</strong> at {{ s.when|t }}: {{ s.detail }}. This is not an all-clear.
+        {%- elif key == 'hail_swath' %}<strong>Hail swath problem</strong> at {{ s.when|t }}: {{ s.detail }}.
+        {%- elif key == 'hail_history' %}<strong>{{ s.heading }}</strong> at {{ s.when|t }}. {{ s.sentence }}
         {%- else %}<strong>NWS town forecasts</strong> loaded for {{ s.detail }}. A town without one shows a dash.{% endif %}
       {%- endmacro %}
       {% if problems|length == 1 %}
@@ -87,6 +83,25 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
       {% endif %}
     </div>
 
+{% if hail_addresses and address_text == 'on' %}
+    <section class="glass find" id="find" aria-labelledby="find-title">
+      <h2 class="find-title" id="find-title">{{ b3.form.title }}</h2>
+      {% if b3.about.addresses_ok %}
+      <form class="find-form" id="address-form" role="search" autocomplete="off">
+        <label class="visually-hidden" for="address-input">{{ b3.form.hint }}</label>
+        <input type="search" class="find-input" id="address-input" name="q" placeholder="{{ b3.form.hint }}" autocomplete="off" autocapitalize="words" spellcheck="false" aria-describedby="address-privacy">
+        <button type="submit" class="find-go" id="address-go">{{ b3.form.button }}</button>
+      </form>
+      <p class="find-privacy" id="address-privacy">{{ b3.form.privacy }}</p>
+      {% if b3.sample %}<p class="sample-tag" data-addr="sample">{{ b3.sample_words }}</p>
+      {% endif %}
+      <ol class="find-results" id="address-results" hidden></ol>
+      <p class="find-status" id="address-status" role="status" hidden></p>
+      {% else %}
+      <p class="find-status" id="address-status" role="status">{{ b3.unavailable.addresses }}</p>
+      {% endif %}
+    </section>
+{% endif %}
     <div class="corners">
       <div class="corner-left">
         <a class="glass round close" href="{{ root }}index.html" aria-label="Close map">
@@ -105,7 +120,8 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
               <ol class="legend-stops" id="legend-stops"></ol>
             </div>
             <p class="legend-note" id="legend-note"></p>
-            <ul class="legend-keys" id="legend-keys"></ul>
+{% if storm_layers %}            <p class="legend-uncoloured" id="legend-uncoloured"></p>
+{% endif %}            <ul class="legend-keys" id="legend-keys"></ul>
 {% if hail_history %}            <p class="legend-tap">Tap or click the map for the five-year hail history at that spot</p>
 {% endif %}          </div>
           <a class="mapdata" href="{{ root }}about.html#sources">Map data</a>
@@ -129,6 +145,8 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
             <label class="choice"><input type="radio" name="layer" value="temp"><span class="swatch sw-temp" aria-hidden="true"></span><span class="choice-text">Temperature</span></label>
             <label class="choice"><input type="radio" name="layer" value="wind"><span class="swatch sw-wind" aria-hidden="true"></span><span class="choice-text">Wind gusts</span></label>
 {% if storm_layers %}            <label class="choice"><input type="radio" name="layer" value="satellite"><span class="swatch sw-satellite" aria-hidden="true"></span><span class="choice-text">Satellite</span></label>
+            <label class="choice"><input type="radio" name="layer" value="hail_60"><span class="swatch sw-hail_60" aria-hidden="true"></span><span class="choice-text">Hail, last hour</span></label>
+            <label class="choice"><input type="radio" name="layer" value="hail_1440"><span class="swatch sw-hail_1440" aria-hidden="true"></span><span class="choice-text">Hail, last 24 hours</span></label>
 {% endif %}          </fieldset>
           <fieldset class="choices base-choices">
             <legend>Base map</legend>
@@ -139,7 +157,18 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
             <label class="toggle"><span class="toggle-text">Warnings<small>NWS outlines</small></span><input type="checkbox" role="switch" id="tg-warnings" checked></label>
             <label class="toggle"><span class="toggle-text">Storm reports<small>SPC, last 3 days</small></span><input type="checkbox" role="switch" id="tg-reports"></label>
           </div>
-        </section>
+{% if hail_addresses %}          <div class="b3-keys" id="b3-keys">
+            <p class="legend-tap b3-head">Addresses, streets and building outlines</p>
+            <p class="legend-tap" data-layer="shapes">{{ b3.legend.shapes }}</p>
+            {% if not b3.outlines_loaded %}<p class="legend-tap" data-layer="dots">{{ b3.legend.dots }}</p>
+            {% endif %}<p class="legend-tap" data-layer="streets">{{ b3.legend.streets }}</p>
+          </div>
+{% endif %}        </section>
+{% if hail_addresses and address_text == 'on' %}
+        <button type="button" class="glass round icon-btn find-open" id="btn-find" aria-label="{{ b3.form.title }}" title="{{ b3.form.title }}" aria-expanded="false" aria-controls="find">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.2"/><path d="M15.2 15.2 20 20"/></svg>
+        </button>
+{% endif %}
         <button type="button" class="glass round icon-btn" id="btn-list" aria-label="List of alerts and towns" aria-haspopup="dialog">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle class="fill" cx="4.6" cy="6.5" r="1.3"/><circle class="fill" cx="4.6" cy="12" r="1.3"/><circle class="fill" cx="4.6" cy="17.5" r="1.3"/></svg>
         </button>
@@ -211,9 +240,22 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
       <h3>Hail history</h3>
       <p>Each town's page has its five-year hail history (NOAA radar estimates) as a table. A spot elsewhere on the map opens its history when you tap or click it, and that needs this interactive map.</p>
 {% endif %}
+{% if hail_addresses %}
+      <h3>Addresses, streets and building outlines</h3>
+      <p>{{ b3.legend.shapes }}</p>
+      {% if not b3.outlines_loaded %}<p>{{ b3.legend.dots }}</p>{% endif %}
+      <p>{{ b3.legend.streets }}</p>
+      {% for line in b3.attribution %}<p>{{ line }}</p>
+      {% endfor %}
+{% endif %}
 {% if storm_layers %}
       <h3>Satellite picture</h3>
       <p>{{ satellite_text }}</p>
+      <h3>{{ swath_site.list_heading }}</h3>
+      {% if sample %}<p class="sample-tag">{{ swath_site.sample_credit }}</p>
+      {% endif %}{% for layer in swath_text %}<h4>{{ layer.title }}</h4>
+      {% for line in layer.lines %}<p>{{ line }}</p>
+      {% endfor %}{% endfor %}
       <h3>Radar echo tops</h3>
       <p>NOAA radar estimate (MRMS), 11 heights from 500 to 15,000 m above sea level. Each echo top is in metres above sea level: the highest sampled height above ground with 35 dBZ or more, among heights that had radar data. "At least" means some heights above it had no radar value. Not observed hail or damage.</p>
       <ul>
@@ -227,6 +269,13 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
     <section class="storm-sec" data-storm="satellite" aria-labelledby="sat-list-h">
       <h3 id="sat-list-h">Satellite picture</h3>
       <p>{{ satellite_text }}</p>
+    </section>
+    <section class="storm-sec" data-storm="hail" aria-labelledby="hail-swath-list-h">
+      <h3 id="hail-swath-list-h">{{ swath_site.list_heading }}</h3>
+      {% if sample %}<p class="sample-tag">{{ swath_site.sample_credit }}</p>
+      {% endif %}{% for layer in swath_text %}<h4>{{ layer.title }}</h4>
+      {% for line in layer.lines %}<p>{{ line }}</p>
+      {% endfor %}{% endfor %}
     </section>
     <section class="storm-sec" data-storm="list" aria-labelledby="storm-list-h">
       <h3 id="storm-list-h">Radar echo tops</h3>
@@ -242,19 +291,23 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
 {% if hail_history %}
   <template id="hail-sheet">
     <p class="sample-tag" data-hail="sample" hidden></p>
-    <p class="sub" data-hail="lead"></p>
-    <h3 data-hail="counts-title" hidden></h3>
-    <ul class="hail-classes" data-hail="counts" hidden></ul>
-    <ul class="hail-days" data-hail="days"></ul>
-    <p class="muted" data-hail="what"></p>
+    <div class="sum" data-hail="summary" hidden></div>
     <p class="warn" data-hail="stale" hidden></p>
-    <p class="muted" data-hail="missing" hidden></p>
-    <p class="muted" data-hail="source"></p>
+    <div class="hist" data-hail="sections" hidden></div>
   </template>
   <template id="hail-list">
     <section class="hail-sec" aria-labelledby="hail-list-h">
       <h3 id="hail-list-h">Hail history</h3>
       <p>Each town's page has its five-year hail history (NOAA radar estimates) as a table. A spot elsewhere on the map opens its history when you tap or click it, and that needs this interactive map.</p>
+    </section>
+  </template>
+{% endif %}
+{% if hail_addresses %}
+  <template id="address-sec">
+    <section class="addr-sec" data-addr="section" hidden>
+      <ul class="addr-lines" data-addr="lines"></ul>
+      <p class="muted" data-addr="note" hidden></p>
+      <p class="muted" data-addr="units" hidden></p>
     </section>
   </template>
 {% endif %}

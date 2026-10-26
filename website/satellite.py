@@ -8,7 +8,7 @@ This module takes the newest scan and draws it as one palette PNG on the map's i
 An OBSERVATION of infrared brightness temperature. It is not a cloud height and not a hail signal, and
 it is never blended with the radar estimate or the model forecast. An uncorrected cloud top is drawn
 away from the satellite (north-west for GOES-East, north-east for GOES-West). Pixels with no good value
-are hatched as "no satellite data", never drawn as clear sky.
+are hatched as "no satellite data", never drawn as cloud-free sky.
 
     layer, status = build_satellite(site_dir, get, now)              # live: NOAA buckets on S3
     layer, status = build_satellite(site_dir, get, now, sample=True)  # invented field, no network

@@ -328,7 +328,8 @@ class ClassTests(unittest.TestCase):
 class WordTests(unittest.TestCase):
     def test_no_forbidden_term_in_any_word(self):
         for key, template in h.WORDS.items():
-            assert_clean_words(self, template)
+            # the required sentence of every stale or unavailable line (D41) is scanned apart from the words it ends
+            assert_clean_words(self, template.replace("This is not an all-clear.", ""))
         for cls in h.CLASSES:
             assert_clean_words(self, cls["word"])
 
@@ -610,10 +611,53 @@ class ReaderTests(unittest.TestCase):
             h.cell_events(dest, *BENCHLAND)
 
     def test_manifest_passes_on_the_fixture(self):
+        # the B2 layout: B1's shards and index, and the joins' j/, k/, s/ and z/ files (the fire zone files of the sample's
+        # tiles included), and the station part's tl/ and sd/ files (D56, D64). The address files under hail/a/ (D18) are
+        # checked by their own test. A manifest does not
+        # list itself, so hail/manifest.json is not in this list.
         manifest = h.check_manifest(FIXTURE)
-        self.assertEqual(sorted(manifest["files"]),
-                         ["hail/index.json", "hail/t/r0079_c0198.json", "hail/t/r0079_c0199.json",
-                          "hail/t/r0092_c0214.json"])
+        self.assertEqual([name for name in sorted(manifest["files"]) if not name.startswith("hail/a/")], [
+            "hail/index.json", "hail/j/e/r0079_c0198.json", "hail/j/e/r0079_c0199.json", "hail/j/e/r0092_c0214.json",
+            "hail/j/events.json", "hail/j/r0079_c0198.json", "hail/j/r0079_c0199.json", "hail/j/r0092_c0214.json",
+            "hail/j/towns.json", "hail/k/MTC045.json", "hail/k/MTC111.json", "hail/s/1LM.json", "hail/s/6S8.json",
+            "hail/s/BIL.json", "hail/s/LWT.json", "hail/sd/US1MTBH0006.json", "hail/sd/US1MTCB0012.json",
+            "hail/sd/US1MTCB0013.json", "hail/sd/US1MTCH0006.json", "hail/sd/US1MTFG0003.json",
+            "hail/sd/US1MTFG0006.json", "hail/sd/US1MTGV0008.json", "hail/sd/US1MTMH0007.json",
+            "hail/sd/US1MTMH0010.json", "hail/sd/US1MTMH0014.json", "hail/sd/US1MTMH0017.json",
+            "hail/sd/US1MTMH0022.json", "hail/sd/US1MTMH0024.json", "hail/sd/US1MTSW0002.json",
+            "hail/sd/US1MTSW0005.json", "hail/sd/US1MTSW0010.json", "hail/sd/US1MTSW0012.json",
+            "hail/sd/US1MTSW0013.json", "hail/sd/US1MTWH0003.json", "hail/sd/US1MTYS0005.json",
+            "hail/sd/US1MTYS0011.json", "hail/sd/US1MTYS0012.json", "hail/sd/US1MTYS0013.json",
+            "hail/sd/US1MTYS0014.json", "hail/sd/US1MTYS0027.json", "hail/sd/US1MTYS0028.json",
+            "hail/sd/US1MTYS0032.json", "hail/sd/US1MTYS0033.json", "hail/sd/US1MTYS0037.json",
+            "hail/sd/US1MTYS0041.json", "hail/sd/US1MTYS0043.json", "hail/sd/US1MTYS0044.json",
+            "hail/sd/US1MTYS0046.json", "hail/sd/US1MTYS0047.json", "hail/sd/US1MTYS0048.json",
+            "hail/sd/US1MTYS0050.json", "hail/sd/US1MTYS0052.json", "hail/sd/USC00240801.json",
+            "hail/sd/USC00240802.json", "hail/sd/USC00241102.json", "hail/sd/USC00241938.json",
+            "hail/sd/USC00243939.json", "hail/sd/USC00243947.json", "hail/sd/USC00244193.json",
+            "hail/sd/USC00244345.json", "hail/sd/USC00244538.json", "hail/sd/USC00244545.json",
+            "hail/sd/USC00244976.json", "hail/sd/USC00244978.json", "hail/sd/USC00245761.json",
+            "hail/sd/USC00245791.json", "hail/sd/USC00246647.json", "hail/sd/USC00246862.json",
+            "hail/sd/USC00247128.json", "hail/sd/USC00247220.json", "hail/sd/USC00247540.json",
+            "hail/sd/USC00247864.json", "hail/sd/USC00249240.json", "hail/sd/USS0009C01S.json",
+            "hail/sd/USS0010C06S.json", "hail/sd/USS0010C09S.json", "hail/sd/USS0010C15S.json",
+            "hail/sd/USS0010C22S.json", "hail/sd/USS0010C23S.json", "hail/sd/USW00004140.json",
+            "hail/sd/USW00024033.json", "hail/sd/USW00024036.json", "hail/t/r0079_c0198.json",
+            "hail/t/r0079_c0199.json", "hail/t/r0092_c0214.json", "hail/tl/r0079_c0198.json",
+            "hail/tl/r0079_c0199.json", "hail/tl/r0092_c0214.json", "hail/z/MTZ050.json", "hail/z/MTZ235.json",
+            "hail/z/MTZ313.json", "hail/z/fire-MTZ117.json", "hail/z/fire-MTZ128.json"])
+
+    def test_the_address_files_are_listed_in_the_manifest_and_the_index_carries_their_block(self):
+        # D18: hail/a/ holds JSON files only, each one is listed in the manifest, and the index's addresses block is
+        # the loaded SAMPLE of the address part, with its byte count equal to the files'
+        on_disk = sorted(p.relative_to(FIXTURE).as_posix() for p in (FIXTURE / "hail" / "a").rglob("*") if p.is_file())
+        self.assertTrue(on_disk)
+        self.assertTrue(all(name.endswith(".json") for name in on_disk), on_disk)
+        manifest = h.check_manifest(FIXTURE)
+        self.assertEqual(sorted(name for name in manifest["files"] if name.startswith("hail/a/")), on_disk)
+        block = json.loads((FIXTURE / "hail" / "index.json").read_text(encoding="utf-8"))["addresses"]
+        self.assertEqual((block["state"], block["sample"]), ("loaded", True))
+        self.assertEqual(block["bytes"]["a"], sum((FIXTURE / name).stat().st_size for name in on_disk))
 
     def test_manifest_catches_a_changed_shard(self):
         dest = self.copy_fixture()
@@ -735,21 +779,113 @@ class ReaderTests(unittest.TestCase):
 
 
 class FixtureTests(unittest.TestCase):
-    def test_fixture_is_under_50_kb_and_holds_only_the_store_files(self):
-        files = sorted(p.relative_to(FIXTURE).as_posix() for p in FIXTURE.rglob("*") if p.is_file())
-        self.assertEqual(files, ["hail/index.json", "hail/manifest.json", "hail/t/r0079_c0198.json",
-                                 "hail/t/r0079_c0199.json", "hail/t/r0092_c0214.json"])
-        total = sum(p.stat().st_size for p in FIXTURE.rglob("*") if p.is_file())
-        self.assertLess(total, 50_000)
+    def test_fixture_without_the_address_files_is_under_480_kb_and_holds_only_the_store_and_joins(self):
+        # D10, D18, D54, D64 and D74: the store and joins files have their own budget, the 480 KiB that the assertion
+        # below tests (480 * 1024 bytes). D64 restated it when the sample gained the station part, and D74 when the
+        # sample began to name the rejected candidates of its tile lists (D69), so their summaries are cut in too.
+        # D78(c) adds the GHCN name beside each display name. The measured fixture sizes and file counts are in
+        # research/hail-history/validation-evidence/b5-verification.json, not here (D87(h)). The address files under
+        # hail/a/ are checked by test_the_address_files_are_listed_in_the_manifest_and_the_index_carries_their_block and
+        # tests/test_joins.py
+        files = sorted(p.relative_to(FIXTURE).as_posix() for p in FIXTURE.rglob("*")
+                       if p.is_file() and not p.relative_to(FIXTURE).as_posix().startswith("hail/a/"))
+        self.assertEqual(files, [
+            "hail/index.json", "hail/j/e/r0079_c0198.json", "hail/j/e/r0079_c0199.json", "hail/j/e/r0092_c0214.json",
+            "hail/j/events.json", "hail/j/r0079_c0198.json", "hail/j/r0079_c0199.json", "hail/j/r0092_c0214.json",
+            "hail/j/towns.json", "hail/k/MTC045.json", "hail/k/MTC111.json", "hail/manifest.json", "hail/s/1LM.json",
+            "hail/s/6S8.json", "hail/s/BIL.json", "hail/s/LWT.json", "hail/sd/US1MTBH0006.json",
+            "hail/sd/US1MTCB0012.json", "hail/sd/US1MTCB0013.json", "hail/sd/US1MTCH0006.json",
+            "hail/sd/US1MTFG0003.json", "hail/sd/US1MTFG0006.json", "hail/sd/US1MTGV0008.json",
+            "hail/sd/US1MTMH0007.json", "hail/sd/US1MTMH0010.json", "hail/sd/US1MTMH0014.json",
+            "hail/sd/US1MTMH0017.json", "hail/sd/US1MTMH0022.json", "hail/sd/US1MTMH0024.json",
+            "hail/sd/US1MTSW0002.json", "hail/sd/US1MTSW0005.json", "hail/sd/US1MTSW0010.json",
+            "hail/sd/US1MTSW0012.json", "hail/sd/US1MTSW0013.json", "hail/sd/US1MTWH0003.json",
+            "hail/sd/US1MTYS0005.json", "hail/sd/US1MTYS0011.json", "hail/sd/US1MTYS0012.json",
+            "hail/sd/US1MTYS0013.json", "hail/sd/US1MTYS0014.json", "hail/sd/US1MTYS0027.json",
+            "hail/sd/US1MTYS0028.json", "hail/sd/US1MTYS0032.json", "hail/sd/US1MTYS0033.json",
+            "hail/sd/US1MTYS0037.json", "hail/sd/US1MTYS0041.json", "hail/sd/US1MTYS0043.json",
+            "hail/sd/US1MTYS0044.json", "hail/sd/US1MTYS0046.json", "hail/sd/US1MTYS0047.json",
+            "hail/sd/US1MTYS0048.json", "hail/sd/US1MTYS0050.json", "hail/sd/US1MTYS0052.json",
+            "hail/sd/USC00240801.json", "hail/sd/USC00240802.json", "hail/sd/USC00241102.json",
+            "hail/sd/USC00241938.json", "hail/sd/USC00243939.json", "hail/sd/USC00243947.json",
+            "hail/sd/USC00244193.json", "hail/sd/USC00244345.json", "hail/sd/USC00244538.json",
+            "hail/sd/USC00244545.json", "hail/sd/USC00244976.json", "hail/sd/USC00244978.json",
+            "hail/sd/USC00245761.json", "hail/sd/USC00245791.json", "hail/sd/USC00246647.json",
+            "hail/sd/USC00246862.json", "hail/sd/USC00247128.json", "hail/sd/USC00247220.json",
+            "hail/sd/USC00247540.json", "hail/sd/USC00247864.json", "hail/sd/USC00249240.json",
+            "hail/sd/USS0009C01S.json", "hail/sd/USS0010C06S.json", "hail/sd/USS0010C09S.json",
+            "hail/sd/USS0010C15S.json", "hail/sd/USS0010C22S.json", "hail/sd/USS0010C23S.json",
+            "hail/sd/USW00004140.json", "hail/sd/USW00024033.json", "hail/sd/USW00024036.json",
+            "hail/t/r0079_c0198.json", "hail/t/r0079_c0199.json", "hail/t/r0092_c0214.json", "hail/tl/r0079_c0198.json",
+            "hail/tl/r0079_c0199.json", "hail/tl/r0092_c0214.json", "hail/z/MTZ050.json", "hail/z/MTZ235.json",
+            "hail/z/MTZ313.json", "hail/z/fire-MTZ117.json", "hail/z/fire-MTZ128.json"])
+        total = sum((FIXTURE / name).stat().st_size for name in files)
+        self.assertLess(total, 480 * 1024)
 
     def test_fixture_is_the_current_output_of_fixture_store(self):
+        # The joins layer and its manifest come from the joins build (tests/test_joins.py checks them), so this compares
+        # the B1 part: the shards byte for byte, and the index and manifest without the joins block. It writes into a
+        # folder this test made, never into the committed fixture.
         tmp = Path(tempfile.mkdtemp(prefix="hail-fixture-"))
         try:
             h.fixture_store(tmp)
-            for path in (tmp / "hail").rglob("*"):
-                if path.is_file():
-                    rel = path.relative_to(tmp)
-                    self.assertEqual(path.read_bytes(), (FIXTURE / rel).read_bytes(), str(rel))
+            for path in (tmp / "hail" / "t").rglob("*.json"):
+                rel = path.relative_to(tmp)
+                self.assertEqual(path.read_bytes(), (FIXTURE / rel).read_bytes(), str(rel))
+            generated = json.loads((tmp / "hail" / "index.json").read_text(encoding="utf-8"))
+            committed = json.loads((FIXTURE / "hail" / "index.json").read_text(encoding="utf-8"))
+            committed.pop("joins")
+            committed.pop("addresses", None)        # the address part is not the B1 writer's (D18)
+            committed.pop("stations", None)         # the station part is the joins fixture's (D56, D64)
+            self.assertEqual(committed, generated)
+            generated = json.loads((tmp / "hail" / "manifest.json").read_text(encoding="utf-8"))
+            committed = json.loads((FIXTURE / "hail" / "manifest.json").read_text(encoding="utf-8"))
+            committed.pop("joins")
+            for doc in (generated, committed):      # the index's own entry hashes the index with its joins block
+                doc["files"] = {k: v for k, v in doc["files"].items() if k.startswith("hail/t/")}
+            self.assertEqual(committed, generated)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_fixture_store_keeps_the_address_files_of_an_earlier_write(self):
+        # D18: a B1 rewrite (joins.fixture makes one) keeps hail/a/ and the index's addresses block, and the manifest
+        # still matches the folder
+        tmp = Path(tempfile.mkdtemp(prefix="hail-fixture-keep-"))
+        try:
+            shutil.copytree(FIXTURE / "hail", tmp / "hail")
+            before = {p.relative_to(tmp).as_posix(): p.read_bytes()
+                      for p in (tmp / "hail" / "a").rglob("*") if p.is_file()}
+            self.assertTrue(before)
+            h.fixture_store(tmp)
+            after = {p.relative_to(tmp).as_posix(): p.read_bytes()
+                     for p in (tmp / "hail" / "a").rglob("*") if p.is_file()}
+            self.assertEqual(after, before)
+            index = json.loads((tmp / "hail" / "index.json").read_text(encoding="utf-8"))
+            committed = json.loads((FIXTURE / "hail" / "index.json").read_text(encoding="utf-8"))
+            self.assertEqual(index["addresses"], committed["addresses"])
+            h.check_manifest(tmp)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_fixture_store_hands_a_real_store_to_the_address_writer(self):
+        # D18: with addresses_from, the fixture path calls the address writer with the folder and the real store
+        tmp = Path(tempfile.mkdtemp(prefix="hail-fixture-addr-"))
+        try:
+            with mock.patch("website.addresses.fixture") as writer:
+                index = h.fixture_store(tmp, addresses_from="real-store")
+            writer.assert_called_once_with(tmp, "real-store")
+            self.assertEqual(index["events"], 1575)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_a_failed_address_write_is_a_store_error_with_its_reason(self):
+        from website import addresses as A
+        tmp = Path(tempfile.mkdtemp(prefix="hail-fixture-addr-fail-"))
+        try:
+            with mock.patch("website.addresses.fixture", side_effect=A.AddressesError("no real rows")):
+                with self.assertRaises(h.HailStoreError) as ctx:
+                    h.fixture_store(tmp, addresses_from="real-store")
+            self.assertIn("no real rows", str(ctx.exception))
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
@@ -851,7 +987,7 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(params["cell_events"], ["store_dir", "lat", "lon", "index"])
         self.assertEqual(params["describe"], ["index", "events", "now", "sample"])
         self.assertEqual(params["map_data"], ["index", "sample"])
-        self.assertEqual(params["fixture_store"], ["dest_dir"])
+        self.assertEqual(params["fixture_store"], ["dest_dir", "addresses_from"])
         self.assertEqual(params["load_store"], ["path", "dest_dir"])
         self.assertEqual(inspect.signature(h.describe).parameters["sample"].default, False)
 
@@ -871,6 +1007,16 @@ class CommandLineTests(unittest.TestCase):
             self.assertEqual(json.loads(out)["events"], 1575)
             self.assertTrue((tmp / "hail" / "index.json").is_file())
             self.assertTrue((tmp / "hail" / "manifest.json").is_file())
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_fixture_command_takes_addresses_from(self):
+        tmp = Path(tempfile.mkdtemp(prefix="hail-cli-addr-"))
+        try:
+            with mock.patch("website.addresses.fixture") as writer:
+                code, _out, _err = self.run_cli(["fixture", "--out", str(tmp), "--addresses-from", "real-store"])
+            self.assertEqual(code, 0)
+            writer.assert_called_once_with(tmp, "real-store")
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
@@ -1669,8 +1815,9 @@ class CompareGateTests(unittest.TestCase):
 
 class WorkflowTests(unittest.TestCase):
     def test_the_daily_job_installs_unpinned_like_the_site_build(self):
+        # the B2 brief's job section and D12: the job also installs pyshp (the zone shapefiles, joins.py only)
         text = (ROOT / ".github" / "workflows" / "hail-store.yml").read_text(encoding="utf-8")
-        self.assertIn("run: pip install numpy pygrib requests\n", text)
+        self.assertIn("run: pip install numpy pygrib requests pyshp\n", text)
         self.assertNotIn("==", text)
         self.assertIn('python-version: "3.12"', text)
         self.assertIn("python -m website.hail verify store", text)
@@ -1903,6 +2050,30 @@ class FetchAndLoadTests(unittest.TestCase):
         self.assertEqual(str(ctx.exception), "the history manifest lists a file outside hail/: ../outside.json")
         self.assertFalse((dest / "hail").exists())
 
+    def test_the_unpack_limits_hold_the_measured_b3_store(self):
+        # A guard on the constants (MAX_UNPACK_BYTES and MAX_UNPACK_FILES, D42), not an archive of the store. The
+        # measured store sizes are in research/hail-history/validation-evidence/b5-verification.json, not here (D87(h)).
+        self.assertGreater(h.MAX_UNPACK_BYTES, 372_739_036)
+        self.assertGreater(h.MAX_UNPACK_FILES, 31_129)
+
+    def test_an_archive_at_the_file_limit_unpacks_and_one_over_it_is_refused(self):
+        members = {f"hail/x/{i:05d}.json": b"1" for i in range(10)}
+        stage = self.tmp / "stage"
+        stage.mkdir()
+        with mock.patch.object(h, "MAX_UNPACK_FILES", 10):
+            h._unpack_hail(self.make_tar(members), stage)
+            self.assertEqual(len(list((stage / "hail" / "x").iterdir())), 10)
+            members["hail/x/extra.json"] = b"1"
+            with self.assertRaises(h.HailStoreError) as ctx:
+                h._unpack_hail(self.make_tar(members), self.tmp / "over")
+        self.assertEqual(str(ctx.exception), "the history archive is larger than the limits allow")
+
+    def test_an_archive_over_the_byte_limit_is_refused(self):
+        with mock.patch.object(h, "MAX_UNPACK_BYTES", 1000):
+            with self.assertRaises(h.HailStoreError) as ctx:
+                h._unpack_hail(self.make_tar({"hail/x/big.json": b"1" * 2000}), self.tmp / "stage")
+        self.assertEqual(str(ctx.exception), "the history archive is larger than the limits allow")
+
     def test_load_store_takes_a_directory_or_a_tar(self):
         self.assertEqual(h.load_store(FIXTURE), FIXTURE)
         tar_path = self.tmp / "hail-store.tar.gz"
@@ -1912,6 +2083,56 @@ class FetchAndLoadTests(unittest.TestCase):
         self.assertEqual(found, dest)
         self.assertEqual(h.load_index(found)["as_of"], "2026-10-15")
         self.assertEqual(h.cell_events(found, *BENCHLAND)[-1], (date(2026, 9, 6), 439))
+
+    def test_a_built_sites_copy_with_live_files_loads_from_its_folder(self):
+        """D75 (a): a built site's own hail/ copy loads. The build writes B4's live files under hail/live/ after the copy,
+        and the manifest never lists them, so the folder load skips them. The copy's own files are still checked, and the
+        strict check (an archive, the build's copy) still refuses the live files."""
+        site = self.tmp / "site"
+        shutil.copytree(FIXTURE, site)
+        live = site / "hail" / "live" / "60" / "202610161200"
+        live.mkdir(parents=True)
+        (live / "r0092_c0214.json").write_text('{"f": "hail-live-v1", "window": 60}', encoding="utf-8")
+        self.assertEqual(h.load_store(site), site)
+        self.assertEqual(h.load_index(site)["as_of"], "2026-10-15")
+        self.assertEqual(h.cell_events(site, *BENCHLAND)[-1], (date(2026, 9, 6), 439))
+        with self.assertRaises(h.HailStoreError) as ctx:
+            h.check_manifest(site)
+        self.assertIn("hail/live/60/202610161200/r0092_c0214.json", str(ctx.exception))
+
+    def test_a_site_copy_still_refuses_what_is_not_a_live_file(self):
+        """D75 (a): only the files under hail/live/ are skipped. A stray file elsewhere under hail/, a file named like the
+        folder without its slash, and a file in a folder whose name starts with live are all refused."""
+        for n, rel in enumerate(("hail/t/stray.json", "hail/live.json", "hail/liveness/r0092_c0214.json")):
+            with self.subTest(rel):
+                site = self.tmp / f"site-{n}"
+                shutil.copytree(FIXTURE, site)
+                path = site / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("{}", encoding="utf-8")
+                with self.assertRaises(h.HailStoreError) as ctx:
+                    h.load_store(site)
+                self.assertIn("does not list", str(ctx.exception))
+
+    def test_a_link_under_the_live_folder_is_refused_in_a_site_copy(self):
+        site = self.tmp / "site-link"
+        shutil.copytree(FIXTURE, site)
+        outside = self.tmp / "outside.json"
+        outside.write_text("{}", encoding="utf-8")
+        (site / "hail" / "live").mkdir(parents=True)
+        os.symlink(outside, site / "hail" / "live" / "linked.json")
+        with self.assertRaises(h.HailStoreError) as ctx:
+            h.load_store(site)
+        self.assertIn("link, which is not allowed", str(ctx.exception))
+
+    def test_an_archive_with_live_files_is_refused_because_no_store_carries_them(self):
+        members = self.fixture_members()
+        members["hail/live/60/202610161200/r0092_c0214.json"] = b"{}"
+        archive = self.tmp / "store-with-live.tar.gz"
+        archive.write_bytes(self.make_tar(members))
+        with self.assertRaises(h.HailStoreError) as ctx:
+            h.load_store(archive, self.tmp / "unpacked")
+        self.assertIn("does not list", str(ctx.exception))
 
     def test_load_store_refuses_a_missing_path(self):
         with self.assertRaises(h.HailStoreError) as ctx:

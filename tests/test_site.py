@@ -6,8 +6,10 @@ or small fake fetchers that fail on purpose. The live sources are checked separa
 website workflow (`python -m website.build --require-live` on branch pushes).
 """
 
+import atexit
 import contextlib
 import hashlib
+import html
 import io
 import json
 import os
@@ -15,6 +17,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import textwrap
 import unittest
@@ -27,8 +30,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from website import build as site  # noqa: E402
 from website import gridded as g  # noqa: E402
+from website import hail as hs  # noqa: E402
 from website import sources as src  # noqa: E402
 from website.sample import SampleFetcher  # noqa: E402
+sys.path.insert(0, str(ROOT / "tests"))   # tests/words_rules.py: the one forbidden list (D41, D81(c))
+import words_rules  # noqa: E402
 
 UTC = timezone.utc
 NOW = datetime(2026, 10, 14, 15, 0, tzinfo=UTC)
@@ -356,9 +362,19 @@ class Contracts(unittest.TestCase):
     def test_every_feed_the_build_uses_is_described(self):
         self.assertEqual(set(src.CONTRACTS), {"alerts", "points", "hourly", "gusts", "daily", "stations",
                                               "observations", "reports", "radar", "forecast_model", "storm_levels",
-                                              "satellite", "basemap", "imagery", "hail_history"})
+                                              "satellite", "basemap", "imagery", "hail_history", "lsr",
+                                              "ncei_storm_events", "swdi_nx3hail", "nws_warnings_polygons",
+                                              "nws_zone_products", "asos_daily_gusts", "msl_addresses",
+                                              "msl_roads", "census_roads", "usa_structures", "census_counties",
+                                              "census_tiger_counties",
+                                              "hail_swath",
+                                              "nclimgrid_daily", "nohrsc_season_snowfall", "ghcn_daily",
+                                              "iem_watchwarn", "iem_lsr", "nwps_gauges", "usgs_water_api",
+                                              "roof_references", "iem_ugcs"})
         for key, c in src.CONTRACTS.items():
-            self.assertEqual(set(c), {"name", "request", "units", "timing", "missing"}, key)
+            # a row a B5 row replaces names it (superseded_by); every other row has the five fields only
+            self.assertTrue({"name", "request", "units", "timing", "missing"} <= set(c) <= {"name", "request", "units",
+                            "timing", "missing", "superseded_by"}, key)
             self.assertTrue(all(isinstance(v, str) and v.strip() for v in c.values()), key)
         self.assertIn("hundredths of an inch", src.CONTRACTS["reports"]["units"])
         self.assertIn("PrecipRate", src.CONTRACTS["radar"]["request"])
@@ -379,15 +395,15 @@ class Contracts(unittest.TestCase):
         self.assertIn("20 to 33 km", c["units"])
         self.assertIn("20 minutes", c["timing"])
         self.assertIn("60 minutes", c["timing"])
-        self.assertIn("never drawn as clear sky", c["missing"])
-        self.assertIn("Not an all-clear", c["missing"])
+        self.assertIn("never drawn as cloud-free sky", c["missing"])                  # D86(b): "clear" is the all-clear stem
+        self.assertIn("This is not an all-clear.", c["missing"])
 
 
 class Formatting(unittest.TestCase):
     def test_times_have_no_leading_zeros_on_any_platform(self):
         self.assertEqual(site.fmt_time("2026-10-14T15:05:00Z"), "Wed 9:05 am MDT")
         self.assertEqual(site.fmt_time("2026-12-02T03:00:00Z", "%a %b %-d %-I %p"), "Tue Dec 1 8 pm")
-        self.assertEqual(site.fmt_time(None), "—")
+        self.assertEqual(site.fmt_time(None), "-")
         self.assertEqual(site.strftime(date(2026, 7, 4), "%b %-d"), "Jul 4")
 
 
@@ -428,6 +444,7 @@ class SampleWith(SampleFetcher):
 
 def build_with(fetch, previous=None):
     out = Path(tempfile.mkdtemp(prefix="hailwatch-site-"))
+    atexit.register(shutil.rmtree, out, True)       # the run removes its own builds when it ends
     result = site.build(out, fetch, NOW, previous)
     return out, result
 
@@ -440,6 +457,7 @@ class SampleBuild(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-sample-"))
+        cls.addClassCleanup(shutil.rmtree, cls.out, True)
         cls.result = site.build(cls.out, None, NOW, sample=True)
 
     def test_every_file_is_there(self):
@@ -567,17 +585,27 @@ class SampleBuild(unittest.TestCase):
 
     def test_about_page_lists_every_source(self):
         html = page(self.out, "about.html")
+        b3 = site.B3_ROWS + tuple(site.ROAD_ROWS.values())                         # flag-gated: HailAddresses
         for key, c in src.CONTRACTS.items():
-            if key not in site.STORM_CONTRACTS and key not in site.HAIL_CONTRACTS:   # flag-gated: StormLayers, HailHistory
+            if key not in site.STORM_CONTRACTS and key not in site.HAIL_CONTRACTS and key not in b3:
                 self.assertIn(c["name"], html)
-        for key in site.STORM_CONTRACTS + site.HAIL_CONTRACTS:
+        for key in site.STORM_CONTRACTS + site.HAIL_CONTRACTS + b3:
             self.assertNotIn(src.CONTRACTS[key]["name"], html)
 
     def test_reports_page_shows_sizes_in_inches_and_unknown_wind(self):
         html = page(self.out, "reports.html")
         self.assertIn("1.75 in", html)
         self.assertIn("unknown", html)
-        self.assertIn("No report is not evidence that no hail fell.", html)
+        self.assertIn("No report is not the same as no hail.", html)
+        empty = "No reports of hail or wind in or near Montana for this day; that is not the same as no hail."
+        self.assertIn(empty, html)                                       # the empty days say it too (D91(c))
+        self.assertEqual(html.count('<p class="empty">'), html.count(empty))
+
+    def test_reports_page_text_passes_the_one_forbidden_list(self):
+        """D91(c): the storm reports page is built text, so tests/words_rules.py scans its visible text: the stems of the one
+        forbidden list, and "no hail" only inside "not the same as no hail" (the lead and each empty day)."""
+        visible = re.sub(r"<(script|style)\b.*?</\1>", " ", page(self.out, "reports.html"), flags=re.S)
+        words_rules.assert_clean(self, " ".join(html_text(visible).split()), "reports.html")
 
     def test_reports_map_key_names_the_forecast_numbers_and_outlines(self):
         """The Storm reports card draws town bubbles and warning outlines beside the reports and hides
@@ -594,6 +622,7 @@ class SampleBuild(unittest.TestCase):
         self.assertIn("Reporting day starting Wed Oct 14 at 6 am MDT", page(self.out, "reports.html"))
         winter = datetime(2026, 12, 10, 18, 0, tzinfo=UTC)
         out = Path(tempfile.mkdtemp(prefix="hailwatch-winter-"))
+        self.addCleanup(shutil.rmtree, out, True)
         site.build(out, SampleWith(winter), winter)
         html = page(out, "reports.html")
         self.assertIn("Reporting day starting Thu Dec 10 at 5 am MST", html)      # 12:00 UTC in winter
@@ -712,6 +741,7 @@ class FailureHonesty(unittest.TestCase):
 
     def test_everything_down_still_builds_and_says_so(self):
         out = Path(tempfile.mkdtemp(prefix="hailwatch-down-"))
+        self.addCleanup(shutil.rmtree, out, True)
         with mock.patch.object(site.src, "Fetcher", lambda *a, **k: FailingFetcher()), \
                 contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             code = site.main(["--out", str(out), "--require-live", "--now", "2026-10-14T15:00:00Z"])
@@ -958,7 +988,8 @@ class StormLayers(unittest.TestCase):
     reason, in the Map's List, in the same words in the noscript panel (a browser with JavaScript off) and on
     its town page, and each value names its source and time. Sample data only, so nothing here is live."""
 
-    FORBIDDEN = re.compile(r"\bdry\b|\bno hail\b|(?<!-)\bclear\b|no radar coverage", re.IGNORECASE)
+    # D45: NOAA's "radar coverage" is allowed; any other "coverage" is the D13 stem
+    FORBIDDEN = re.compile(r"\bdry\b|\bno hail\b|(?<!-)\bclear\b|(?<!radar )\bcoverage\b", re.IGNORECASE)
     STORM_WORDS = ("echo top", "radar echo", "mrms reflectivity levels", "storm-list", "storm.js", "data-storm")
 
     @classmethod
@@ -1416,6 +1447,12 @@ class MapLabels(unittest.TestCase):
         self.assertGreaterEqual(js.count("townMinZoom(t)"), 5)     # the definition's use, and the four places
 
 
+def tile_names_of(block: dict) -> list[str]:
+    """The tile names a map.json hail block's split map lists (D40: no block lists every tile name), sorted."""
+    return sorted(f"r{int(row):04d}_c{c:04d}" for row, runs in block["tile_split"].items()
+                  for first, last in runs for c in range(first, last + 1))
+
+
 class HailHistory(unittest.TestCase):
     """The five-year hail history (--hail-history; website/hail.py) behind a flag. Off by default: no hail key, files
     or section, and no hail words on the pages. On with --sample: the labelled SAMPLE store on the Map's sheet data,
@@ -1425,7 +1462,7 @@ class HailHistory(unittest.TestCase):
     for the tile list and state lists the browser reads."""
 
     HAIL_NOW = datetime(2026, 10, 18, 12, 0, tzinfo=UTC)
-    HAIL_PAGE_WORDS = ("Hail history, five years", "<h2>Hail history</h2>", 'id="hail-sheet"', 'id="hail-list"',
+    HAIL_PAGE_WORDS = ("Five years of weather at", "<h2>Hail history</h2>", 'id="hail-sheet"', 'id="hail-list"',
                        "legend-tap", "data-hail", "Tap or click the map for the five-year hail history")
     # the words that must not appear unless a sentence says "not the same as no hail" or "'no hail'" (the negation)
     FORBIDDEN = re.compile(r"\bdamag\w*|\bdry\b|\bclear\b|\binsurance\b|\beligib\w*|\bconfirm\w*|\bno hail\b", re.I)
@@ -1472,7 +1509,7 @@ class HailHistory(unittest.TestCase):
         h = json.loads(page(self.on, "data/map.json"))["hail"]
         self.assertEqual(h["state"], "sample")
         self.assertEqual((h["as_of"], h["window"][0], h["d0"]), (fixture["as_of"], fixture["window"][0], "2020-01-01"))
-        self.assertEqual(h["tiles"], fixture["tiles"])                  # the browser's outside test reads this list
+        self.assertEqual(tile_names_of(h), fixture["tiles"])            # the browser's outside test reads the split map (D40)
         self.assertEqual(h["shard"], "hail/t/r{r}_c{c}.json")
         self.assertEqual((h["tenths_per_inch"], h["tenths_per_mm"], h["floor_tenths"]), (254, 10, 64))
         self.assertEqual((h["stale_days"], h["at_zoom"]), (3, 9))
@@ -1488,7 +1525,7 @@ class HailHistory(unittest.TestCase):
 
     def test_every_listed_tile_has_a_shard_in_the_state_format(self):
         h = json.loads(page(self.on, "data/map.json"))["hail"]
-        names = h["tiles"]
+        names = tile_names_of(h)
         self.assertEqual(names, sorted(set(names)))
         self.assertTrue(names)
         for name in names:
@@ -1531,15 +1568,13 @@ class HailHistory(unittest.TestCase):
         from website import hail as hs            # the source line's words are hail.WORDS; the page must carry them
         fixture = json.loads((hs.FIXTURE_DIR / "hail" / "index.json").read_text(encoding="utf-8"))
         town = page(self.on, "town/billings.html")
-        self.assertIn("Hail history, five years", town)
+        self.assertIn("Five years of weather at Billings", town)
         self.assertIn("SAMPLE data", town)
-        self.assertIn("4 days with a radar-estimated hail size of 0.25 in or more between Oct 16, 2021 and "
-                      "Oct 15, 2026. Largest: 0.62 in (16.0 mm) on Jul 24, 2022.", town)     # 160 tenths: 0.62, not 0.63
-        self.assertIn("<th scope=\"row\">Jul 24, 2022</th>", town)
-        self.assertIn("<td class=\"n\">16.0</td>", town)
-        self.assertIn("<td>pea to mothball</td>", town)
-        self.assertIn("Days with no data, not counted: Jun 8, 2022.", town)
-        self.assertIn(hs.WORDS["source"].format(as_of=hs.fmt_date(date.fromisoformat(fixture["as_of"]))), town)
+        self.assertIn("Radar estimate: Jul 24, 2022: 0.62 in (16.0 mm), pea to mothball", visible(town))   # 160 tenths: 0.62
+        self.assertIn("Radar estimate: Jun 15, 2025: 0.25 in (6.5 mm), pea to mothball", visible(town))
+        self.assertIn("Radar days by size class in these five seasons: 4 days pea to mothball", visible(town))
+        as_of = hs.fmt_date(date.fromisoformat(fixture["as_of"]))
+        self.assertIn(f"1,826 storm-report days (each from 12:00 to 12:00 UTC) ending {as_of}", visible(town))   # the as-of date
         about = " ".join(page(self.on, "about.html").split())      # the template wraps the sentences across lines
         self.assertIn("<h2>Hail history</h2>", page(self.on, "about.html"))
         self.assertIn("An estimate is not a measurement at the ground and not an inspection.", about)
@@ -1579,7 +1614,7 @@ class HailHistory(unittest.TestCase):
         self.assertTrue(result["status"]["hail_history"]["ok"])
         for path in sorted((out / "town").glob("*.html")):
             self.assertNotIn(">None<", path.read_text(encoding="utf-8"), path.name)
-        self.assertIn("Hail history, five years", page(out, "town/billings.html"))
+        self.assertIn("Five years of weather at Billings", page(out, "town/billings.html"))
 
     def test_the_contract_row_carries_the_same_sentences(self):
         row = src.CONTRACTS["hail_history"]
@@ -1619,7 +1654,8 @@ class HailHistory(unittest.TestCase):
         self.assertIn('<template id="hail-sheet">', on)
         self.assertIn('<template id="hail-list">', on)
         self.assertIn("Each town's page has its five-year hail history", on)
-        self.assertIn("Hail history didn't load", (ROOT / "website" / "templates" / "map.html").read_text(encoding="utf-8"))
+        self.assertEqual(hs.WORDS["heading_failed"], "Hail history didn't load")     # D98(a): Python supplies the banner heading
+        self.assertIn("{{ s.heading }}", (ROOT / "website" / "templates" / "map.html").read_text(encoding="utf-8"))
         self.assertNotIn("legend-tap", off)
         self.assertNotIn("hail-sheet", off)
         self.assertNotIn("Each town's page has its five-year hail history", off)
@@ -1629,12 +1665,10 @@ class HailHistory(unittest.TestCase):
         # The sheet's and the legend's rules are a style block that only a --hail-history build writes. The shared
         # map.css is the same file in every build, so the default build's static files are the ones it was before.
         source_css = (ROOT / "website" / "static" / "map" / "map.css").read_text(encoding="utf-8")
-        self.assertNotIn(".sheet-body .hail-days", source_css)
         self.assertNotIn(".legend-tap", source_css)
         self.assertEqual((self.off / "static" / "map" / "map.css").read_bytes(),
                          (ROOT / "website" / "static" / "map" / "map.css").read_bytes())
         on, off = page(self.on, "map.html"), page(self.off, "map.html")
-        self.assertIn(".sheet-body .hail-days:not([hidden])", on)
         self.assertIn(".legend-2col .legend-tap", on)
         self.assertNotIn("hail-days", off)
         self.assertNotIn(".legend-tap", off)
@@ -1661,7 +1695,10 @@ class HailHistory(unittest.TestCase):
             self.assertNotIn(literal, js)
         for name in ("display_caps", "display_hundredths", "hailHundredths"):   # decision 10: the caps are gone
             self.assertNotIn(name, js)
-        self.assertIn("Math.floor(t * 100 / h.tenths_per_inch) / 100", js)     # the floor rule, from the data's divisor
+        inches = next(line for line in js.splitlines() if line.startswith("  function hailInches(h, t) {"))
+        self.assertNotRegex(inches, r"\b(?:100|2)\b")        # no literal scale or decimals: the block gives them (D87(d), D87(r))
+        self.assertIn("U.scale", inches)                     # read from summary.units.in, the build's own unit spec
+        self.assertIn("U.decimals", inches)
         from website import hail as hs
         strings = [c["word"] for c in hs.CLASSES] + list(hs.WORDS.values()) + list(site.HAIL_SITE_WORDS.values())
         for text in strings:
@@ -1678,17 +1715,23 @@ class HailHistory(unittest.TestCase):
             self.skipTest("node is not installed; tools/smoke_map.py checks the same sizes in Chromium")
         js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
         parts = []
-        for name in ("hailInches", "hailMm"):
-            match = re.search(r"^  function %s\(h, t\) \{.*\}$" % name, js, re.M)
-            self.assertIsNotNone(match, name)
+        for signature in (r"own\(obj, key\)", r"missingKey\(key\)", r"hailInches\(h, t\)", r"hailMm\(h, t\)"):
+            match = re.search(r"^  function %s \{.*\}$" % signature, js, re.M)     # one line each, as map.js writes them
+            self.assertIsNotNone(match, signature)
             parts.append(match.group(0))
         script = "\n".join(parts) + (
-            "\nconst h = { tenths_per_inch: 254, tenths_per_mm: 10 };"
+            "\nconst h = { tenths_per_inch: 254, tenths_per_mm: 10, summary: { units: { in: { scale: 100, decimals: 2 } } } };"
             "\nconst cases = [513, 185, 253, 190, 1015, 254, 1016, 64];"
-            "\nconsole.log(JSON.stringify(cases.map(t => [hailInches(h, t), hailMm(h, t)])));")
+            "\nconst tenths = { tenths_per_inch: 254, tenths_per_mm: 10, summary: { units: { in: { scale: 10, decimals: 1 } } } };"
+            "\nconst bare = { tenths_per_inch: 254, tenths_per_mm: 10, summary: {} };"
+            "\nconsole.log(JSON.stringify([cases.map(t => [hailInches(h, t), hailMm(h, t)]), hailInches(tenths, 513),"
+            " hailInches(bare, 513)]));")
         out = subprocess.run([node, "-e", script], capture_output=True, text=True, timeout=60, check=True)
-        self.assertEqual(json.loads(out.stdout), [["2.01", "51.3"], ["0.72", "18.5"], ["0.99", "25.3"], ["0.74", "19.0"],
-                                                  ["3.99", "101.5"], ["1.00", "25.4"], ["4.00", "101.6"], ["0.25", "6.4"]])
+        rows, read_from_block, without_block = json.loads(out.stdout)
+        self.assertEqual(rows, [["2.01", "51.3"], ["0.72", "18.5"], ["0.99", "25.3"], ["0.74", "19.0"],
+                                ["3.99", "101.5"], ["1.00", "25.4"], ["4.00", "101.6"], ["0.25", "6.4"]])
+        self.assertEqual(read_from_block, "2.0")          # the scale and the decimals come from the block: 513 at scale 10 (D87(r))
+        self.assertEqual(without_block, "[missing words key: summary.units.in.scale]")   # no block, no guess (D16)
 
     def test_the_hail_part_of_the_map_script_reads_no_polygon_and_no_basemap(self):
         js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
@@ -1710,6 +1753,21 @@ class HailHistory(unittest.TestCase):
         self.assertIn('tag.className = "sample-tag";', show)
         self.assertIn("tag.textContent = h.words.sample;", show)
 
+    def test_the_sheet_shows_the_radar_days_before_the_joins(self):                                        # D81(e): round 2's order
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        open_hail = js[js.index("function openHail("):js.index("function onHailClick(")]
+        radar = open_hail.index('hailShow(h, "loaded", text, null);')          # the radar text first; the table and sections follow
+        table = open_hail.index("sumRender(el.sheetBody.querySelector('[data-hail=\"summary\"]'), res);")
+        sections = open_hail.index("histRender(slot, histModel(h, cell, both[0], both[1], text));")
+        self.assertLess(radar, table)
+        self.assertLess(table, sections)
+        self.assertNotIn('hailShow(h, "loaded", text, joins)', open_hail)
+
+    def test_a_warning_row_gives_the_end_date_only_on_a_later_montana_day(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn('var ends = joinDay(x.e) === joinDay(x.b) ? "" : joinDay(x.e) + " ";', js)
+        self.assertIn("end: ends + joinClock(J, x.e),", js)
+
     def test_every_placeholder_is_filled_by_the_map_script(self):
         from website import hail as hs
         js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
@@ -1729,7 +1787,20 @@ class HailHistory(unittest.TestCase):
             self.assertNotIn("\u2014", text)        # no em dash
             self.assertNotIn("\u2013", text)        # no en dash
             rest = text.replace("not the same as no hail", "").replace("'no hail'", "")
+            rest = rest.replace("This is not an all-clear.", "")      # the required sentence of every unavailable line (D41)
             self.assertIsNone(self.FORBIDDEN.search(rest), text)
+
+    def test_the_sheet_prints_the_stale_line_once_and_map_js_adds_no_second_all_clear(self):
+        """D96(b): the stale line is the words' own sentence, which ends with the required all-clear sentence once; map.js
+        fills that line from the words and appends no all-clear to it, and the sheet shows the line in one slot."""
+        from website import hail as hs
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertEqual(js.count("out.stale = fill(w.stale, { as_of: hailDate(h.as_of) });"), 1)
+        self.assertEqual(js.count('show(slot("stale"), payload.stale);'), 1)
+        self.assertNotIn("out.stale +=", js)
+        self.assertNotIn("w.stale + ", js)
+        self.assertTrue(hs.WORDS["stale"].endswith("This is not an all-clear."))
+        self.assertEqual(hs.WORDS["stale"].count("This is not an all-clear."), 1)
 
     def test_the_build_flag_adds_only_the_hail_key_to_map_data(self):
         off = set(json.loads(page(self.off, "data/map.json")))
@@ -1749,15 +1820,21 @@ class HailHistory(unittest.TestCase):
         self.assertIn("missing", status["detail"])
         h = json.loads(page(out, "data/map.json"))["hail"]
         self.assertEqual(h["state"], "unavailable")
-        self.assertEqual(h["tiles"], [])                       # no tile is known: the map says unavailable, not outside
+        self.assertEqual(h["tile_split"], {})                  # no tile is known: the map says unavailable, not outside
         self.assertIn("missing", h["problem"])
         self.assertFalse((out / "hail").exists())
-        self.assertIn("Hail history is unavailable: the history store file store.tar.gz is missing.",
+        self.assertIn("Weather history could not be loaded in this update: the history store file store.tar.gz is missing.",
                       page(out, "town/billings.html"))
         self.assertTrue((out / "index.html").is_file())
         self.assertIn("Hail history (radar estimates)", page(out, "index.html"))
-        self.assertIn("Hail history didn't load", page(out, "map.html"))     # the banner says it, with no all-clear
-        self.assertIn("This is not an all-clear.", page(out, "map.html"))
+        # D98(a): the banner's heading is Python's word for a store that did not load, and its sentence says the plain words
+        banner = re.search(r'<div class="banner banner-problem" role="alert" id="problems">.*?</div>',
+                           page(out, "map.html"), re.S)
+        self.assertIsNotNone(banner)
+        self.assertIn("<strong>Hail history didn&#39;t load</strong>", banner.group(0))    # the template escapes the apostrophe
+        self.assertIn("The history store file store.tar.gz is missing.", banner.group(0))
+        # D96(b): the banner's own line carries the all-clear sentence once (the macro line no longer adds a second copy)
+        self.assertEqual(banner.group(0).count("This is not an all-clear."), 1)
 
     def test_require_live_fails_on_a_failed_store_and_the_default_build_passes(self):
         missing_dir = Path(tempfile.mkdtemp(prefix="hailwatch-missing-"))
@@ -1792,9 +1869,9 @@ class HailHistory(unittest.TestCase):
         self.assertFalse(result["status"]["hail_history"]["detail"].startswith("SAMPLE"))
         h = json.loads(page(out, "data/map.json"))["hail"]
         self.assertEqual(h["state"], "loaded")          # a store file is real data: no SAMPLE label on it
-        self.assertEqual(h["tiles"], json.loads((store / "hail" / "index.json").read_text(encoding="utf-8"))["tiles"])
+        self.assertEqual(tile_names_of(h), json.loads((store / "hail" / "index.json").read_text(encoding="utf-8"))["tiles"])
         self.assertNotIn("SAMPLE data", page(out, "town/billings.html"))
-        self.assertIn("4 days with a radar-estimated hail size", page(out, "town/billings.html"))
+        self.assertIn("Radar estimate: Jul 24, 2022: 0.62 in (16.0 mm), pea to mothball", visible(page(out, "town/billings.html")))
         self.assertEqual((out / "hail" / "t" / "r0079_c0199.json").read_bytes(),
                          (store / "hail" / "t" / "r0079_c0199.json").read_bytes())
 
@@ -1842,8 +1919,8 @@ class HailHistory(unittest.TestCase):
         self.assertNotIn("--require-live", args[1])
         # every build reads its own branch's asset, named as the store job names it
         self.assertIn('export HAIL_STORE_ASSET="hail-store-$(echo "$GITHUB_REF_NAME" | tr \'/\' \'-\').tar.gz"', text)
-        # every build waits for the same commit's store job before it reads the asset; the listing needs the actions
-        # scope, and the wait is bounded (the job's timeout covers it)
+        # a branch build waits for its branch's latest store job before it reads the asset (main never waits); the listing
+        # needs the actions scope, and the wait is bounded (the job's timeout covers it)
         wait = text[text.index("Wait for this branch's hail history store job"):text.index("- name: Build from live data")]
         self.assertIn("if: steps.plan.outputs.run == 'true' && github.ref != 'refs/heads/main'\n", wait)
         self.assertIn('--workflow hail-store.yml --branch "$GITHUB_REF_NAME" --limit 1', wait)
@@ -1853,9 +1930,10 @@ class HailHistory(unittest.TestCase):
         self.assertIn("timeout-minutes: ${{ github.ref == 'refs/heads/main' && 15 || 75 }}", build_job)
         self.assertIn('print("\\nHail history (--hail-history):")', text)   # the summary names main's build too
         unit = [line for line in text.splitlines() if "python -m unittest" in line]
-        self.assertEqual(len(unit), 1)
+        self.assertEqual(len(unit), 2, "the offline unit step and the real-store parity step (D88(a))")
         self.assertIn("tests.test_hail", unit[0])
         self.assertIn('"tests/test_hail.py"', text)
+        self.assertIn("HAIL_PARITY_STORE: _site", text)      # the parity step reads the built site's copy of the store (D88(a))
 
     def test_the_wait_step_waits_for_a_running_store_job_and_fails_a_branch_on_a_bad_one(self):
         """The step's own shell runs under bash as GitHub runs a step with no shell key (bash -e), with a stub gh
@@ -1958,7 +2036,9 @@ class HailHistory(unittest.TestCase):
         row = src.CONTRACTS["hail_history"]
         self.assertIn("hail-store-main.tar.gz", row["request"])
         self.assertIn("its own branch's store", row["request"])
-        self.assertIn("waits for the store job of its own commit", row["timing"])
+        self.assertIn("waits for its branch's latest store job", row["timing"])
+        self.assertIn("(main does not wait)", row["timing"])
+        self.assertIn("a branch preview is marked as failed.", row["timing"])
         self.assertEqual(hs.STALE_DAYS, 3)
         self.assertIn("more than three days old is a failed source", row["timing"])
         self.assertNotIn("within the hour", row["timing"])
@@ -1973,14 +2053,62 @@ class HailHistory(unittest.TestCase):
         out = Path(tempfile.mkdtemp(prefix="hailwatch-404-"))
         self.addCleanup(shutil.rmtree, out, True)
         c = site.Collector(Fetcher(), self.HAIL_NOW)
-        block = c.hail(out, False, None, [{"name": "Billings", "lat": 45.78, "lon": -108.5}])
+        town = {"name": "Billings", "lat": 45.78, "lon": -108.5}
+        block = c.hail(out, False, None, [town])
         status = c.status["hail_history"]
         self.assertFalse(status["ok"])
         self.assertIn("hail-store-main.tar.gz: not published (HTTP 404)", status["detail"])
         self.assertEqual(block["state"], "unavailable")
         self.assertIn("could not be downloaded", json.dumps(block))
         self.assertNotIn("HTTP", json.dumps(block))
+        # the town's words, summary and joins take the same plain sentence (the unavailable branch passes it on)
+        self.assertIn("could not be downloaded", json.dumps(town["hail"]))
+        self.assertNotIn("HTTP", json.dumps(town["hail"]))
         self.assertEqual(hs.plain_problem("the history store file x.tar.gz is missing"), "the history store file x.tar.gz is missing")
+
+    def test_the_map_banner_for_a_failed_download_says_didnt_load_in_plain_words(self):
+        """D98(a): a store whose download answers 404 heads the map banner "Hail history didn't load"; its sentence is the
+        plain words (the HTTP code stays in the build log), and the all-clear sentence closes the banner once."""
+        from website import hail as hs
+
+        class DownloadFails(SampleFetcher):
+            """Sample data for every feed; the history store's download answers 404, as when no asset is published."""
+            def binary(self, url, headers=None):
+                return None, "not published (HTTP 404)"
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-404-banner-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        result = site.build(out, DownloadFails(self.HAIL_NOW), self.HAIL_NOW, hail_history=True)
+        status = result["status"]["hail_history"]
+        self.assertFalse(status["ok"])
+        self.assertIn("(HTTP 404)", status["detail"])                                   # the log keeps the code
+        self.assertEqual(status["heading"], hs.WORDS["heading_failed"])
+        self.assertEqual(status["sentence"], "The history store could not be downloaded in this update.")
+        banner = re.search(r'<div class="banner banner-problem" role="alert" id="problems">.*?</div>',
+                           page(out, "map.html"), re.S)
+        self.assertIsNotNone(banner, "a failed download is a failed source: the map page's problem banner")
+        self.assertIn("<strong>Hail history didn&#39;t load</strong>", banner.group(0))
+        self.assertIn("The history store could not be downloaded in this update.", banner.group(0))
+        self.assertNotIn("Hail history is older", banner.group(0))
+        start = banner.group(0).index('data-source="hail_history"')
+        hail_line = banner.group(0)[start:].split("</li>")[0].split("</p>")[0]         # the history's own line, as printed
+        self.assertNotIn("HTTP", hail_line)
+        self.assertEqual(banner.group(0).count("This is not an all-clear."), 1)
+
+    def test_an_unavailable_joins_block_carries_the_same_words_as_a_loaded_one(self):
+        """D95(b) and D96(a): the unavailable joins block reads the same word table as a loaded block, so it is filtered by
+        nothing; no word in that table quotes an HTTP code (the zone-edition reason says it in plain words)."""
+        from website import build as bd
+        from website import joins as jn
+        self.assertEqual([k for k, v in jn.WORDS_JOINS.items() if "HTTP" in str(v)], [],
+                         "a word that quotes an HTTP code is reworded in WORDS_JOINS, never filtered out of a block")
+        gone = bd.join_block_unavailable(jn, "the joined records are not in this history store")
+        self.assertNotIn("HTTP", json.dumps(gone))
+        self.assertIn("reason_not_published", gone["words"])
+        self.assertIn("section_flooding", gone["words"])
+        store = {"state": "ok", "parts": {part: "ok" for part in jn.PARTS}, "reasons": {}, "lags": {}, "partial": {},
+                 "zone_names": {}, "types": {}, "cover": "", "shapes": {}, "montana_time": []}
+        loaded = bd.join_block(jn, {"as_of": "2026-10-19", "window": ["2021-10-19", "2026-10-19"], jn.INDEX_KEY: store}, False)
+        self.assertEqual(gone["words"], loaded["words"])
 
     def test_a_stale_store_is_a_failed_source_but_the_sample_never_is(self):
         """A real store whose last day is more than STALE_DAYS old still builds the pages (with the stale line) but
@@ -1997,8 +2125,27 @@ class HailHistory(unittest.TestCase):
         status = result["status"]["hail_history"]
         self.assertFalse(status["ok"])
         self.assertIn("stale", status["detail"])
+        self.assertEqual(status["heading"], hs.WORDS["heading_stale"])                # D98(a): the banner's heading for this state
+        self.assertEqual(hs.STALE_DAYS, 3)                                             # the heading's "three days"
+        self.assertEqual(hs.WORDS["stale"], hs.WORDS["stale_lead"] + " This is not an all-clear.")   # D96(b): one sentence, one source
         self.assertEqual(json.loads(page(out, "data/map.json"))["hail"]["state"], "loaded")
-        self.assertIn(hs.WORDS["stale"].format_map({"as_of": hs.fmt_date(as_of)}), page(out, "town/billings.html"))
+        billings = page(out, "town/billings.html")
+        stale = hs.WORDS["stale"].format_map({"as_of": hs.fmt_date(as_of)})
+        self.assertEqual(billings.count(stale), 1)                                  # one stale line, not two
+        self.assertIn(f"<p class=\"sub\"><strong>{stale}</strong></p>", billings)  # the town page's own stale paragraph
+        self.assertEqual(stale.count("This is not an all-clear."), 1)               # D96(b): the sentence once in the line
+        from website import summary as sm
+        self.assertEqual(sm.WORDS_SUMMARY["stale"], hs.WORDS["stale"])            # D96(b): one text, imported by summary.py
+        # D96(b): the stale store is a failed source, so the map page's problem banner says so, with the all-clear once
+        banner = re.search(r'<div class="banner banner-problem" role="alert" id="problems">.*?</div>',
+                           page(out, "map.html"), re.S)
+        self.assertIsNotNone(banner, "a stale store is a failed source: the map page's problem banner")
+        # D98(a): the heading says the store is older than three days (not that it did not load), and the sentence after it
+        # keeps what loaded and the as-of date
+        self.assertIn("<strong>" + hs.WORDS["heading_stale"] + "</strong>", banner.group(0))
+        self.assertNotIn("didn&#39;t load", banner.group(0))
+        self.assertIn(hs.WORDS["stale_lead"].format_map({"as_of": hs.fmt_date(as_of)}), banner.group(0))
+        self.assertEqual(banner.group(0).count("This is not an all-clear."), 1)
         fresh = datetime.combine(as_of + timedelta(days=hs.STALE_DAYS), time(13, 0), tzinfo=timezone.utc)
         self.assertTrue(site.build(out, None, fresh, sample=True, hail_history=True,
                                    hail_store_path=str(store))["status"]["hail_history"]["ok"])
@@ -2011,5 +2158,3382 @@ class HailHistory(unittest.TestCase):
         self.assertEqual(smoke.HAIL_GATE, (47.025, -110.135))       # the centre of cell (797, 1986) (decision 15)
 
 
+class HailJoins(unittest.TestCase):
+    """The joined records behind the hail history (B2, website/joins.py): six contract rows gated like the store's, the
+    About paragraph on the kinds joined and the sources not joined, the sheet and town markup, and a flag-off build with
+    none of it. The records themselves are checked in tests/test_joins.py (builder 1)."""
+
+    # the joined feeds the About page lists in a hail build: the B2 rows that B5 keeps and the three B5 rows that replace
+    # the B2 feeds (sources.py superseded_by); the replaced rows stay in CONTRACTS for the record and are not listed
+    JOIN_KEYS = ("ncei_storm_events", "swdi_nx3hail", "asos_daily_gusts", "iem_lsr", "iem_watchwarn")
+    SUPERSEDED = ("lsr", "nws_warnings_polygons", "nws_zone_products")
+    HAIL_NOW = datetime(2026, 10, 18, 12, 0, tzinfo=UTC)
+    # the words a row or paragraph must not state as a fact (AGENTS.md rule 5); "damage threat" is the warning tag's own
+    # word and "not the same as no hail" is the negation the words always carry
+    FORBIDDEN = re.compile(r"\bdamag\w*|\bdry\b|\bclear\b|\binsurance\b|\beligib\w*|\bconfirm\w*|\bcustomers?\b|"
+                           r"\bbest\b|\bguarantee\w*", re.I)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.off = Path(tempfile.mkdtemp(prefix="hailwatch-join-off-"))
+        cls.on = Path(tempfile.mkdtemp(prefix="hailwatch-join-on-"))
+        cls.addClassCleanup(shutil.rmtree, cls.off, True)      # only the folders this class made
+        cls.addClassCleanup(shutil.rmtree, cls.on, True)
+        site.build(cls.off, None, cls.HAIL_NOW, sample=True)
+        site.build(cls.on, None, cls.HAIL_NOW, sample=True, hail_history=True)
+
+    def test_the_joined_feed_rows_are_present_complete_and_gated_like_the_store(self):
+        for key in self.JOIN_KEYS + self.SUPERSEDED:
+            row = src.CONTRACTS[key]
+            for field in ("name", "request", "units", "timing", "missing"):
+                self.assertTrue(row[field].strip(), (key, field))
+            self.assertIn(key, site.HAIL_CONTRACTS)
+            self.assertNotIn(key, site.STORM_CONTRACTS)
+        for key in self.SUPERSEDED:
+            self.assertIn(src.CONTRACTS[key]["superseded_by"], src.CONTRACTS)     # the row that replaces it exists
+        self.assertEqual(list(src.CONTRACTS)[-len(site.B5_CONTRACTS):], list(site.B5_CONTRACTS))
+
+    def test_the_contract_rows_state_no_damage_insurance_or_all_clear(self):
+        for key in self.JOIN_KEYS:
+            text = " ".join(src.CONTRACTS[key].values())
+            plain = re.sub(r"damage threat|not the same as no (?:hail|wind)", "", text, flags=re.I)
+            self.assertIsNone(self.FORBIDDEN.search(plain), key)
+            self.assertNotRegex(plain, r"\bno hail\b", key)
+            self.assertNotRegex(plain, r"\bno wind\b", key)
+
+    def test_the_about_page_names_the_kinds_joined_and_the_sources_not_joined(self):
+        about = " ".join(page(self.on, "about.html").split())
+        self.assertIn("Other records for the same cell", about)
+        for phrase in ("NWS local storm reports within 5 miles, of every type the history reads",
+                       "NEXRAD hail signatures within 2 miles", "not hail on the ground",
+                       "the NWS polygons that intersect the cell", "the two nearest airport stations within 40 miles",
+                       "Not in this history", "Flood zones (FEMA)", "Iowa State's inventory of radar detections is not complete"):
+            self.assertIn(phrase, about)
+        self.assertNotIn("Other records for the same cell", page(self.off, "about.html"))
+        self.assertNotIn("Not in this history", page(self.off, "about.html"))
+
+    def test_the_joined_feed_rows_appear_on_the_about_page_only_with_the_flag(self):
+        on, off = page(self.on, "about.html"), page(self.off, "about.html")
+        for key in self.JOIN_KEYS:
+            name = src.CONTRACTS[key]["name"]
+            self.assertIn(jesc(name), on)
+            self.assertNotIn(jesc(name), off)
+        for key in self.SUPERSEDED:                  # the rows a B5 row replaces are not listed on the About page
+            self.assertNotIn(jesc(src.CONTRACTS[key]["name"]), on, key)
+
+    def test_the_flag_off_build_has_no_join_markup_anywhere(self):
+        for path in sorted(self.off.rglob("*.html")):
+            text = path.read_text(encoding="utf-8")
+            for words in ("hail-join-sec", "joins-sec", "joins-rows", "joins-more", 'data-hail="joins"',
+                          "Other records for the same cell", "Five years of weather at"):
+                self.assertNotIn(words, text, f"{words!r} in {path.name}")
+        self.assertFalse((self.off / "hail").exists())
+        self.assertNotIn("hail", json.loads(page(self.off, "data/map.json")))
+
+    def test_the_sheet_has_the_template_slots_for_the_table_and_the_sections(self):                          # D81(e): round 2's slots
+        on = page(self.on, "map.html")
+        self.assertIn('<template id="hail-sheet">', on)
+        for slot in ('data-hail="sample"', 'data-hail="summary"', 'data-hail="stale"', 'data-hail="sections"'):
+            self.assertIn(slot, on, slot)
+        off = page(self.off, "map.html")
+        self.assertNotIn('id="hail-sheet"', off)
+        self.assertNotIn('data-hail="sections"', off)
+
+
+    # the browser's joined-records block (map.js, from "joined records at a spot" to the card mode): code only, no comments
+    BLOCK_FORBIDDEN = (" in ", "mph", " kt", "knot", "mile", " mi", "inch", "hundredth", "millimet", "damage", "insurance",
+                       "eligib", "all clear", "no hail", "no wind", "estimated", "measured", "unknown", "warning",
+                       "radar", "nws", "ncei", "swdi", "iem", "benchland", "utica", "montana", "severe", "tornado",
+                       "flash", "hail", "wind", "rain", "snow", "dbz", "tenths", "radius")
+
+    @staticmethod
+    def joins_block_code() -> str:
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        block = js[js.index("joined records at a spot (--hail-history builds, B2)"):js.index("card mode (inside other pages)")]
+        code = re.sub(r"/\*.*?\*/", "", block, flags=re.S)
+        return re.sub(r"//[^\n]*", "", code)
+
+    def test_the_browser_joins_hold_no_unit_threshold_or_sentence_of_their_own(self):
+        code = self.joins_block_code()
+        for text in re.findall(r'"((?:[^"\\\n]|\\.)*)"', code):          # every double-quoted string
+            if " " not in text:                                           # an identifier or a key, not a sentence
+                continue
+            for word in self.BLOCK_FORBIDDEN:
+                self.assertNotIn(word, text.lower(), (word, text))
+        # the field maps name the record rows' indices: their declarations are the one place those numbers live
+        bare = re.sub(r"var (?:JROW|JDET|JDAY) = \{[^}]*\};", "", code)
+        numbers = set(re.findall(r"(?<![\w.])(\d+(?:\.\d+)?)", bare))
+        # 0-4: indices, the nibble and digit arithmetic and the decimal places; 10: an ISO date's length; 16: hex;
+        # 60 and 100: the hhmm and minute arithmetic of the time codes; 180: the degrees-to-radians factor
+        self.assertLessEqual(numbers, {"0", "1", "2", "3", "4", "10", "16", "60", "100", "180"}, numbers)
+
+    def test_every_word_the_browser_fills_is_one_the_build_writes(self):
+        from website import joins as jn
+        known = set(jn.WORDS_JOINS) | set(site.JOIN_SITE_WORDS)
+        code = self.joins_block_code()
+        used = set(re.findall(r"\bW\.(\w+)", code)) | set(re.findall(r'\bW\["(\w+)"\]', code)) | \
+            set(re.findall(r"\bJ\.words\.(\w+)", code))
+        self.assertFalse(sorted(used - known), sorted(used - known))
+        for part in jn.PARTS:                                            # the keys each part's sections are built from
+            for key in (f"{part}_heading", f"{part}_what", f"source_{part}", f"feed_{part}"):
+                self.assertIn(key, known, key)
+            if part != "zones":
+                self.assertIn(f"{part}_lead_none", known, part)
+        for key in ("reports_row", "reports_row_here", "records_zone_row", "detections_row_one", "detections_row_many",
+                    "warnings_row_b5", "warnings_row_point", "zones_row", "zones_event", "stations_row", "unavailable", "partial",
+                    "show_all"):
+            self.assertIn(key, known, key)
+        for stop in jn.ZONE_STOP_WORDS:                 # the browser names a stop's words as zones_<stop> and zones_<stop>_at
+            for key in (f"zones_{stop}", f"zones_{stop}_at"):
+                self.assertIn(key, jn.WORDS_JOINS, key)
+        for stop in ("cancelled", "upgraded"):          # the stops map.js reads: joins.ZONE_STOP_STATE's words
+            self.assertIn(stop, jn.ZONE_STOP_WORDS)
+
+
+def write_joined_store(dest: Path) -> Path:
+    """A small store with the joined records (hail/j, hail/z, hail/s) built on the B1 fixture, written into dest (a folder
+    the caller made). The values are invented for the test; the formats are joins.py's B5 formats (hail-events-v2,
+    hail-joins-v2, hail-station-v2): one events table holds every report, record and warning row once
+    (hail/j/events.json), each tile refers to its rows by index, a warning comes with the tile's cover of cell keys, and
+    a tile's zones map each zone code to its cell keys. The Benchland day
+    (2025-06-15) has an LSR hail report of 1.75 in at 20:10 UTC and an NCEI record at the same time, a Thunderstorm Wind
+    record in knots, radar detections, a severe thunderstorm warning covering the cell, one zone, and the Billings
+    station's gusts. The manifest lists every file, as hail.load_store checks it."""
+    from website import hail as hs
+    hail = dest / "hail"
+    shutil.copytree(hs.FIXTURE_DIR / "hail", hail)
+    day = (date(2025, 6, 15) - hs.D0).days
+
+    def cover(keys):
+        value = 0
+        for key in keys:
+            value |= 1 << key
+        return f"{value:025x}"
+
+    def row(d, t, lat, lon, code, mag, unit, qual, src, city, remark, kind):
+        return [d, t, lat, lon, code, mag, unit, qual, src, city, remark, kind]
+
+    def record(d, t, lat, lon, code, mag, unit, qual, src, city, remark, mph, kt, cause=""):
+        return [d, t, lat, lon, code, mag, unit, qual, src, city, remark, mph, kt, cause]
+
+    remark = "Public caller updated with golf ball sized hail a few minutes after initial call."
+    reports = [row(day, 545, 46.97, -110.09, "H", "1.0", "in", "E", "Public", "Utica", "", "hail"),                 # 0
+               row(day, 2010, 47.08, -110.02, "H", "1.75", "in", "E", "Public", "Benchland", remark, "hail"),       # 1
+               row(day, 2005, 47.08, -110.02, "H", "1.0", "in", "M", "Public", "Benchland", "", "hail"),            # 2
+               row(day, 2020, 47.08, -110.02, "H", "1.25", "in", "M", "Trained Spotter", "Benchland", "", "hail")]  # 3
+    records = [record(day, 2010, 47.08, -110.02, "hail", "1.75", "in", "", "Public", "Judith Basin", "", None, None),
+               record(day, 2000, 47.00, -110.10, "thunderstorm wind", "56", "kt", "MG", "Mesonet", "Test", "", 64, 56)]
+    warnings = [{"k": "SV", "s": "W", "b": "2025-06-15T20:33Z", "e": "2025-06-15T21:00Z", "o": "TFX",
+                 "tags": {"hail_in": 1.0, "wind_mph": 50.0, "damage": "", "tornado": ""}}]
+    bil = {"id": "BIL", "name": "Billings/Logan Intl", "lat": 45.8069, "lon": -108.5422, "miles": 30.2}   # the fixture's station
+    # R9 (D61): the gate cell and Benchland get a station within 40 miles of their own cells, the fixture's Lewistown
+    # Municipal gust file (LWT); Billings is 113 miles from the gate cell, so it is not a candidate there
+    from website import joins as jn
+    lwt = {"id": "LWT", "name": "Lewistown Municipal", "lat": 47.0492, "lon": -109.4667}
+
+    def near(lat, lon):
+        return dict(lwt, miles=round(jn.haversine_km(lat, lon, lwt["lat"], lwt["lon"]) / jn.MILE_KM, 1))
+
+    gate_lat, gate_lon = hs.cell_centre(797, 1986)
+    bench_lat, bench_lon = hs.cell_centre(792, 1998)
+    assert near(gate_lat, gate_lon)["miles"] <= jn.STATION_MILES and near(bench_lat, bench_lon)["miles"] <= jn.STATION_MILES
+    tiles = {
+        "r0079_c0198": {   # the gate cell's tile (797, 1986): key 76, the zone MTZ048
+            "reports": [0, 1], "records": [0, 1], "warnings": [[0, cover([76])]],
+            "detections": [[day, 300, 47.02, -110.13, 75], [day, 2030, 47.07, -110.01, 100]],
+            "zones": {"MTZ048": [76]}, "fire": {"MTZ117": [76]}, "stations": [near(gate_lat, gate_lon)]},
+        "r0079_c0199": {   # Benchland's own cell (792, 1998): key 28, the same zone
+            "reports": [2, 1, 3], "records": [0], "warnings": [[0, cover([28])]],
+            "detections": [[day, 2030, 47.07, -110.01, 100], [day, 2000, 47.075, -110.015, 75]],
+            "zones": {"MTZ048": [28]}, "stations": [near(bench_lat, bench_lon)]},
+        "r0092_c0214": {   # Billings' tile: no reports; the airport's gusts
+            "reports": [], "records": [], "warnings": [], "detections": [], "zones": {},
+            "stations": [dict(bil, miles=1.2)]},
+    }
+    # the in-range station's gust file: the fixture's Billings file (one gust day in the window, 2025-06-16) under Lewistown
+    # Municipal's id and position, so the gate cell and Benchland have a station with a day inside 40 miles (R9)
+    bil_file = json.loads((hail / "s" / "BIL.json").read_text(encoding="utf-8"))
+    lwt_file = dict(bil_file, id=lwt["id"], name=lwt["name"], lat=lwt["lat"], lon=lwt["lon"])
+    (hail / "s" / f"{lwt['id']}.json").write_text(json.dumps(lwt_file, separators=(",", ":")), encoding="utf-8")
+    (hail / "j").mkdir(exist_ok=True)
+    (hail / "j" / jn.TILE_EVENTS_DIR).mkdir(exist_ok=True)
+    events = {"f": jn.EVENTS_FORMAT, "d0": "2020-01-01", "reports": reports, "records": records, "warnings": warnings}
+    (hail / "j" / "events.json").write_text(json.dumps(events, separators=(",", ":")), encoding="utf-8")
+    for name, body in tiles.items():
+        doc = {"f": "hail-joins-v2", "r": int(name[1:5]), "c": int(name[7:11]), "d0": "2020-01-01", "counties": {}, **body}
+        (hail / "j" / f"{name}.json").write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")
+        # D30: the tile's own events file, the rows its tile refers to (the browser fetches it on a tap, never events.json)
+        tile_events = jn._tile_events(doc, reports, records, warnings)
+        (hail / "j" / jn.TILE_EVENTS_DIR / f"{name}.json").write_text(json.dumps(tile_events, separators=(",", ":")),
+                                                                      encoding="utf-8")
+    (hail / "z").mkdir(exist_ok=True)
+    # the zone's products: a high wind warning, and a winter storm warning cancelled with no start recorded (D16)
+    zone = {"f": "hail-zone-v1", "zone": "MTZ048", "name": "Judith Basin",
+            "events": [{"k": "HW", "s": "W", "b": "2025-06-15T18:00Z", "e": "2025-06-16T02:00Z", "o": "BYZ"},
+                       {"k": "WS", "s": "W", "b": None, "e": "2025-06-15T06:00Z", "st": "cancelled", "o": "BYZ"}],
+            "records": [record(day, 1100, 47.0, -110.5, "high wind", "58", "kt", "", "Mesonet", "Test", "", 67, 58),
+                        record(day, 300, 47.0, -110.5, "winter storm", "", "", "", "Mesonet", "Test", "", None, None)]}
+    (hail / "z" / "MTZ048.json").write_text(json.dumps(zone, separators=(",", ":")), encoding="utf-8")
+    # the fire weather zone's red flag warnings (D7, D17): one with a start and an end, and one with a start and no end
+    fire = {"f": "hail-zone-v1", "kind": "fire", "zone": "MTZ117", "name": "Central and Eastern Lewis and Clark National "
+            "Forest Areas", "events": [{"k": "FW", "s": "W", "b": "2025-06-15T16:00Z", "e": "2025-06-15T23:00Z", "o": "TFX"},
+                                       {"k": "FW", "s": "W", "b": "2025-06-14T15:00Z", "e": None, "o": "TFX"}]}
+    (hail / "z" / "fire-MTZ117.json").write_text(json.dumps(fire, separators=(",", ":")), encoding="utf-8")
+    # the Billings gust file is the B1 fixture's own hail-station-v3 file, copied with the folder above: one gust day
+    # (2025-06-16, 50 kt, 58 mph), so the Billings page has one station line
+    index = json.loads((hail / "index.json").read_text(encoding="utf-8"))
+    index["joins"] = {
+        "format": jn.FORMAT, "events_format": jn.EVENTS_FORMAT,           # R9: the formats the readers check (D30)
+        "built_at": "2026-10-18T12:00:00Z", "lsr_rows": 4, "ncei_rows": 2, "ncei_newest_event": "2026-06-30",
+        "swdi_rows": 3, "warnings": {"SV": 2, "TO": 0, "FF": 0}, "zone_events": 2, "zones": 1, "stations": 1,
+        "station_days": 3, "sources": {}, "state": "loaded",
+        "parts": {part: "loaded" for part in ("reports", "records", "detections", "warnings", "zones", "stations")},
+        "reasons": {}, "lags": {"ncei": "2026-06-30", "swdi": "2026-10-14", "warnings": "2026-10-16"}, "partial": {},
+        "zone_names": {"MTZ048": "Judith Basin"}, "fire_zones": {"state": "loaded"},
+        "fire_zone_names": {"MTZ117": "Central and Eastern Lewis and Clark National Forest Areas"},
+        "zone_products_unplaced": 2, "warnings_no_outline": 0,
+        "types": {"H": "hail", "G": "thunderstorm wind gust", "N": "non-thunderstorm wind gust", "R": "heavy rain"},
+        "cover": "bit k is cell key k", "shapes": {}, "montana_time": []}
+    (hail / "index.json").write_text(json.dumps(index, indent=1), encoding="utf-8")
+    manifest_path = hail / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    files = {}
+    for path in sorted(hail.rglob("*")):
+        if path.is_dir() or path.name == "manifest.json":
+            continue
+        data = path.read_bytes()
+        files[path.relative_to(dest).as_posix()] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+    manifest["files"] = files
+    manifest_path.write_text(json.dumps(manifest, indent=1), encoding="utf-8")
+    return dest
+
+
+def write_store_without_joins(dest: Path) -> Path:
+    """The SAMPLE fixture's hail/ folder copied into dest with its joined records taken out (no j/, z/ or s/ folders and no
+    joins block in the index), with a manifest that lists what is left: a store of the B1 kind."""
+    from website import hail as hs
+    hail = dest / "hail"
+    shutil.copytree(hs.FIXTURE_DIR / "hail", hail)
+    for name in ("j", "z", "s"):
+        shutil.rmtree(hail / name, ignore_errors=True)
+    index_path = hail / "index.json"
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    index.pop("joins", None)
+    index_path.write_text(json.dumps(index, indent=1), encoding="utf-8")
+    manifest_path = hail / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["files"] = {}
+    for path in sorted(hail.rglob("*")):
+        if path.is_dir() or path.name == "manifest.json":
+            continue
+        data = path.read_bytes()
+        manifest["files"][path.relative_to(dest).as_posix()] = {"bytes": len(data),
+                                                              "sha256": hashlib.sha256(data).hexdigest()}
+    manifest_path.write_text(json.dumps(manifest, indent=1), encoding="utf-8")
+    return dest
+
+
+def write_b2_only_store(dest: Path) -> Path:
+    """A B2 store made from the sample fixture's hail/ folder with its B5 parts taken out (D64): the climate, snow, station
+    and gauge files and their index blocks, the county files, the per-tile events files, the towns file and the joins
+    block's B5 keys. What is left is the B2 store (the radar shards, the joins, the zone and gust files), and its
+    manifest lists exactly those files, so hail.load_store checks it."""
+    from website import hail as hs
+    hail = dest / "hail"
+    shutil.copytree(hs.FIXTURE_DIR / "hail", hail)
+    for name in ("c", "n", "sd", "tl", "g", "k"):
+        shutil.rmtree(hail / name, ignore_errors=True)
+    shutil.rmtree(hail / "j" / "e", ignore_errors=True)
+    (hail / "j" / "towns.json").unlink(missing_ok=True)
+    index_path = hail / "index.json"
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    for key in ("climate", "snow", "stations", "gauges", "county"):
+        index.pop(key, None)
+    if isinstance(index.get("joins"), dict):
+        for key in ("counties", "events_tiles", "towns_file"):
+            index["joins"].pop(key, None)
+    index_path.write_text(json.dumps(index, indent=1), encoding="utf-8")
+    manifest_path = hail / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["files"] = {}
+    for path in sorted(hail.rglob("*")):
+        if path.is_dir() or path.name == "manifest.json":
+            continue
+        data = path.read_bytes()
+        manifest["files"][path.relative_to(dest).as_posix()] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+    manifest_path.write_text(json.dumps(manifest, indent=1), encoding="utf-8")
+    return dest
+
+
+JOIN_IDS = ("reports", "records", "detections", "warnings", "zones", "stations")
+BROWSER_JOINS_START = "joined records at a spot (--hail-history builds, B2)"     # the joined block in map.js
+BROWSER_JOINS_END = "card mode (inside other pages)"
+# node runs the sheet's joined-records code from map.js: the input (code, h, cells, site, tz) comes on stdin as JSON, the six
+# sections of each cell go out as JSON. Only fetch is stubbed: it reads the built site's files, as the browser would.
+NODE_JOINS_SCRIPT = r"""
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
+let raw = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => { raw += chunk; });
+process.stdin.on("end", () => {
+  const input = JSON.parse(raw);
+  const fetchFile = (url) => new Promise((resolve) => {
+    fs.readFile(path.join(input.site, url), "utf8", (err, text) => resolve(err ? { ok: false, status: 404 }
+      : { ok: true, status: 200, json: () => new Promise((ok) => ok(JSON.parse(text))) }));   // a bad body rejects, as json() does
+  });
+  const ctx = vm.createContext({ Intl: Intl, Date: Date, Math: Math, JSON: JSON, Promise: Promise, Set: Set,
+    Object: Object, Array: Array, String: String, Number: Number, Error: Error, isFinite: isFinite,
+    fetch: fetchFile, data: { tz: input.tz }, hailTiles: {} });
+  vm.runInContext(input.code, ctx);
+  vm.runInContext("this.runCells = async (h, cells) => { const out = []; for (const c of cells) " +
+    "out.push(await joinSections(h, c)); return out; };", ctx);
+  ctx.runCells(input.h, input.cells).then((out) => process.stdout.write(JSON.stringify(out)),
+    (err) => { process.stderr.write(String((err && err.stack) || err)); process.exit(1); });
+});
+"""
+
+
+def js_function(js: str, name: str) -> str:
+    """One top-level function of map.js (two-space indent, as the file writes them): its own line when it is one line,
+    else its lines up to the closing brace at the same indent."""
+    lines = js.split("\n")
+    first = next(n for n, line in enumerate(lines) if line.startswith(f"  function {name}("))
+    if lines[first].count("{") == lines[first].count("}"):
+        return lines[first]
+    last = next(n for n in range(first + 1, len(lines)) if lines[n] == "  }")
+    return "\n".join(lines[first:last + 1])
+
+
+def browser_join_code(js: str) -> str:
+    """The part of map.js the sheet's joined records run on: the constants and helpers the block calls, then the block
+    from its heading to the card mode. Nothing else of the page is run."""
+    consts = [line for line in js.split("\n") if re.match(r"  var (MIN|HAIL_DAY_MS|dtfUtcDay|hailTiles)\b", line)]
+    helpers = [js_function(js, name) for name in ("fill", "pad4", "hailIso", "hailDate", "hailKey", "hailTileName",
+                                                  "hailTile", "hailFailure")]
+    start = js.rindex("\n", 0, js.index(BROWSER_JOINS_START)) + 1          # from the start of the heading's line
+    end = js.rindex("\n", 0, js.index(BROWSER_JOINS_END)) + 1               # up to the card mode's heading line
+    return "\n".join(consts + helpers + [js[start:end]])
+
+
+def node_join_sections(site: Path, h: dict, tz: str, cells: list[dict]) -> list[dict]:
+    """The six sections for each cell as the browser's code writes them (joinSections in map.js, under node), with h the
+    map.json hail block the page would read and site the built folder its fetches read."""
+    js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+    payload = {"code": browser_join_code(js), "site": str(site), "h": h, "tz": tz, "cells": cells}
+    done = subprocess.run([shutil.which("node"), "-e", NODE_JOINS_SCRIPT], input=json.dumps(payload),
+                          capture_output=True, text=True, timeout=120)
+    if done.returncode:
+        raise AssertionError(f"the browser's joined records did not run under node: {done.stderr[-800:]}")
+    return json.loads(done.stdout)
+
+
+def module_view(sec: dict) -> dict:
+    """A section as describe_joins writes it, in the comparable form the browser's section is put in below."""
+    return {"id": sec["id"], "heading": sec["heading"], "what": " ".join(x for x in (sec["what"], sec["source"]) if x),
+            "lead": sec["lead"] or "", "fire_lead": sec.get("fire_lead") or "",
+            "rows": [[r["text"], r["remark"] or ""] for r in sec["rows"]],
+            "lines": list(sec["lines"]), "unavailable": sec["unavailable"] or ""}
+
+
+def browser_view(sec: dict) -> dict:
+    """A section as the browser's code writes it (its what already holds the source line), in the same form."""
+    return {"id": sec["id"], "heading": sec["heading"], "what": sec["what"], "lead": sec["lead"] or "",
+            "fire_lead": sec.get("fire_lead") or "", "rows": [[r["text"], r["remark"] or ""] for r in sec["rows"]],
+            "lines": list(sec["lines"] or []), "unavailable": sec["unavailable"] or ""}
+
+
+class HailJoinedRecords(unittest.TestCase):
+    """The joined records in a built site (B2), from a store made here: the sheet's data, the town tables, the words the
+    build writes, and a store without the records. The store is invented for the test (write_joined_store says so); the
+    real store is checked by tools/smoke_map.py and by builder 1's verification."""
+
+    NOW = datetime(2026, 10, 18, 12, 0, tzinfo=UTC)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = Path(tempfile.mkdtemp(prefix="hailwatch-joined-"))        # this class made it; only it removes it
+        cls.addClassCleanup(shutil.rmtree, cls.tmp, True)
+        cls.store = write_joined_store(cls.tmp / "store")
+        cls.site = cls.tmp / "site"
+        cls.result = site.build(cls.site, None, cls.NOW, sample=True, hail_history=True,
+                                hail_store_path=str(cls.store))     # sample: no network for the other feeds
+        cls.plain = cls.tmp / "plain"
+        cls.plain_store = write_store_without_joins(cls.tmp / "plain-store")
+        cls.plain_site = site.build(cls.plain, None, cls.NOW, sample=True, hail_history=True,
+                                    hail_store_path=str(cls.plain_store))
+
+    def test_the_map_block_carries_the_words_radii_and_zone_names_the_browser_reads(self):
+        m = json.loads(page(self.site, "data/map.json"))["hail"]
+        j = m["joins"]
+        self.assertEqual(j["state"], "loaded")
+        self.assertEqual(j["radius_miles"], {"report": 5.0, "detection": 2.0, "station": 40.0})
+        self.assertEqual(j["shards"], {"j": "hail/j/{tile}.json", "z": "hail/z/{zone}.json", "s": "hail/s/{station}.json",
+                                       "fire": "hail/z/fire-{zone}.json"})
+        self.assertEqual(j["fire_state"], "loaded")
+        self.assertEqual(j["counts"], {"warnings_no_outline": 0, "ncei_zone_rows_unmatched": 0, "zone_products_unplaced": 2})
+        self.assertGreater(j["earth_radius_km"], 6000)
+        self.assertEqual(j["zone_names"], {"MTZ048": "Judith Basin"})
+        self.assertEqual((j["hail_unit"], j["show_first"], j["spc_hours"], j["hundredths_per_inch"]), ("in", 10, 12, 100))
+        self.assertEqual(j["unit_words"], {"mph": "magnitude_mph", "kt": "magnitude_kt"})
+        for key in ("show_all", "times_note", "reports_row", "zones_heading_no_zone", "records_newest_unknown", "unavailable",
+                    "partial", "part_reports", "one_reports", "fire_lead_one", "zones_lead_one", "fire_product"):
+            self.assertIn(key, j["words"])
+        for key in ("not_known", "zone_unknown_name", "zone_unknown_code"):
+            self.assertNotIn(key, j["words"])
+
+    def test_the_billings_town_page_joins_sit_in_their_sections_newest_first(self):
+        # the s/ v3 fixture holds one gust day, so the page has one station line: its words come from the fixture (the day
+        # index, the knots and miles per hour, the station's own name) and its distance is from the town point (D36)
+        from website import hail as hs, joins as jn
+        fixture = json.loads((hs.FIXTURE_DIR / "hail" / "s" / "BIL.json").read_text(encoding="utf-8"))
+        (index, mph, kt, _flag), = fixture["days"]
+        town = next(t for t in json.loads(jn.TOWNS_FILE.read_text(encoding="utf-8")) if t["slug"] == "billings")
+        miles = jn.haversine_km(town["lat"], town["lon"], fixture["lat"], fixture["lon"]) / jn.MILE_KM
+        line = (f"Station: {hs.fmt_date(hs.day_of_index(index))}: {kt} kt ({mph} mph) at {fixture['name']}, "
+                f"about {miles:.1f} miles away")
+        town_page = page(self.site, "town/billings.html")
+        wind = town_page[town_page.index('id="sec-wind"'):town_page.index('id="sec-storms"')]     # the station rows are the wind section's
+        self.assertEqual(visible(wind).count("Station: "), len(fixture["days"]))
+        self.assertIn(line, visible(wind))
+        from website import summary as sm
+        self.assertIn(jesc(sm.WORDS_INDICATORS["what_station"]), wind)                        # the kind's own sentence
+
+    def test_the_module_words_for_the_gate_and_benchland_cells(self):
+        from website import hail as hs
+        from website import joins as jn
+        index = hs.load_index(self.site)
+        def words(lat, lon):
+            row, col = hs.cell_for(lat, lon)
+            tile = json.loads((self.site / "hail" / "j" / f"{hs.tile_name(row // 10, col // 10)}.json").read_text("utf-8"))
+            return jn.describe_joins(index, tile, row, col, self.NOW, sample=False, store_dir=self.site)
+        gate = {sec["id"]: sec for sec in words(47.025, -110.135)["sections"]}
+        self.assertIn("1 NWS local storm report within 5 miles", gate["reports"]["lead"])   # the 1.75 report is 6.6 miles away
+        self.assertIn("Jun 14, 2025 11:45 pm MDT", gate["reports"]["rows"][0]["text"])  # 05:45 UTC on Jun 15, the newest report
+        self.assertIn("Jun 14, 2025 11:45 pm MDT: hail, 1.00 in (estimated), Public, 4.4 mi SE", gate["reports"]["rows"][0]["text"])
+        self.assertIn("TFX", gate["warnings"]["rows"][0]["text"])
+        bench = {sec["id"]: sec for sec in words(47.075, -110.015)["sections"]}
+        rows = bench["reports"]["rows"]                       # newest first: the 2:20 pm report leads
+        self.assertIn("Jun 15, 2025 2:20 pm MDT: hail, 1.25 in (measured), Trained Spotter, 0.4 mi NW", rows[0]["text"])
+        golf = [r for r in rows if "1.75 in (estimated)" in r["text"]]
+        self.assertEqual(len(golf), 1)
+        self.assertIn("Jun 15, 2025 2:10 pm MDT", golf[0]["text"])
+        self.assertEqual(golf[0]["remark"], "Remark, as written: “Public caller updated with golf ball sized hail "
+                         "a few minutes after initial call.”")
+
+    def test_a_store_without_the_records_says_so_in_the_history(self):
+        town = page(self.plain, "town/billings.html")       # a town in a sample tile: each joined part says why, once
+        for sentence in ("Reports could not be loaded in this update; that is not the same as no report.",
+                         "Records could not be loaded in this update; that is not the same as no record.",
+                         "Detections could not be loaded in this update; that is not the same as no detection.",
+                         "Warnings could not be loaded in this update; that is not the same as no warning.",
+                         "Zone products could not be loaded in this update; that is not the same as no zone product.",
+                         "Station readings could not be loaded in this update; that is not the same as no station reading."):
+            self.assertIn(sentence, town)
+        m = json.loads(page(self.plain, "data/map.json"))["hail"]["joins"]
+        self.assertEqual(m["state"], "unavailable")   # the sample fixture holds no records: every part says so
+
+    # the three cells the parity checks read: the gate cell, Benchland's own cell, and a cell with no records (Billings' tile)
+    PARITY_CELLS = {"the gate cell": (47.025, -110.135), "Benchland's cell": (47.075, -110.015),
+                    "a cell with no records (Billings)": (45.7833, -108.5007)}
+
+    def page_hail(self) -> tuple[dict, str]:
+        """The map block the page reads (data/map.json "hail") and the page's time zone."""
+        m = json.loads(page(self.site, "data/map.json"))
+        return m["hail"], m["tz"]
+
+    def assert_browser_matches_module(self, index: dict, h: dict, tz: str, label: str) -> None:
+        """For the three cells, the browser's sections (map.js run under node on the page's own block and files) say what
+        describe_joins says for the same index: the same headings, leads, rows, remarks, lines, unavailable sentences and
+        times, section by section."""
+        from website import hail as hs
+        from website import joins as jn
+        cells = []
+        for lat, lon in self.PARITY_CELLS.values():
+            row, col = hs.cell_for(lat, lon)
+            cells.append({"row": row, "col": col})
+        browser = node_join_sections(self.site, h, tz, cells)
+        for (name, (lat, lon)), got in zip(self.PARITY_CELLS.items(), browser):
+            row, col = hs.cell_for(lat, lon)
+            tile = json.loads((self.site / "hail" / "j" / f"{hs.tile_name(row // hs.TILE, col // hs.TILE)}.json")
+                              .read_text(encoding="utf-8"))
+            want = jn.describe_joins(index, tile, row, col, self.NOW, sample=False, store_dir=self.site)
+            self.assertEqual([browser_view(got[key]) for key in JOIN_IDS], [module_view(s) for s in want["sections"]],
+                             f"{label}: {name}")
+            self.assertEqual(got["times"], want["times_note"], f"{label}: {name} times")
+
+    def test_the_browser_joins_say_what_the_module_says_for_three_cells(self):
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import hail as hs
+        h, tz = self.page_hail()
+        self.assert_browser_matches_module(hs.load_index(self.site), h, tz, "the built store")
+        row, col = hs.cell_for(*self.PARITY_CELLS["a cell with no records (Billings)"])
+        billings = node_join_sections(self.site, h, tz, [{"row": row, "col": col}])[0]
+        for key in ("reports", "records", "detections", "warnings"):       # the cell the name says has no records
+            self.assertEqual(billings[key]["rows"], [], key)
+
+    def test_the_zone_sections_name_both_leads_and_the_red_flag_rows(self):
+        """The gate cell's zone section as the sheet shows it (the browser's code, under node): the forecast zone's lead and
+        the fire weather zone's lead (D17), the red flag rows with their fire weather words (D7), a cancelled product with
+        no recorded start (D16), a red flag warning with no end, and the unplaced line (D11)."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import hail as hs
+        h, tz = self.page_hail()
+        row, col = hs.cell_for(47.025, -110.135)
+        zones = node_join_sections(self.site, h, tz, [{"row": row, "col": col}])[0]["zones"]
+        self.assertIn("2 products for zone Judith Basin (MTZ048) between", zones["lead"])
+        self.assertIn("2 red flag warnings for fire weather zone Central and Eastern Lewis and Clark National Forest Areas "
+                      "(MTZ117) between", zones["fire_lead"])
+        self.assertIn("Zone product: Red flag warning, fire weather zone Central and Eastern Lewis and Clark National Forest "
+                      "Areas (MTZ117): Jun 14, 2025 9:00 am MDT to end not recorded", " ".join(r["text"] for r in zones["rows"]))
+        texts = [r["text"] for r in zones["rows"]]
+        self.assertIn("Zone product: High wind warning: Jun 15, 2025 12:00 pm MDT to 8:00 pm MDT", texts)
+        self.assertIn("Zone product: Winter storm warning: start not recorded; end Jun 15, 2025 12:00 am MDT, cancelled", texts)
+        red = [x for x in texts if x.startswith("Zone product: Red flag warning, fire weather zone Central")]
+        self.assertEqual(len(red), 1)
+        self.assertIn("Jun 15, 2025 10:00 am MDT to 5:00 pm MDT", red[0])
+        self.assertIn("end not recorded", red[0])
+        self.assertNotIn("end end", " ".join(texts))
+        from website import joins as jn
+        self.assertEqual(zones["lines"], [jn.WORDS_JOINS["zones_unplaced_many"].format(n=2)])   # the module's own words
+
+    def test_a_record_with_no_unit_reads_as_its_type_word_and_no_size_is_given(self):
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import hail as hs
+        h, tz = self.page_hail()
+        row, col = hs.cell_for(47.025, -110.135)
+        got = node_join_sections(self.site, h, tz, [{"row": row, "col": col}])[0]
+        winter = [r["text"] for r in got["records"]["rows"] if "winter storm" in r["text"]]
+        self.assertEqual(winter, ["Record: Jun 14, 2025 9:00 pm MDT: winter storm, Mesonet, across zone MTZ048"])
+        for part in JOIN_IDS:
+            self.assertNotIn("no size given", json.dumps(got[part]), part)
+        wind = [r["text"] for r in got["records"]["rows"] if "thunderstorm wind" in r["text"]]
+        self.assertEqual(len(wind), 1)                              # a unit type: its speeds, knots first (D5, D19)
+        self.assertIn("thunderstorm wind, 56 kt (64 mph) (measured gust), Mesonet, 2.4 mi SE", wind[0])
+        row, col = hs.cell_for(47.075, -110.015)                    # Benchland's cell: the 1.75 in hail record is 0.4 miles away
+        bench = node_join_sections(self.site, h, tz, [{"row": row, "col": col}])[0]["records"]["rows"]
+        hail = [r["text"] for r in bench if ": hail, " in r["text"]]
+        self.assertEqual(len(hail), 1)
+        self.assertIn("hail, 1.75 in, Public", hail[0])
+
+    def test_a_part_that_did_not_load_reads_the_same_on_both_surfaces(self):
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import hail as hs
+        index = hs.load_index(self.site)
+        h, tz = self.page_hail()
+        marks = {"parts": {"reports": "unavailable", "records": "partial", "detections": "partial"},
+                 "partial": {"records": ["Jun 14, 2025"], "detections": ["Jun 14, 2025"]}}
+        for block in (index["joins"], h["joins"]):     # the same mark on the store's index and on the page's block
+            block["parts"].update(marks["parts"])
+            block["partial"] = dict(marks["partial"])
+        self.assert_browser_matches_module(index, h, tz, "a part marked unavailable or partial")
+        got = node_join_sections(self.site, h, tz, [{"row": hs.cell_for(47.025, -110.135)[0],
+                                                       "col": hs.cell_for(47.025, -110.135)[1]}])[0]
+        self.assertEqual(got["reports"]["lead"], "")                 # a part that did not load says no lead ("No ...")
+        self.assertEqual(got["reports"]["rows"], [])
+        self.assertTrue(got["reports"]["unavailable"])
+        self.assertTrue(got["records"]["unavailable"])              # a partial part keeps its rows and says why
+        self.assertTrue(got["records"]["rows"])
+
+    GATE_POINT = (47.025, -110.135)          # the gate cell (797, 1986): one forecast zone and one fire weather zone
+    STATION_UNAVAILABLE = ("Station readings could not be loaded in this update; that is not the same as no station "
+                           "reading. This is not an all-clear.")          # D41: the unavailable line ends with the all-clear
+    ZONE_UNAVAILABLE = ("Zone products could not be loaded in this update; that is not the same as no zone product. "
+                        "This is not an all-clear.")   # D41: the unavailable line ends with the all-clear sentence
+
+    def copy_site(self) -> Path:
+        """A copy of the built site's hail folder, for one test to change. The test makes it and removes it."""
+        folder = Path(tempfile.mkdtemp(prefix="hailwatch-copy-"))
+        self.addCleanup(shutil.rmtree, folder, True)
+        shutil.copytree(self.site / "hail", folder / "hail")
+        return folder
+
+    def gate_copy(self) -> Path:
+        """A copy of the site whose gate tile lists two stations: Lewistown Municipal (the store's own file, with a day in the
+        window, within 40 miles of the gate cell, R9) and Lima (the B1 fixture's file, which holds no day). A test changes or
+        removes one of the two files."""
+        from website import hail as hs
+        folder = self.copy_site()
+        row, col = hs.cell_for(*self.GATE_POINT)
+        path = folder / "hail" / "j" / f"{hs.tile_name(row // hs.TILE, col // hs.TILE)}.json"
+        tile = json.loads(path.read_text(encoding="utf-8"))
+        tile["stations"].append({"id": "1LM", "name": "Lima", "lat": 46.7, "lon": -109.7333, "miles": 38.6})
+        path.write_text(json.dumps(tile, separators=(",", ":")), encoding="utf-8")
+        return folder
+
+    def both_ways(self, folder: Path) -> tuple[dict, dict]:
+        """The gate cell's six sections as the browser's code writes them (under node, reading the folder's files), and as
+        describe_joins writes them from the same folder; each side keyed by section id, in the comparable views."""
+        from website import hail as hs
+        from website import joins as jn
+        h, tz = self.page_hail()
+        row, col = hs.cell_for(*self.GATE_POINT)
+        got = node_join_sections(folder, h, tz, [{"row": row, "col": col}])[0]
+        tile = json.loads((folder / "hail" / "j" / f"{hs.tile_name(row // hs.TILE, col // hs.TILE)}.json")
+                          .read_text(encoding="utf-8"))
+        want = jn.describe_joins(hs.load_index(folder), tile, row, col, self.NOW, sample=False, store_dir=folder)
+        self.assertEqual(got["times"], want["times_note"])
+        return {key: browser_view(got[key]) for key in JOIN_IDS}, {s["id"]: module_view(s) for s in want["sections"]}
+
+    def test_a_store_with_no_records_says_every_part_is_unavailable_in_the_browser(self):
+        """The published store may hold no joined records at all (the B1 asset until the daily job's joins step has run,
+        or a job whose joins step failed). The browser then shows every section's unavailable sentence and nothing else,
+        and throws nothing: the block's empty window dates are read only once the store is known to hold records (the
+        preview of 2026-10-19 failed on exactly this: "Invalid time value" and six silent sections)."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import build as bd
+        from website import hail as hs
+        from website import joins as jn
+        h, tz = self.page_hail()
+        h = dict(h)
+        h["joins"] = bd.join_block_unavailable(jn, "the joined records are not in this history store")
+        self.assertEqual(h["joins"]["window"], ["", ""])          # the shape the build writes for such a store
+        row, col = hs.cell_for(47.025, -110.135)
+        got = node_join_sections(self.site, h, tz, [{"row": row, "col": col}])[0]
+        w = jn.WORDS_JOINS
+        for part in jn.PARTS:
+            self.assertEqual(got[part]["unavailable"], w["unavailable"].format(part=w["part_" + part], one=w["one_" + part]))
+            self.assertEqual((got[part]["lead"], got[part]["rows"], got[part]["lines"]), ("", [], []))
+
+    def test_a_station_file_that_did_not_load_says_so_and_gives_no_count(self):
+        """A station file the browser cannot load makes the stations section show its unavailable sentence and nothing else
+        (D27, D28): no lead, no rows, no note, and none of the other station's days. The gate cell's tile lists Lewistown
+        Municipal and Lima (gate_copy); Lima's file is removed, not JSON, not an object, or JSON whose days are not a list.
+        Each case matches describe_joins on the same folder, which reads the same failure."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        browser, module = self.both_ways(self.gate_copy())                  # the baseline: both files load
+        self.assertEqual(browser["stations"], module["stations"])
+        self.assertEqual(browser["stations"]["unavailable"], "")
+        self.assertTrue(any("Lewistown Municipal" in r[0] for r in browser["stations"]["rows"]))
+        for label, text in (("missing", None), ("not JSON", "{not json"), ("not an object", "null"),
+                            ("days that are not a list", '{"f": "hail-station-v2", "days": "x"}')):
+            with self.subTest(label):
+                folder = self.gate_copy()
+                path = folder / "hail" / "s" / "1LM.json"
+                if text is None:
+                    path.unlink()
+                else:
+                    path.write_text(text, encoding="utf-8")
+                browser, module = self.both_ways(folder)
+                got = browser["stations"]
+                self.assertEqual(got["unavailable"], self.STATION_UNAVAILABLE)
+                self.assertEqual((got["lead"], got["rows"], got["lines"]), ("", [], []))
+                self.assertEqual(got, module["stations"])
+
+    def test_a_zone_file_that_did_not_load_keeps_the_point_records_and_says_so(self):
+        """A zone file the browser cannot load (D27) makes the zone products section show its unavailable sentence and nothing
+        else. The records section keeps the point records that loaded, with the partial sentence for the zone part: it names
+        the zone and the reason (the file did not answer, or it was in an unexpected format). Each case matches describe_joins
+        on the same folder: the zone file is removed, is not JSON, or is JSON whose records are not a list."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import joins as jn
+        for label, text, reason in (("missing", None, jn.WORDS_JOINS["reason_no_answer"]),
+                                    ("not JSON", "{not json", jn.WORDS_JOINS["reason_format"]),
+                                    ("records that are not a list", '{"f": "hail-zone-v1", "records": "x"}',
+                                     jn.WORDS_JOINS["reason_format"])):
+            with self.subTest(label):
+                folder = self.copy_site()
+                path = folder / "hail" / "z" / "MTZ048.json"
+                if text is None:
+                    path.unlink()
+                else:
+                    path.write_text(text, encoding="utf-8")
+                browser, module = self.both_ways(folder)
+                zones = browser["zones"]
+                self.assertEqual(zones["unavailable"], self.ZONE_UNAVAILABLE)
+                self.assertEqual((zones["lead"], zones["fire_lead"], zones["rows"], zones["lines"]), ("", "", [], []))
+                records = browser["records"]
+                self.assertEqual(records["unavailable"], jn.WORDS_JOINS["partial"].format(
+                    feed=jn.WORDS_JOINS["feed_records"], periods="MTZ048", reason=reason))
+                texts = [r[0] for r in records["rows"]]
+                self.assertTrue(any("thunderstorm wind" in t for t in texts))        # the point record within five miles stays
+                self.assertFalse(any("winter storm" in t for t in texts))            # the zone's own records are missing
+                self.assertNotEqual(records["lead"], "")
+                self.assertEqual(browser, module)
+
+    def test_a_fire_weather_zone_file_that_did_not_load_keeps_the_public_products(self):
+        """D7, D17: a fire weather zone file that does not load leaves the public zone products as they are. The zone section
+        gets the line that red flag warnings are not listed (the fire weather zones were not available) and no fire weather
+        lead. The browser and describe_joins agree on the folder."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import joins as jn
+        folder = self.copy_site()
+        (folder / "hail" / "z" / "fire-MTZ117.json").unlink()
+        browser, module = self.both_ways(folder)
+        zones = browser["zones"]
+        self.assertEqual(zones["unavailable"], "")
+        self.assertIn(jn.WORDS_JOINS["zones_fire_unavailable"], zones["lines"])
+        self.assertEqual(zones["fire_lead"], "")
+        self.assertTrue(any(r[0].startswith("Zone product: High wind warning:") for r in zones["rows"]))
+        self.assertEqual(browser, module)
+
+    def test_a_cancelled_zone_product_at_or_before_its_begin_reads_cancelled_at_as_the_module_does(self):
+        """D26: a cancellation at or before the product's begin reads "cancelled at {time}" in place of the span, in the module
+        and in the sheet alike. The gate cell's zone file gets such a product here (the row is built in this test): a winter
+        storm warning that begins at 6 am Montana time and is cancelled an hour earlier."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import joins as jn
+        folder = self.copy_site()
+        path = folder / "hail" / "z" / "MTZ048.json"
+        zone = json.loads(path.read_text(encoding="utf-8"))
+        zone["events"].append({"k": "WS", "s": "W", "b": "2025-06-15T12:00Z", "e": "2025-06-15T11:00Z", "st": "cancelled",
+                               "o": "BYZ"})
+        path.write_text(json.dumps(zone, separators=(",", ":")), encoding="utf-8")
+        browser, module = self.both_ways(folder)
+        self.assertEqual(browser["zones"], module["zones"])
+        winter = [r[0] for r in browser["zones"]["rows"] if r[0].startswith("Zone product: Winter storm warning:")]
+        self.assertEqual(len(winter), 1)
+        self.assertIn(jn.WORDS_JOINS["zones_cancelled_at"].format(time="Jun 15, 2025 5:00 am MDT"), winter[0])
+        self.assertNotIn("Jun 15, 2025 6:00 am MDT to", winter[0])
+
+    def test_an_upgraded_zone_product_reads_its_span_with_upgraded_and_one_upgraded_at_its_begin_reads_so(self):
+        """D31: an upgrade ends the lower product at its upgrade time, and the span reads "{begin} to {end}, upgraded"; an
+        upgrade at or before the begin reads "upgraded at {time}" in place of the span. Both rows are built here into the gate
+        cell's zone file, and the browser and describe_joins agree on every section."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import joins as jn
+        folder = self.copy_site()
+        path = folder / "hail" / "z" / "MTZ048.json"
+        zone = json.loads(path.read_text(encoding="utf-8"))
+        zone["events"].append({"k": "HW", "s": "W", "b": "2025-06-15T20:00Z", "e": "2025-06-15T22:00Z", "st": "upgraded",
+                               "o": "BYZ"})                                        # 2:00 pm to 4:00 pm, upgraded
+        zone["events"].append({"k": "WS", "s": "W", "b": "2025-06-15T12:00Z", "e": "2025-06-15T12:00Z", "st": "upgraded",
+                               "o": "BYZ"})                                        # upgraded at 6:00 am, the begin's own time
+        path.write_text(json.dumps(zone, separators=(",", ":")), encoding="utf-8")
+        browser, module = self.both_ways(folder)
+        self.assertEqual(browser["zones"], module["zones"])
+        rows = {r[0].split(": ")[1]: r[0] for r in browser["zones"]["rows"]}      # by the product's name (the row's second part)
+        self.assertIn("Jun 15, 2025 2:00 pm MDT to 4:00 pm MDT" + jn.WORDS_JOINS["zones_upgraded"], rows["High wind warning"])
+        self.assertIn(jn.WORDS_JOINS["zones_upgraded_at"].format(time="Jun 15, 2025 6:00 am MDT"), rows["Winter storm warning"])
+
+    def test_each_joined_section_of_a_sample_build_carries_the_sample_label(self):
+        """A sample build's six sections each say SAMPLE data, as the sheet's own tag does. map_data_joins writes the state
+        "sample" for a sample build; this class's store is real-format, so the state is set here, and nothing else in the
+        block depends on it."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import hail as hs
+        from website import joins as jn
+        h, tz = self.page_hail()
+        row, col = hs.cell_for(47.025, -110.135)
+        cell = [{"row": row, "col": col}]
+        h["joins"]["state"] = "sample"
+        got = node_join_sections(self.site, h, tz, cell)[0]
+        for key in JOIN_IDS:
+            self.assertEqual(got[key]["sample"], jn.WORDS_JOINS["sample"], key)
+        h["joins"]["state"] = "loaded"
+        got = node_join_sections(self.site, h, tz, cell)[0]
+        for key in JOIN_IDS:
+            self.assertEqual(got[key]["sample"], "", key)
+
+
+class HailAddresses(unittest.TestCase):
+    """The B3 layers (--hail-addresses, with --hail-history): the address dots and the typed-address search, the street
+    lines and the building outlines, each from its module (website/addresses.py, streets.py, buildings.py). Off by
+    default: no B3 key, words, form, legend line, About paragraph or contract row. --address-text off (D35) writes no
+    address text, no search index and no form. A layer that did not load says so in words and the build goes on (D36).
+    The browser checks are in tools/smoke_map.py (check_addresses, run with --addresses)."""
+
+    B3_NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+    B3_HEADING = "Addresses, streets and building outlines"
+    B3_ABOUT_END = "<h2>Base map imagery</h2>"
+    B3_BEGIN, B3_END = "B3 layers: begin", "B3 layers: end"     # the markers of the B3 section in map.js
+    B3_FORM = ("Find an address", 'id="address-input"', 'id="address-form"', 'id="address-results"')
+    B3_LEGEND = ("Dots are addresses from Montana", "Each dot is one building outline", "Streets from the Montana State")
+    # D29 and D34: no word of a B3 template says what a building is or who uses it. "use" and the others are checked as
+    # whole words. The source's own quotes and labels are removed first (they are the sources' words, quoted exactly),
+    # and so are the proper names that contain "Structures" (the two data sources' names).
+    # The county file's quoted use sentence (sources.py census_counties, quoted from its metadata) is exempt as a quotation;
+    # "occupancy" is forbidden outside a quotation (D45, R-04). The quotes go first (the purpose sentence holds a proper
+    # name), then the proper names.
+    B3_CENSUS_USE = ("These products are free to use in a product or publication, however acknowledgement must be given to the "
+                     "U.S. Census Bureau as the source.")
+    B3_EXEMPT = ("Use terms in the file's metadata", "Structures and Addresses Framework", "Structures/Addresses Framework",
+                 "USA Structures", "Montana State Library Structures")
+    B3_FORBIDDEN = re.compile(r"\b(homes?|houses?|residences?|dwellings?|use|structures?|occupancy)\b", re.I)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dirs, cls.results = {}, {}
+        builds = (("off", {}), ("history", {"hail_history": True}),
+                  ("on", {"hail_history": True, "hail_addresses": True}),
+                  ("notext", {"hail_history": True, "hail_addresses": True, "address_text": "off"}))
+        for key, options in builds:
+            out = Path(tempfile.mkdtemp(prefix=f"hailwatch-b3-{key}-"))
+            cls.addClassCleanup(shutil.rmtree, out, True)
+            cls.results[key] = site.build(out, None, cls.B3_NOW, sample=True, **options)
+            cls.dirs[key] = out
+
+    def test_the_b3_sizes_are_recorded_for_the_budgets(self):
+        self.assertNotIn("b3_sizes", self.results["history"])
+        sizes = self.results["on"]["b3_sizes"]
+        self.assertEqual(set(sizes), {"outline_shards", "address_shards", "search_files", "road_shards"})
+        self.assertGreater(sizes["address_shards"]["files"], 0)
+        self.assertGreater(sizes["search_files"]["files"], 0)
+        self.assertEqual(sizes["outline_shards"]["files"], 0)          # the sample has no outline part
+        # D38 and D42: the totals are recorded beside their budgets (60 MB address shards and letter files, 250 MB outlines)
+        self.assertEqual({k: v["budget_bytes"] for k, v in sizes.items()},
+                         {"outline_shards": 250_000_000, "address_shards": 60_000_000, "search_files": 60_000_000,
+                          "road_shards": None})
+        self.assertTrue(all(v["within_budget"] for v in sizes.values()))
+        self.assertEqual(sizes["address_shards"]["largest_bytes"],
+                         max((self.dirs["on"] / "hail" / "a").glob("*.json"), key=lambda p: p.stat().st_size).stat().st_size)
+
+    def html_text(self, html: str) -> str:
+        import html as html_lib
+        return html_lib.unescape(re.sub(r"<[^>]+>", " ", html))
+
+    def test_the_flags_need_the_history_flag_and_the_text_mode_needs_the_flag(self):
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b3-flags-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        with self.assertRaises(ValueError):
+            site.build(out, None, self.B3_NOW, sample=True, hail_addresses=True)
+        with self.assertRaises(ValueError):
+            site.build(out, None, self.B3_NOW, sample=True, hail_history=True, address_text="maybe")
+        for argv, message in ((["--hail-addresses"], "--hail-addresses needs --hail-history"),
+                              (["--hail-history", "--address-text", "off"],
+                               "--address-text off needs --hail-addresses"),
+                              (["--hail-history", "--hail-addresses", "--address-text", "maybe"], "invalid choice")):
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err), self.assertRaises(SystemExit):
+                site.main(["--out", str(out), "--sample", *argv])
+            self.assertIn(message, err.getvalue(), argv)
+
+    def test_the_flag_off_builds_have_no_address_layer_key_words_form_row_or_text(self):
+        for key in ("off", "history"):
+            out = self.dirs[key]
+            m = json.loads(page(out, "data/map.json"))
+            for name in ("addresses", "roads", "buildings", "attribution"):
+                self.assertNotIn(name, m.get("hail", {}), key)
+            for path in sorted(out.rglob("*.html")):
+                text = path.read_text(encoding="utf-8")
+                for words in (self.B3_HEADING, *self.B3_FORM, *self.B3_LEGEND, "Montana State Library address points",
+                              "USA Structures, Oak Ridge", "Oak Ridge National Laboratory and FEMA, USA Structures"):
+                    self.assertNotIn(words, text, f"{words!r} in {key}/{path.name}")
+
+    def test_a_history_build_without_the_addresses_flag_has_no_contract_row_for_a_layer(self):
+        about = page(self.dirs["history"], "about.html")
+        for key in ("msl_addresses", "msl_roads", "census_roads", "usa_structures", "census_counties"):
+            self.assertNotIn(src.CONTRACTS[key]["name"], about, key)
+        self.assertNotIn(src.CONTRACTS["lsr"]["name"], about)       # superseded by iem_lsr (B5): listed once, as the B5 row
+        self.assertIn(src.CONTRACTS["iem_lsr"]["name"], about)      # the B2 reports still show with the history, through it
+
+    def test_the_sample_build_with_both_flags_has_the_address_layer_and_two_unavailable_layers(self):
+        from website import buildings, streets
+        out = self.dirs["on"]
+        m = json.loads(page(out, "data/map.json"))["hail"]
+        self.assertEqual(m["addresses"]["state"], "sample")
+        self.assertGreater(m["addresses"]["count"], 0)
+        self.assertEqual(m["addresses"]["text"], "on")
+        for key in ("roads", "buildings"):
+            self.assertEqual(m[key]["state"], "unavailable", key)
+            self.assertTrue(m[key]["problem"], key)
+        # the address list loaded, so its line is there (D44); the two layers that did not load name no source (D29)
+        self.assertEqual(len(m["attribution"]), 1)
+        self.assertTrue(m["attribution"][0].startswith("Addresses: Montana State Library, Structures and Addresses Framework"))
+        status = json.loads(page(out, "data/state.json"))["status"]
+        self.assertTrue(status["address_list"]["ok"])
+        self.assertFalse(status["street_list"]["ok"])
+        self.assertFalse(status["outline_list"]["ok"])
+        self.assertTrue(status["hail_history"]["ok"])
+        html = page(out, "map.html")
+        for words in self.B3_FORM:
+            self.assertIn(words, html)
+        self.assertIn("SAMPLE data", html)                             # the fixture's address list is labelled
+        for words in self.B3_LEGEND[:1] + (streets.WORDS_STREETS["msl"]["unavailable"],
+                                           buildings.WORDS_BUILDINGS["unavailable"]):
+            self.assertIn(words, html)
+        about = page(out, "about.html")
+        self.assertIn(self.B3_HEADING, about)
+        self.assertIn(streets.WORDS_STREETS["msl"]["unavailable"], about)
+        self.assertIn(buildings.WORDS_BUILDINGS["unavailable"], about)
+        self.assertIn(src.CONTRACTS["msl_addresses"]["name"], about)
+        self.assertIn(src.CONTRACTS["usa_structures"]["name"], about)
+        self.assertNotIn(src.CONTRACTS["msl_roads"]["name"], about)    # no road part was built, so no road row (D25)
+        self.assertNotIn(src.CONTRACTS["census_roads"]["name"], about)
+
+    def test_a_row_is_shown_only_for_the_layer_that_is_built(self):
+        shown = site.contract_shown
+        self.assertTrue(shown("msl_addresses", False, True, True, None))
+        self.assertFalse(shown("msl_addresses", False, True, False, None))
+        self.assertFalse(shown("msl_addresses", False, False, True, None))
+        self.assertTrue(shown("census_roads", False, True, True, "census_roads"))
+        self.assertFalse(shown("msl_roads", False, True, True, "census_roads"))
+        self.assertFalse(shown("census_roads", False, True, True, None))
+        self.assertFalse(shown("msl_roads", False, True, False, "msl_roads"))
+        self.assertTrue(shown("census_counties", False, True, True, None))          # gated like the other B3 rows
+        self.assertFalse(shown("census_counties", False, True, False, None))
+        self.assertFalse(shown("census_counties", False, False, True, None))
+        self.assertTrue(shown("lsr", False, True, False, None))
+
+    def test_the_b3_contract_rows_name_their_files_and_their_limits(self):
+        for key in ("msl_addresses", "msl_roads", "census_roads", "usa_structures", "census_counties"):
+            self.assertEqual(set(src.CONTRACTS[key]), {"name", "request", "units", "timing", "missing"}, key)
+            self.assertTrue(all(isinstance(v, str) and v.strip() for v in src.CONTRACTS[key].values()), key)
+        request = src.CONTRACTS
+        self.assertIn("StructuresFramework_shp.zip", request["msl_addresses"]["request"])
+        self.assertIn("Montana State Plane grid", request["msl_addresses"]["units"])
+        self.assertIn("for no other purpose", request["msl_addresses"]["missing"])
+        self.assertIn("Transportation Framework", request["msl_roads"]["request"])
+        self.assertIn("for no other purpose", request["msl_roads"]["missing"])
+        self.assertIn("TIGER2026", request["census_roads"]["request"])
+        self.assertIn("acknowledgement must be given to the U.S. Census Bureau", request["census_roads"]["missing"])
+        self.assertIn("registered trademarks", request["census_roads"]["missing"])
+        self.assertIn("high-precision measurement", request["census_roads"]["missing"])
+        self.assertIn("MT_Structures_20260913.zip", request["usa_structures"]["request"])
+        self.assertIn("15 metres", request["usa_structures"]["units"])
+        self.assertIn("Only the outline geometry is", request["usa_structures"]["request"])
+        self.assertIn("not surveys", request["usa_structures"]["timing"] + request["usa_structures"]["missing"])
+        # D45 (R-04): no attribute field is named as read, and "occupancy" appears only in a quotation (none here)
+        self.assertIn("other field of the file is ever read, stored or shown", request["usa_structures"]["request"])
+        self.assertNotIn("occupancy", request["usa_structures"]["request"])
+        # D48: the county row quotes its file's own use sentence (cb_2025_us_county_500k.zip metadata); the TIGER road
+        # files' "not copyrighted" words are theirs, and the county row does not claim them
+        self.assertIn("cb_2025_us_county_500k.zip", request["census_counties"]["request"])
+        self.assertIn("acknowledgement must be given to the U.S. Census Bureau as the source", request["census_counties"]["missing"])
+        self.assertIn("should not be used for geocoding addresses", request["census_counties"]["missing"])
+        self.assertIn("label, not a measurement", request["census_counties"]["missing"])
+        self.assertNotIn("not copyrighted", request["census_counties"]["missing"])
+        self.assertIn("census_counties", site.B3_ROWS)
+
+    def test_the_about_page_states_the_attribution_and_no_counsel_reasoning_about_the_outline_licence(self):
+        # The licence reading is open with counsel (D14, counsel item 1): the About page gives the attribution only.
+        for key in ("on", "notext"):
+            about = " ".join(page(self.dirs[key], "about.html").split())
+            self.assertNotIn("licence reading", about, key)
+            self.assertNotIn("Data.gov", about, key)
+            self.assertIn("Oak Ridge National Laboratory and FEMA, USA Structures", about, key)
+
+    def test_the_address_text_off_build_writes_no_search_no_form_and_no_address_text(self):
+        from website import hail as hs
+        out = self.dirs["notext"]
+        self.assertFalse((out / "hail" / "a" / "idx").exists())
+        m = json.loads(page(out, "data/map.json"))["hail"]
+        self.assertEqual(m["addresses"]["text"], "off")
+        self.assertEqual(m["buildings"]["text"], "off")
+        for key in ("cities", "letter", "words", "search_words", "dir", "file_key"):
+            self.assertNotIn(key, m["addresses"], key)
+        self.assertNotIn("title", m["addresses"]["templates"])
+        html = page(out, "map.html")
+        for words in self.B3_FORM:
+            self.assertNotIn(words, html)
+        self.assertIn("Dots are addresses from Montana", html)         # the legend line names no address
+        self.assertNotIn("What you type stays in your browser.", page(out, "about.html"))
+        hs.check_manifest(out)                                         # the copied files match the rewritten manifest
+        texts = []
+        for path in sorted((out / "hail" / "a").glob("*.json")):
+            for row in json.loads(path.read_text(encoding="utf-8"))["a"]:
+                self.assertEqual(row[2:5], ["", "", ""], path.name)
+                self.assertEqual(len(row), 6, path.name)
+            texts.append(path.read_text(encoding="utf-8"))
+        self.assertNotIn("Billings", "".join(texts))
+        on = [json.loads(p.read_text(encoding="utf-8")) for p in sorted((self.dirs["on"] / "hail" / "a").glob("*.json"))]
+        self.assertTrue(any(row[2] for doc in on for row in doc["a"]))  # the text-on build keeps the text
+
+    def test_the_address_text_on_build_keeps_the_text_and_the_search_index(self):
+        out = self.dirs["on"]
+        self.assertTrue((out / "hail" / "a" / "idx" / "cities.json").is_file())
+        m = json.loads(page(out, "data/map.json"))["hail"]["addresses"]
+        self.assertEqual(m["cities"], "hail/a/idx/cities.json")
+        self.assertEqual(m["letter"], "hail/a/idx/{dir}/{key}.json")
+
+    def test_a_failed_text_strip_removes_the_address_files_and_says_the_layer_failed(self):
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b3-strip-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        with mock.patch.object(site, "strip_address_text", side_effect=OSError("disk full")):
+            result = site.build(out, None, self.B3_NOW, sample=True, hail_history=True, hail_addresses=True,
+                                address_text="off")
+        self.assertFalse((out / "hail" / "a").exists())
+        m = json.loads(page(out, "data/map.json"))["hail"]
+        self.assertEqual(m["addresses"]["state"], "unavailable")
+        self.assertIn("couldn't be prepared", m["addresses"]["problem"])
+        self.assertFalse(result["status"]["address_list"]["ok"])
+        self.assertNotIn('id="address-input"', page(out, "map.html"))
+
+    def test_a_store_that_is_missing_marks_the_three_layers_unavailable_with_its_reason(self):
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b3-missing-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        result = site.build(out, None, self.B3_NOW, sample=True, hail_history=True, hail_addresses=True,
+                            hail_store_path=str(out / "no-such-store.tar.gz"))
+        m = json.loads(page(out, "data/map.json"))["hail"]
+        for key in ("addresses", "roads", "buildings"):
+            self.assertEqual(m[key]["state"], "unavailable", key)
+            self.assertIn("missing", m[key]["problem"], key)
+        self.assertEqual(m["attribution"], [])
+        self.assertFalse(result["status"]["hail_history"]["ok"])
+        for key in ("address_list", "street_list", "outline_list"):
+            self.assertFalse(result["status"][key]["ok"], key)
+        html = page(out, "map.html")
+        self.assertNotIn('id="address-input"', html)
+        self.assertIn("address list could not be loaded in this update", html)
+
+    def test_strip_address_text_writes_no_text_and_a_manifest_that_checks(self):
+        from website import hail as hs
+        root = Path(tempfile.mkdtemp(prefix="hailwatch-b3-unit-"))
+        self.addCleanup(shutil.rmtree, root, True)
+        (root / "hail" / "a" / "idx" / "billings").mkdir(parents=True)
+        (root / "hail" / "b").mkdir()
+        shard = {"f": "hail-addresses-v1", "b": [-108.5, 45.7, -108.4, 45.8], "n": 1,
+                 "a": [[-108.45, 45.78, "401 North 27th Street", "Billings", "59101", "S"]]}
+        (root / "hail" / "a" / "r0092_c0213123.json").write_text(json.dumps(shard), encoding="utf-8")
+        (root / "hail" / "a" / "idx" / "cities.json").write_text(
+            json.dumps({"f": "hail-address-cities-v1", "cities": {"Billings": {"n": 1, "keys": {"N": 1}}}}),
+            encoding="utf-8")
+        (root / "hail" / "a" / "idx" / "billings" / "N.json").write_text(
+            json.dumps({"f": "hail-address-idx-v1", "a": [["401", "North 27th Street", "", -108.45, 45.78, "59101", "S"]]}),
+            encoding="utf-8")
+        outline = {"f": "hail-buildings-v1", "b": [-108.5, 45.7, -108.4, 45.8], "n": 1, "m": 1, "c": ["Billings", "59101"],
+                   "a": [{"p": [-108.45, 45.78], "g": [[[-108.46, 45.77], [-108.44, 45.77], [-108.44, 45.79],
+                                                         [-108.46, 45.77]]],
+                          "l": ["401 North 27th Street"], "z": [None]}]}
+        (root / "hail" / "b" / "r0092_c0213123.json").write_text(json.dumps(outline), encoding="utf-8")
+        index = {"format": hs.FORMAT, "as_of": "2026-10-15", "window": ["2021-10-15", "2026-10-15"], "missing_days": [],
+                 "floor_tenths": 64, "tiles": [], "d0": hs.D0.isoformat(), "grid": dict(hs.GRID)}
+        (root / "hail" / "index.json").write_text(json.dumps(index), encoding="utf-8")
+
+        def entry(rel):
+            data = (root / rel).read_bytes()
+            return {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+
+        rels = sorted(p.relative_to(root).as_posix() for p in (root / "hail").rglob("*.json") if p.name != "manifest.json")
+        manifest = {"format": hs.MANIFEST_FORMAT, "as_of": "2026-10-15", "sample": True, "counts": {},
+                    "files": {rel: entry(rel) for rel in rels}}
+        (root / "hail" / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        site.strip_address_text(root)
+        self.assertFalse((root / "hail" / "a" / "idx").exists())
+        doc = json.loads((root / "hail" / "a" / "r0092_c0213123.json").read_text(encoding="utf-8"))
+        self.assertEqual(doc["a"], [[-108.45, 45.78, "", "", "", "S"]])
+        bdoc = json.loads((root / "hail" / "b" / "r0092_c0213123.json").read_text(encoding="utf-8"))
+        self.assertIsNone(bdoc["c"])
+        self.assertNotIn("l", bdoc["a"][0])
+        self.assertNotIn("z", bdoc["a"][0])
+        self.assertEqual(bdoc["a"][0]["p"], [-108.45, 45.78])
+        self.assertEqual(bdoc["m"], 1)
+        listed = json.loads((root / "hail" / "manifest.json").read_text(encoding="utf-8"))["files"]
+        self.assertFalse(any(name.startswith("hail/a/idx/") for name in listed))
+        hs.check_manifest(root)
+
+    def test_only_the_addresses_flag_copies_the_store_address_outline_and_road_folders(self):
+        from website import hail as hs
+        self.assertFalse((self.dirs["off"] / "hail").exists())             # no history folder without --hail-history
+        out = self.dirs["history"]
+        for folder in ("a", "b", "r"):
+            self.assertFalse((out / "hail" / folder).exists(), f"history has hail/{folder}")
+        listed = json.loads(page(out, "hail/manifest.json"))["files"]
+        self.assertFalse([name for name in listed if name.split("/")[1] in ("a", "b", "r")])
+        hs.check_manifest(out)
+        self.assertTrue((self.dirs["on"] / "hail" / "a" / "idx").is_dir())
+        hs.check_manifest(self.dirs["on"])
+
+    def test_the_history_copy_drops_the_b3_blocks_files_and_folders_and_still_checks_out(self):
+        # D35 and gate B3-6: a history build without --hail-addresses has no B3 index block, file, folder or manifest
+        # entry. The synthetic store holds every B3 part (the fixture, counts.json, hail/b/, hail/r/ and the three blocks);
+        # with the flag on, the copy keeps all of them.
+        from website import addresses as ad, buildings as bd, hail as hs, streets as st
+        root = Path(tempfile.mkdtemp(prefix="hailwatch-b3-store-"))
+        self.addCleanup(shutil.rmtree, root, True)
+        shutil.copytree(hs.FIXTURE_DIR / "hail", root / "hail")
+        (root / "hail" / "counts.json").write_bytes(b'{"f": "hail-buildings-counts-v1"}')
+        for folder in ("b", "r"):
+            (root / "hail" / folder).mkdir()
+            (root / "hail" / folder / "r0000_c0000.json").write_bytes(b'{"f": "test"}')
+        index = json.loads((root / "hail" / "index.json").read_text(encoding="utf-8"))
+        for key in (ad.INDEX_KEY, st.INDEX_KEY, bd.INDEX_KEY):
+            index[key] = {"state": "loaded", "sample": True}
+        (root / "hail" / "index.json").write_bytes(hs._pretty(index))
+        manifest = json.loads((root / "hail" / "manifest.json").read_text(encoding="utf-8"))
+        manifest["files"] = {}
+        for path in sorted((root / "hail").rglob("*")):
+            if path.is_file() and path.name != "manifest.json":
+                data = path.read_bytes()
+                manifest["files"][path.relative_to(root).as_posix()] = {
+                    "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+        (root / "hail" / "manifest.json").write_bytes(hs._pretty(manifest))
+        hs.check_manifest(root)
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b3-copy-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        kept = site._copy_hail(root, out / "off", index, addresses=False)
+        hail_off = out / "off" / "hail"
+        for name in ("a", "b", "r", "counts.json"):
+            self.assertFalse((hail_off / name).exists(), name)
+        written = json.loads((hail_off / "index.json").read_text(encoding="utf-8"))
+        for key in (ad.INDEX_KEY, st.INDEX_KEY, bd.INDEX_KEY):
+            self.assertNotIn(key, written)
+            self.assertNotIn(key, kept)
+        listed = json.loads((hail_off / "manifest.json").read_text(encoding="utf-8"))["files"]
+        self.assertFalse([rel for rel in listed if rel.split("/")[1] in ("a", "b", "r", "counts.json")])
+        self.assertEqual(listed["hail/index.json"]["sha256"],
+                         hashlib.sha256((hail_off / "index.json").read_bytes()).hexdigest())
+        hs.check_manifest(out / "off")
+        site._copy_hail(root, out / "on", index, addresses=True)
+        hail_on = out / "on" / "hail"
+        for name in ("a", "b", "r", "counts.json"):
+            self.assertTrue((hail_on / name).exists(), name)
+        self.assertEqual({ad.INDEX_KEY, st.INDEX_KEY, bd.INDEX_KEY} & set(json.loads(page(out / "on", "hail/index.json"))),
+                         {ad.INDEX_KEY, st.INDEX_KEY, bd.INDEX_KEY})
+        hs.check_manifest(out / "on")
+        # The sample history build (no flag) carries none of the B3 blocks or files either.
+        history = self.dirs["history"]
+        history_index = json.loads(page(history, "hail/index.json"))
+        self.assertFalse({"addresses", "roads", "buildings"} & set(history_index))
+        self.assertFalse((history / "hail" / "counts.json").exists())
+        hs.check_manifest(history)
+
+    def test_the_b3_words_and_the_rendered_b3_sections_say_no_forbidden_word(self):
+        from website import addresses as ad, buildings as bd, streets as st
+        # the longest quotes first: the TIGER acknowledgement is a part of the county file's sentence, so it must not go first
+        exempt = (self.B3_CENSUS_USE, ad.PURPOSE_TEXT, ad.USE_DISCLAIMER_TEXT, ad.USE_CONVENIENCE_TEXT, ad.ACCCONST_TEXT,
+                  st.TIGER_ACK, st.TIGER_TRADEMARK, st.TIGER_ACCURACY) + self.B3_EXEMPT
+        texts = [*ad.WORDS_ADDRESSES.values(), *bd.WORDS_BUILDINGS.values(), site.FIND_BUTTON]
+        for kind in st.WORDS_STREETS.values():
+            texts += list(kind.values())
+        for key in ("msl_addresses", "msl_roads", "census_roads", "usa_structures", "census_counties"):
+            texts += list(src.CONTRACTS[key].values())
+        on = self.dirs["on"]
+        about = page(on, "about.html")
+        texts.append(self.html_text(about[about.index('<h2 id="addresses">'):about.index(self.B3_ABOUT_END)]))
+        texts += json.loads(page(on, "data/map.json"))["hail"]["attribution"]     # the map's own attribution lines (D29, D44)
+        map_html = page(on, "map.html")
+        start = map_html.index('<section class="glass find"')
+        texts.append(self.html_text(map_html[start:map_html.index("</section>", start)]))
+        texts += [self.html_text(line) for line in re.findall(r'<p class="legend-tap" data-layer=[^\n]*', map_html)]
+        for text in texts:
+            self.assertNotIn("\u2014", text)                     # no em dash
+            self.assertNotIn("\u2013", text)                     # no en dash
+            rest = text
+            for quote in exempt:
+                rest = rest.replace(quote, " ")
+            self.assertIsNone(self.B3_FORBIDDEN.search(rest), text)
+
+    def test_the_map_attribution_carries_the_addresses_line_first_with_the_library_terms(self):
+        from website import addresses as ad
+        for key in ("on", "notext"):                  # the address text mode does not change the source's line
+            lines = json.loads(page(self.dirs[key], "data/map.json"))["hail"]["attribution"]
+            address = [line for line in lines if line.startswith(smoke_map().ADDRESS_ATTRIBUTION_START)]
+            self.assertEqual(len(address), 1, key)                              # D44: the line the smoke expects
+            self.assertIn(ad.USE_CONVENIENCE_TEXT, address[0], key)             # the quoted use sentence (D17)
+            self.assertEqual(lines[0], address[0], key)                         # the Library's line comes first
+        about = " ".join(page(self.dirs["on"], "about.html").split())
+        self.assertIn("Source: Montana State Library Structures and Addresses Framework, file dated", about)  # D44: About
+
+    def test_the_phone_legend_holds_no_b3_sentence_and_the_find_panel_sits_behind_a_button(self):
+        # D43 (R-01): the two B3 legend sentences are in the layer menu, not on the legend card; at a phone width the find
+        # panel is behind the Find an address button (map.css), so the card does not cover the map's centre. The legend's
+        # height and the centre tap are measured in Chromium (tools/smoke_map.py: check_phone_legend and check_taps).
+        html = page(self.dirs["on"], "map.html")
+        card = html[html.index('id="legend"'):html.index('<a class="mapdata"')]
+        self.assertNotIn('data-layer="shapes"', card)
+        self.assertNotIn('data-layer="dots"', card)
+        self.assertIn("Tap or click the map for the five-year hail history", card)
+        menu = html[html.index('id="b3-keys"'):html.index('id="btn-list"')]
+        self.assertIn('data-layer="shapes"', menu)
+        self.assertIn('data-layer="dots"', menu)                  # the sample has no outlines, so the dots line stays
+        self.assertIn('data-layer="streets"', menu)
+        self.assertEqual(html.count('id="btn-find"'), 1)
+        self.assertIn('aria-controls="find"', html)
+        self.assertNotIn('id="btn-find"', page(self.dirs["notext"], "map.html"))
+        css = (ROOT / "website" / "static" / "map" / "map.css").read_text(encoding="utf-8")
+        self.assertIn(".icon-btn.find-open { display: none; }", css)
+        self.assertIn("@media (max-width: 520px) {\n  .icon-btn.find-open { display: grid; }\n"
+                      "  .top:not(.find-shown) > #find { display: none; }\n"
+                      "  .top.find-shown .legend-wrap { display: none; }\n}", css)
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn('b3FindOpen(!el.top.classList.contains("find-shown"))', js)
+
+    def test_the_outlines_line_stands_in_for_the_dot_sentence_when_the_outlines_load(self):
+        # D48 (R-05): the unmatched-address sentence shows only when the outline layer is absent; build.py's b3_words sets the
+        # flag, and map.html guards both places the sentence is printed (the layer menu and the no-script text).
+        from website import addresses as ad, buildings as bd, streets as st
+        loaded = {"state": "loaded", "sample": True}
+        missing = {"state": "unavailable", "reason": "not built"}
+        found = {ad.INDEX_KEY: loaded, st.INDEX_KEY: missing, bd.INDEX_KEY: loaded}
+        self.assertTrue(site.b3_words(found, "on")["outlines_loaded"])
+        found[bd.INDEX_KEY] = missing
+        self.assertFalse(site.b3_words(found, "on")["outlines_loaded"])
+        template = (ROOT / "website" / "templates" / "map.html").read_text(encoding="utf-8")
+        self.assertEqual(template.count("{% if not b3.outlines_loaded %}"), 2)
+        self.assertEqual(template.count("{{ b3.legend.dots }}"), 2)
+        self.assertIn("Dots are addresses from Montana", page(self.dirs["on"], "map.html"))   # no outlines in the sample: shown
+
+    def test_the_about_names_the_county_file_only_when_its_counts_were_made(self):
+        from website import addresses as ad, buildings as bd, streets as st
+        made = {"state": "loaded", "sample": True, "counties": {"state": "loaded"}}
+        found = {ad.INDEX_KEY: {"state": "loaded", "sample": True}, st.INDEX_KEY: {"state": "unavailable", "reason": "x"},
+                 bd.INDEX_KEY: made}
+        self.assertTrue(site.counties_loaded(found))
+        self.assertEqual(site.b3_words(found, "on")["about"]["counties"], bd.COUNTY_ACK)
+        made["counties"] = {"state": "unavailable", "reason": "the county file could not be read"}
+        self.assertFalse(site.counties_loaded(found))
+        self.assertEqual(site.b3_words(found, "on")["about"]["counties"], "")
+        self.assertFalse(site.counties_loaded({}))
+        # the sample's outlines are unavailable, so About prints no county paragraph (no empty one either)
+        about = page(self.dirs["on"], "about.html")
+        self.assertNotIn(bd.COUNTY_ACK, about)
+        self.assertNotIn("<p> </p>", about)
+        self.assertIn(src.CONTRACTS["census_counties"]["name"], about)
+
+    def test_map_script_b3_section_holds_no_sentence_unit_radius_zoom_cap_width_or_colour_literal(self):
+        from website import addresses as ad, buildings as bd, streets as st
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIsNone(re.search(r"\b(houses?|residences?|dwellings?)\b", js, re.I))
+        begin, end = js.find(self.B3_BEGIN), js.find(self.B3_END)
+        self.assertTrue(begin >= 0 and end > begin, "map.js needs the B3 section between the two markers")
+        block = js[begin:end]
+        code = re.sub(r"/\*.*?\*/|//[^\n]*", " ", block, flags=re.S)  # comments may hold the words of the design
+        literals = re.findall(r'"((?:[^"\\\n]|\\.)*)"|\'((?:[^\'\\\n]|\\.)*)\'|`([^`]*)`', code)
+        for group in literals:
+            text = group[0] or group[1] or group[2]
+            words = text.split()
+            self.assertFalse(len(words) >= 3, f"a sentence in the B3 section: {text!r}")
+            self.assertIsNone(re.search(r"\b(mph|mm|inch|inches|miles?|metres?|kt|knots?)\b|%|°", text), text)
+            self.assertIsNone(re.search(r"#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(", text), text)
+        bare = re.sub(r'"(?:[^"\\\n]|\\.)*"|\'(?:[^\'\\\n]|\\.)*\'|`[^`]*`', " ", code)
+        # A number on a line about a zoom, a radius, a width, a cap, a limit or a grid is a display rule and must come from
+        # map.json. Geometry constants (0, 1, 2, 0.5, 180, 256, 360: the half turn, the tile size, the full turn) are allowed.
+        rule_words = re.compile(r"radius|width|\bcap\b|zoom|\bz\b|\bZ\.|tap|\bpx\b|limit|per_view|grid|min_|max_|from\b")
+        allowed = {"0", "1", "2", "0.5", "180", "256", "360"}
+        flagged = []
+        for line in bare.splitlines():
+            if rule_words.search(line):
+                flagged += [n for n in re.findall(r"(?<![\w.])\d+(?:\.\d+)?", line) if n not in allowed]
+        self.assertEqual(sorted(set(flagged)), [], "a display rule written in map.js (it must come from map.json)")
+        for text in [*ad.WORDS_ADDRESSES.values(), *bd.WORDS_BUILDINGS.values(), *st.WORDS_STREETS["msl"].values()]:
+            if "{" not in text and len(text) > 25:
+                self.assertNotIn(text, js, text)
+            elif "{" in text:
+                for part in re.split(r"\{\w+\}", text):
+                    if len(part) > 25:
+                        self.assertNotIn(part, js, part)
+
+    def test_the_workflow_previews_pass_the_addresses_flag_and_the_tests_and_smoke_run(self):
+        text = (ROOT / ".github" / "workflows" / "website.yml").read_text(encoding="utf-8")
+        args = [line for line in text.splitlines() if "args+=(" in line and "--hail-history" in line]
+        self.assertEqual(len(args), 2, "the branch line and main's own line (D59: main passes --hail-history alone)")
+        self.assertIn("--require-live --storm-layers --hail-history --hail-addresses", args[0])
+        self.assertIn("args+=(--hail-history)", args[1])
+        unit = [line for line in text.splitlines() if "python -m unittest" in line]
+        self.assertEqual(len(unit), 2, "the offline unit step and the real-store parity step (D88(a))")
+        self.assertIn("tests.test_streets", unit[0])
+        self.assertIn("tests.test_buildings", unit[0])
+        self.assertIn("python tools/smoke_map.py _site --addresses", text)
+        self.assertIn('"tests/test_streets.py"', text)
+        self.assertIn('"tests/test_buildings.py"', text)
+
+    def test_the_smoke_test_has_the_address_checks(self):
+        smoke = smoke_map()
+        for name in ("check_addresses", "check_zoom_rules", "check_budget_and_pan", "check_taps", "check_attribution",
+                     "check_search", "check_address_text_off"):
+            self.assertTrue(callable(getattr(smoke, name, None)), name)
+        self.assertEqual(smoke.ADDRESS_GATE_ZOOM, 15)                 # the zoom of the gate and the budget (D30)
+        # D91(a), D66, D82(b): the phone budget is read from the build's map.json (hail.budget.phone_gzip_bytes, written from
+        # build.PHONE_GZIP_BUDGET) by the smoke's map_budget; the B3 check and the whole phone view both use it, and the smoke
+        # keeps no budget constant of its own. A map.json without the budget gives None, which the smoke names as a problem.
+        self.assertFalse(hasattr(smoke, "ADDRESS_FETCH_BUDGET_GZIP"))
+        self.assertEqual(smoke.map_budget({"hail": {"budget": {"phone_gzip_bytes": 123_456}}}, "phone_gzip_bytes"), 123_456)
+        self.assertEqual(smoke.map_budget({"hail": {"budget": {"phone_gzip_bytes": site.PHONE_GZIP_BUDGET}}}, "phone_gzip_bytes"),
+                         700_000)
+        self.assertIsNone(smoke.map_budget({"hail": {}}, "phone_gzip_bytes"))
+        self.assertEqual(site.PHONE_GZIP_BUDGET, 700_000)
+        self.assertEqual(smoke.ADDRESS_DRAW_MS, 30)
+        self.assertEqual(smoke.PAN_FETCH_LIMIT, 20)
+        self.assertEqual(smoke.B3_BILLINGS, (45.7857, -108.5071))     # 401 North 27th Street, Billings
+
+
+class SiteCopySource(unittest.TestCase):
+    """D92(a), D75(a): a build's copy may take a built site's own hail/ folder as its source (the parity step reads _site as
+    HAIL_PARITY_STORE). That folder holds B4's live swath files under hail/live/, which the manifest never lists. _copy_hail
+    checks its source with allow_live=True, so such a source passes; any other unlisted file under hail/ still refuses it, and
+    a link is refused either way. The copy's own check stays strict, and the copy takes only the listed folders."""
+
+    def store(self, extra: dict) -> Path:
+        """A hail/ folder copied from the sample fixture, with extra files written under the store root. The manifest lists
+        the fixture's files only, so each extra file is unlisted."""
+        root = Path(tempfile.mkdtemp(prefix="hailwatch-d92-store-"))
+        self.addCleanup(shutil.rmtree, root, True)
+        shutil.copytree(hs.FIXTURE_DIR / "hail", root / "hail")
+        for rel, data in extra.items():
+            (root / rel).parent.mkdir(parents=True, exist_ok=True)
+            (root / rel).write_bytes(data)
+        return root
+
+    def site_dir(self) -> Path:
+        """A site folder that does not exist yet (the copy makes its hail/ folder)."""
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-d92-site-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        return out / "site"
+
+    def test_a_source_with_live_files_passes_and_the_copy_never_carries_them(self):
+        root = self.store({"hail/live/60/20261024T120000Z/MTC045.json": b'{"f": "hail-live-test"}'})
+        with self.assertRaises(hs.HailStoreError):
+            hs.check_manifest(root)                     # strict refuses it: the pass below is allow_live's doing
+        out = self.site_dir()
+        site._copy_hail(root, out, hs.load_index(root), addresses=False)
+        self.assertFalse((out / "hail" / "live").exists())
+        hs.check_manifest(out)
+
+    def test_a_source_with_an_unlisted_file_elsewhere_under_hail_still_fails(self):
+        for rel in ("hail/zz/unlisted.json", "hail/t/unlisted.json"):
+            with self.subTest(rel=rel):
+                root = self.store({rel: b"{}"})
+                out = self.site_dir()
+                words = "the history has a file the manifest does not list: " + re.escape(rel)
+                with self.assertRaisesRegex(hs.HailStoreError, words):
+                    site._copy_hail(root, out, hs.load_index(root), addresses=False)
+                self.assertFalse((out / "hail").exists())
+
+    def test_a_link_under_the_live_folder_is_refused_either_way(self):
+        root = self.store({})
+        (root / "hail" / "live").mkdir()
+        os.symlink(root / "hail" / "manifest.json", root / "hail" / "live" / "link.json")
+        with self.assertRaisesRegex(hs.HailStoreError, "the history has a link"):
+            site._copy_hail(root, self.site_dir(), hs.load_index(root), addresses=False)
+
+    def test_the_source_is_checked_with_allow_live_and_the_copy_strictly(self):
+        root = self.store({"hail/live/60/20261024T120000Z/MTC045.json": b"{}"})
+        out = self.site_dir()
+        real_check = hs.check_manifest
+        calls = []
+
+        def recording(path, allow_live=False):
+            calls.append((Path(path).resolve(), allow_live))
+            return real_check(path, allow_live=allow_live)
+
+        with mock.patch.object(hs, "check_manifest", side_effect=recording):
+            site._copy_hail(root, out, hs.load_index(root), addresses=False)
+        self.assertEqual(calls[0], (root.resolve(), True))       # the source: hail/live is skipped (D92(a))
+        self.assertEqual(calls[-1], (out.resolve(), False))      # the copy: its own check is strict
+
+    def test_the_copy_refuses_an_unlisted_file_it_would_carry_from_a_clean_source(self):
+        root = self.store({})
+        out = self.site_dir()
+        real_copytree = shutil.copytree
+
+        def copytree_with_a_stray(src, dst, *args, **kwargs):
+            result = real_copytree(src, dst, *args, **kwargs)
+            (Path(dst) / "stray.json").write_bytes(b"{}")         # an unlisted file the copy would carry
+            return result
+
+        with mock.patch.object(shutil, "copytree", side_effect=copytree_with_a_stray):
+            with self.assertRaisesRegex(hs.HailStoreError, "the history has a file the manifest does not list: hail/"):
+                site._copy_hail(root, out, hs.load_index(root), addresses=False)
+
+
+class B3Completion(unittest.TestCase):
+    """The B3 completion rulings that need no full build (D42 to D48): the unpack limits and their refusals, the address zoom
+    rules run under node, the index rewrite of the address-text mode, and the workflow's install line. The builds and the
+    browser are checked in HailAddresses (offline) and tools/smoke_map.py (in Chromium)."""
+
+    def test_the_unpack_limits_are_800_mib_and_60000_files_and_hold_the_b3_store(self):
+        from website import hail as hs
+        self.assertEqual(hs.MAX_UNPACK_BYTES, 800 * 1024 * 1024)               # D42
+        self.assertEqual(hs.MAX_UNPACK_FILES, 60000)
+        # the B3 store's measured size is recorded with the job (b5-verification.json); the limits are the constants above
+        self.assertLess(372880597, hs.MAX_UNPACK_BYTES)
+        self.assertLess(31129, hs.MAX_UNPACK_FILES)
+
+    def test_the_unpack_refuses_more_files_or_bytes_than_the_limits_and_reads_up_to_them(self):
+        from website import hail as hs
+
+        def archive(members):
+            buf = io.BytesIO()
+            with tarfile.open(fileobj=buf, mode="w:gz") as tar:
+                for name, data in members:
+                    info = tarfile.TarInfo(name)
+                    info.size = len(data)
+                    tar.addfile(info, io.BytesIO(data))
+            return buf.getvalue()
+
+        def stage():
+            path = Path(tempfile.mkdtemp(prefix="hailwatch-unpack-"))
+            self.addCleanup(shutil.rmtree, path, True)
+            return path
+
+        two = [("hail/index.json", b"{}"), ("hail/manifest.json", b"{}")]
+        with mock.patch.object(hs, "MAX_UNPACK_FILES", 2):
+            here = stage()
+            hs._unpack_hail(archive(two), here)                                  # at the file limit: read
+            self.assertTrue((here / "hail" / "index.json").is_file())
+            with self.assertRaises(hs.HailStoreError) as ctx:
+                hs._unpack_hail(archive(two + [("hail/a/x.json", b"{}")]), stage())
+            self.assertIn("larger than the limits", str(ctx.exception))
+        with mock.patch.object(hs, "MAX_UNPACK_BYTES", 4):
+            here = stage()
+            hs._unpack_hail(archive([("hail/index.json", b"{}")]), here)         # two bytes: within 4
+            with self.assertRaises(hs.HailStoreError) as ctx:
+                hs._unpack_hail(archive([("hail/index.json", b"{}"), ("hail/manifest.json", b"{}x")]), stage())
+            self.assertIn("larger than the limits", str(ctx.exception))
+
+    def test_the_address_zoom_keys_give_the_dots_and_the_chooser_zoom_without_outlines(self):
+        # D47 (R-02): an address-only build has no outline zoom and no street zoom; its own zoom keys still set the dots
+        # (15) and the search's zoom (17), and the top zoom the map may reach is at least the chooser's.
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("node is not installed")
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        code = js_function(js, "b3Zoom")
+
+        def zoom(h):
+            done = subprocess.run([node, "-e", code + f"\nconsole.log(JSON.stringify(b3Zoom({json.dumps(h)})));"],
+                                  capture_output=True, text=True, timeout=60)
+            self.assertEqual(done.returncode, 0, done.stderr[-500:])
+            return json.loads(done.stdout)
+
+        only_addresses = zoom({"addresses": {"zoom": {"dots": 15, "choose": 17}}})
+        self.assertEqual((only_addresses["dots"], only_addresses["choose"], only_addresses["top"]), (15, 17, 17))
+        with_outlines = zoom({"addresses": {"zoom": {"dots": 15, "choose": 17}},
+                              "buildings": {"zoom": {"dots": 15, "fills": 16, "emphasis": 17, "counts": 13}},
+                              "roads": {"zoom": {"arterials_from": 13, "local_from": 15, "names_from": 16}}})
+        self.assertEqual((with_outlines["dots"], with_outlines["choose"], with_outlines["emphasis"]), (15, 17, 17))
+        self.assertEqual(with_outlines["top"], 17)
+        bare = zoom({})
+        self.assertEqual(bare["top"], 0)
+        self.assertIsNone(bare.get("dots"))                                      # undefined is left out of the JSON
+        self.assertIn("B3.zoom.choose || B3.zoom.emphasis", js)                 # the chooser's zoom (b3Choose)
+
+    def test_strip_address_text_drops_the_letter_counts_and_rewrites_the_index_and_its_manifest(self):
+        from website import addresses as ad, hail as hs
+        root = Path(tempfile.mkdtemp(prefix="hailwatch-b3-index-"))
+        self.addCleanup(shutil.rmtree, root, True)
+        (root / "hail" / "a" / "idx" / "billings").mkdir(parents=True)
+        shard = {"f": "hail-addresses-v1", "b": [-108.5, 45.7, -108.4, 45.8], "n": 1,
+                 "a": [[-108.45, 45.78, "401 North 27th Street", "Billings", "59101", "S"]]}
+        (root / "hail" / "a" / "r0092_c0213123.json").write_text(json.dumps(shard), encoding="utf-8")
+        (root / "hail" / "a" / "idx" / "cities.json").write_text(
+            json.dumps({"f": "hail-address-cities-v1", "cities": {"Billings": {"n": 1, "keys": {"N": 1}}}}), encoding="utf-8")
+        (root / "hail" / "a" / "idx" / "billings" / "N.json").write_text(
+            json.dumps({"f": "hail-address-idx-v1", "a": [["401", "North 27th Street", "", -108.45, 45.78, "59101", "S"]]}),
+            encoding="utf-8")
+        block = {"state": "loaded", "sample": True, "rows": 1, "shards": 1, "cities": 1, "letter_files": 1,
+                 "largest_letter": {"city": "Billings", "key": "N", "rows": 1, "bytes": 90,
+                                    "file": "hail/a/idx/billings/N.json"},
+                 "two_character_files": 0, "over_limit_letter_files": [],
+                 "largest_shard": {"name": "r0092_c0213123", "bytes": 999, "rows": 1},
+                 "bytes": {"shards": 999, "letters": 90, "cities": 60, "words": 20, "idx": 170, "a": 1169},
+                 "source": {"pubdate": "2026-09-30", "export_date": "2026-09-30"}}
+        index = {"format": hs.FORMAT, "as_of": "2026-10-15", "window": ["2021-10-15", "2026-10-15"], "missing_days": [],
+                 "floor_tenths": 64, "tiles": [], "d0": hs.D0.isoformat(), "grid": dict(hs.GRID), ad.INDEX_KEY: block}
+        (root / "hail" / "index.json").write_text(json.dumps(index), encoding="utf-8")
+
+        def entry(rel):
+            data = (root / rel).read_bytes()
+            return {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+
+        rels = sorted(p.relative_to(root).as_posix() for p in (root / "hail").rglob("*.json") if p.name != "manifest.json")
+        manifest = {"format": hs.MANIFEST_FORMAT, "as_of": "2026-10-15", "sample": True, "counts": {},
+                    "files": {rel: entry(rel) for rel in rels}}
+        (root / "hail" / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        site.strip_address_text(root)
+        written = json.loads((root / "hail" / "index.json").read_text(encoding="utf-8"))[ad.INDEX_KEY]
+        for key in site.ADDRESS_LETTER_KEYS:                                       # R-07: the letter counts leave the block
+            self.assertNotIn(key, written, key)
+        self.assertEqual(written["rows"], 1)                                       # the rest of the block stays
+        shard_bytes = (root / "hail" / "a" / "r0092_c0213123.json").stat().st_size
+        self.assertEqual(written["bytes"], {"shards": shard_bytes, "a": shard_bytes})
+        self.assertEqual(written["largest_shard"], {"name": "r0092_c0213123", "bytes": shard_bytes, "rows": 1})
+        listed = json.loads((root / "hail" / "manifest.json").read_text(encoding="utf-8"))["files"]
+        self.assertEqual(listed["hail/index.json"], entry("hail/index.json"))      # the manifest carries the new index
+        hs.check_manifest(root)
+
+    def test_the_workflow_installs_pyproj_and_pyogrio_as_compatible_releases_and_pins_nothing(self):
+        text = (ROOT / ".github" / "workflows" / "website.yml").read_text(encoding="utf-8")
+        installs = [line for line in text.splitlines() if "python -m pip install" in line and "pygrib" in line]
+        self.assertEqual(len(installs), 1)
+        self.assertIn('"pyproj~=3.8"', installs[0])                                # D19: a compatible release
+        self.assertIn('"pyogrio~=0.13"', installs[0])
+        self.assertIn("h5py", installs[0].split())                                 # the satellite reader's install is kept
+        for line in text.splitlines():
+            if "pip install" in line:
+                self.assertNotIn("==", line)                                       # no pin on any pip line (D19)
+        for module in ("tests.test_addresses", "tests.test_streets", "tests.test_buildings"):
+            unit = [line for line in text.splitlines() if "python -m unittest" in line]
+            self.assertEqual(len(unit), 2, "the offline unit step and the real-store parity step (D88(a))")
+            self.assertIn(module, unit[0].split())
+
+
+# ---------------------------------------------------------------- the five-season history (B5, --hail-history)
+
+def jesc(text: str) -> str:
+    """The text as Jinja writes it into a page (its autoescape: quotes and apostrophes as entities)."""
+    from markupsafe import escape
+    return str(escape(text))
+
+
+def write_manifest(root: Path) -> None:
+    """A test store's manifest: every file under hail/ with its bytes and SHA-256 (hail.check_manifest reads it)."""
+    from website import hail as hs
+    files = {}
+    for path in sorted((root / "hail").rglob("*")):
+        if path.is_file() and path.name != "manifest.json":
+            data = path.read_bytes()
+            files[path.relative_to(root).as_posix()] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+    (root / "hail" / "manifest.json").write_text(json.dumps({"format": hs.MANIFEST_FORMAT, "files": files}), encoding="utf-8")
+
+
+def fixture_store(variant: str = "full") -> Path:
+    """A store tests/test_summary.py writes, with its manifest. The summary fixture writes the parts the five-season table
+    reads; the joined records also read the lag, cover and clock keys of the B2 index, which are added here (their values
+    are the fixture's own, as the real index gives them)."""
+    from tests import test_summary as ts
+    root, _ = ts.build_store(variant)
+    path = root / "hail" / "index.json"
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    joins_block = doc["joins"]
+    joins_block.setdefault("cover", "")
+    joins_block.setdefault("lags", {"ncei": None, "swdi": doc["as_of"], "warnings": doc["as_of"]})
+    joins_block.setdefault("montana_time", [])
+    joins_block.setdefault("shapes", {})
+    joins_block.setdefault("types", {})
+    path.write_text(json.dumps(doc), encoding="utf-8")
+    write_manifest(root)
+    return root
+
+
+def set_index(root: Path, **blocks) -> None:
+    """Change blocks of a test store's index and rewrite its manifest (so the store still checks out)."""
+    path = root / "hail" / "index.json"
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    doc.update(blocks)
+    path.write_text(json.dumps(doc), encoding="utf-8")
+    write_manifest(root)
+
+
+def visible(fragment: str) -> str:
+    """The text a reader sees in an HTML fragment (tags out, entities back, blank runs squeezed)."""
+    text = re.sub(r"<style>.*?</style>", " ", fragment, flags=re.S)
+    text = re.sub(r"<(?:br|/?(?:p|li|h2|h3|h4|tr|table|ol|ul|section|details|summary))[^>]*>", "\n", text)
+    return re.sub(r"[ \t]+", " ", html.unescape(re.sub(r"<[^>]+>", " ", text)))
+
+
+
+
+SHARED_STATIC = ("static/map/map.js", "static/map/map.css")   # left out of the identity check: they change with the feature
+VERSION_QUERY = re.compile(rb"(static/map/map\.(?:js|css))\?v=[0-9a-f]{12}")
+
+
+def default_digests(root: Path) -> dict:
+    """Relative path -> digest for every file of a build: the bytes (the pages' ?v= hashes normalised), or for a PNG the
+    decoded RGBA pixels with the size, so the encoder does not matter. Shared script and style files are left out."""
+    from PIL import Image
+    out = {}
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        name = path.relative_to(root).as_posix()
+        if name in SHARED_STATIC:
+            continue
+        if path.suffix == ".png":
+            with Image.open(path) as opened:
+                image = opened.convert("RGBA")
+            digest = hashlib.sha256(f"{image.size[0]}x{image.size[1]}".encode() + image.tobytes()).hexdigest()
+        else:
+            data = path.read_bytes()
+            if path.suffix == ".html":
+                data = VERSION_QUERY.sub(rb"\1?v=HASH", data)
+            digest = hashlib.sha256(data).hexdigest()
+        out[name] = digest
+    return out
+
+
+def write_default_manifest(build_dir, base: str) -> Path:
+    """Writes tests/fixtures/default-build-manifest.json from a default build of the base commit (its tree extracted, then
+    python -m website.build --out <dir> --sample --now 2026-10-19T12:00:00Z run there). A PR that changes the default build
+    on purpose runs this on its own build and commits the file, with the command in its description:
+    python -c "import sys; sys.path.insert(0, 'tests'); import test_site as t; t.write_default_manifest('<dir>', '<base>')"
+    """
+    files = default_digests(Path(build_dir))
+    path = ROOT / "tests" / "fixtures" / "default-build-manifest.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"base": base, "build": "python -m website.build --sample --now 2026-10-19T12:00:00Z",
+                                "files": files}, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    return path
+
+
+def restore_base(data: bytes, changes) -> tuple[bytes, list]:
+    """The page with each named on-purpose change written back to the base's text (D95(g)). A change the page does not
+    carry exactly the stated number of times is a problem; the restored bytes are what the digest then compares."""
+    problems = []
+    for ruling, base_text, now_text, count in changes:
+        new, old = now_text.encode("utf-8"), base_text.encode("utf-8")
+        found = data.count(new)
+        if found != count:
+            problems.append(f"{ruling}: the page has {found} copies of {now_text!r}, not {count}")
+        data = data.replace(new, old)
+    return data, problems
+
+
+def on_purpose_problems(name: str, data: bytes, changes, base_digest: str) -> list:
+    """The problems with one page of the default build: a named change that is missing or repeated, or a line that no
+    named change accounts for (the page still differs from the base's digest once the named changes are written back).
+    An empty list means the page differs from the base only as the rulings name (D93(a), D95(g))."""
+    restored, problems = restore_base(data, changes)
+    if name.endswith(".html"):
+        restored = VERSION_QUERY.sub(rb"\1?v=HASH", restored)
+    if hashlib.sha256(restored).hexdigest() != base_digest:
+        problems.append(f"{name} differs from the base build on a line that no named ruling accounts for")
+    return problems
+
+
+class HailSwathLayers(unittest.TestCase):
+    """The live hail swath layers (B4; website/swath.py) behind --storm-layers, sample builds only (the live feed is
+    checked by the Website workflow and tools/smoke_map.py): the two Map layers and their status line, the List and the
+    no-JavaScript panel (with the SAMPLE credit), the map page's two radios, the About bullet, the words, the browser's
+    scans (map.js: no threshold, word, unit or numeric literal in the swath section), a layer that cannot be read, and
+    the default build's identity with the base commit (B4-6)."""
+
+    NOW_SWATH = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+    SWATH_BASE = "f96f5c7"                  # main at the B1 go-live (D59): the default build must match its build (B4-6)
+    # words that must not appear unless a negation comes before them (the same rule as test_swath's WordsTests)
+    NEGATED = (("damage", "not "), ("observed hail", "not "), ("no hail", "same as "), ("dry", "not "),
+               ("insurance", "not "), ("eligib", "not "), ("confirmed", "not "))
+    HAIL_TITLES = ("Hail, last hour", "Hail, last 24 hours")
+
+    @classmethod
+    def setUpClass(cls):
+        cls.off = Path(tempfile.mkdtemp(prefix="hailwatch-swath-off-"))
+        cls.on = Path(tempfile.mkdtemp(prefix="hailwatch-swath-on-"))
+        cls.addClassCleanup(shutil.rmtree, cls.off, True)      # only the folders this class made
+        cls.addClassCleanup(shutil.rmtree, cls.on, True)
+        cls.off_result = site.build(cls.off, None, cls.NOW_SWATH, sample=True)
+        cls.on_result = site.build(cls.on, None, cls.NOW_SWATH, sample=True, storm_layers=True)
+        cls.env = site.env()
+
+    @staticmethod
+    def panel(html: str) -> str:
+        """The map page's <noscript> panel (the one with the class; the head has a style-only one)."""
+        blocks = [b for b in re.findall(r"<noscript>.*?</noscript>", html, re.S) if 'class="noscript"' in b]
+        assert len(blocks) == 1
+        return blocks[0]
+
+    def phrase(self, text: str) -> str:
+        """The text as the page renders it (Jinja escapes an apostrophe)."""
+        return self.env.from_string("{{ t }}").render(t=text)
+
+    def test_the_flag_adds_the_two_layers_and_their_status_and_nothing_else_to_the_contract(self):
+        off = json.loads(page(self.off, "data/map.json"))
+        on = json.loads(page(self.on, "data/map.json"))
+        self.assertEqual(set(on["layers"]), {"precip", "temp", "wind", "satellite", "hail_60", "hail_1440"})
+        self.assertNotIn("hail_60", off["layers"])
+        self.assertNotIn("hail_swath", off["status"])
+        self.assertNotIn("hail_swath", json.loads(page(self.off, "data/state.json"))["status"])
+        self.assertEqual(on["status"]["hail_swath"]["label"], "Hail swath (radar estimate)")
+        self.assertNotIn("hail", on)                       # the flag does not turn on the history (B1's flag)
+        self.assertTrue((self.on / "hail" / "live").is_dir())    # the live files are written with this flag
+        self.assertFalse((self.on / "hail" / "t").exists())      # the history store (--hail-history) is not
+        self.assertFalse((self.off / "hail").exists())           # and the default build writes no hail folder
+
+    def test_the_swath_layers_carry_the_words_and_the_numbers_the_browser_fills(self):
+        on = json.loads(page(self.on, "data/map.json"))
+        for key, window, word, stamp, title in (("hail_60", 60, "hour", "202610191158", self.HAIL_TITLES[0]),
+                                                ("hail_1440", 1440, "24 hours", "202610191130", self.HAIL_TITLES[1])):
+            L = on["layers"][key]
+            self.assertEqual((L["kind"], L["title"], L["unit"], L["window"], L["window_word"]),
+                             ("hail_swath", title, "in", window, word))
+            self.assertEqual((L["fresh_min"], L["stale_min"]), (20, 60) if window == 60 else (60, 120))
+            self.assertEqual(L["live"]["pattern"], f"hail/live/{window}/{stamp}/{{tile}}.json")
+            self.assertNotIn("?", L["live"]["pattern"])                       # the folder carries the time (D14)
+            self.assertEqual(L["frames"][0]["src"], f"map/frames/hail-{window}-{stamp}.png")
+            self.assertTrue((self.on / L["frames"][0]["src"]).is_file())
+            self.assertTrue((self.on / "hail" / "live" / str(window) / stamp).is_dir())
+            self.assertEqual((L["modes"], L["now_index"]), ({"12h": [0]}, {"12h": 0}))
+            self.assertEqual(L["bounds"], [[43.0, -118.5], [50.5, -101.0]])
+            self.assertTrue(L["sample"])
+            self.assertEqual(L["valid"][:16], f"2026-10-19T{stamp[8:10]}:{stamp[10:12]}")
+            for name in ("fresh", "stale", "unavailable", "age_out", "all_clear", "live_line", "no_estimate",
+                         "no_coverage", "large_note", "sample_sheet", "outside", "hatch_key", "hatch_note",
+                         "hatch_key_out", "hatch_note_out", "live_failed", "live_loading", "no_picture", "list_heading"):
+                self.assertIn(name, L["words"], name)
+            self.assertIn("{age}", L["words"]["fresh"])
+            self.assertIn("{age}", L["words"]["stale"])
+            self.assertIn("{window}", L["words"]["live_line"])
+            self.assertEqual(L["live"]["tenths_per_inch"], 254)
+            self.assertEqual(L["live"]["floor_tenths"], 64)
+
+    def test_the_legend_has_every_class_with_its_inches_and_the_uncoloured_sentence(self):
+        from website import hail as hs
+        from website import swath as sw
+        L = json.loads(page(self.on, "data/map.json"))["layers"]["hail_60"]
+        self.assertEqual([e["label"] for e in L["legend"]], [f"{c['min_in']:.2f} in, {c['word']}" for c in reversed(hs.CLASSES)])
+        self.assertEqual(len({e["color"] for e in L["legend"]}), len(hs.CLASSES))
+        self.assertTrue(L["legend_note"].startswith("Sample: invented field, not NOAA MRMS MESH."), L["legend_note"])
+        self.assertEqual(L["legend_uncoloured"], sw.WORDS_SWATH["uncoloured"].format(window=L["window_word"]))   # its own line
+        self.assertEqual(L["legend_uncoloured"], "Uncoloured: no radar hail estimate of 0.25 in or more in the last hour, "
+                         "or no value; NOAA's data does not tell the two apart.")
+        for field in ("legend_note", "legend_uncoloured"):                          # no template left unfilled in the legend
+            self.assertNotIn("{", L[field], field)
+        self.assertNotIn(sw.WORDS_SWATH["uncoloured"].format(window=L["window_word"]), L["legend_note"])   # not repeated
+        self.assertIn("not observed hail and not an inspection", L["legend_note"])   # the swath words (D89(e))
+
+    def test_the_status_line_names_both_layers_with_their_valid_time_and_age(self):
+        status = self.on_result["status"]["hail_swath"]
+        self.assertTrue(status["ok"], status)
+        self.assertEqual(status["detail"], "Hail, last hour: valid Oct 19, 5:58 am MDT, 2 min ago; "
+                                           "Hail, last 24 hours: valid Oct 19, 5:30 am MDT, 30 min ago")
+        state = json.loads(page(self.on, "data/state.json"))["status"]["hail_swath"]
+        self.assertEqual(state["label"], "Hail swath (radar estimate)")
+
+    def test_the_panel_and_the_list_carry_the_build_s_lines_and_credit_the_sample(self):
+        html = page(self.on, "map.html")
+        panel = self.panel(html)
+        lines = self.on_result["content"]["hail_swath"]
+        self.assertEqual(set(lines), set(self.HAIL_TITLES))
+        self.assertIn("<h3>Hail swath (radar estimate)</h3>", panel)
+        self.assertIn('<p class="sample-tag">SAMPLE: invented values, not NOAA data.</p>', panel)
+        self.assertLess(panel.index("<h3>Satellite picture</h3>"), panel.index("<h3>Hail swath (radar estimate)</h3>"))
+        self.assertLess(panel.index("<h3>Hail swath (radar estimate)</h3>"), panel.index("<h3>Radar echo tops</h3>"))
+        template = re.search(r'<template id="storm-list">.*?</template>', html, re.S).group(0)
+        self.assertIn('data-storm="hail"', template)
+        self.assertIn('<h3 id="hail-swath-list-h">Hail swath (radar estimate)</h3>', template)
+        for title in self.HAIL_TITLES:
+            self.assertIn(f"<h4>{title}</h4>", panel)
+            self.assertIn(f"<h4>{title}</h4>", template)
+            for row in lines[title]:
+                self.assertIn(f"<p>{self.phrase(row)}</p>", panel, row)
+                self.assertIn(f"<p>{self.phrase(row)}</p>", template, row)
+        self.assertIn("SAMPLE: invented radar estimate, not NOAA data.", " ".join(lines["Hail, last hour"]))
+
+    def test_the_map_page_has_the_two_radios_after_the_weather_layers_and_only_with_the_flag(self):
+        from website import swath as sw
+        on, off = page(self.on, "map.html"), page(self.off, "map.html")
+        self.assertEqual([p.title for p in sw.PRODUCTS], list(self.HAIL_TITLES))
+        for value, title in (("hail_60", self.HAIL_TITLES[0]), ("hail_1440", self.HAIL_TITLES[1])):
+            self.assertEqual(on.count(f'<input type="radio" name="layer" value="{value}">'), 1)
+            self.assertIn(f'<span class="choice-text">{title}</span>', on)
+            self.assertIn(f"sw-{value}", on)                       # the swatch is painted from the layer's legend
+            self.assertNotIn(value, off)
+        self.assertLess(on.index('value="satellite"'), on.index('value="hail_60"'))
+        self.assertLess(on.index('value="hail_1440"'), on.index("<legend>Base map</legend>"))
+
+    def test_the_about_page_has_the_bullet_with_the_contract_words_and_only_with_the_flag(self):
+        about = page(self.on, "about.html")
+        c = src.CONTRACTS["hail_swath"]
+        self.assertIn("<strong>Hail swath (radar estimate)</strong> is NOAA's MRMS MESH (maximum estimated size of hail), "
+                      "a radar estimate", about)
+        self.assertIn("not observed hail and not an inspection", about)     # the About wording (words owner, D41, D86)
+        self.assertIn(self.phrase(c["name"]), about)
+        self.assertIn("This is not an all-clear.", about)
+        self.assertNotIn("Hail swath", page(self.off, "about.html"))
+        self.assertNotIn(c["name"], page(self.off, "about.html"))
+
+    def test_a_default_build_has_no_swath_word_in_any_page_or_data_file(self):
+        for path in self.off.rglob("*"):
+            if path.is_file() and path.suffix in (".html", ".json"):
+                text = path.read_text(encoding="utf-8", errors="replace")
+                for word in ("hail_60", "hail_1440", "Hail swath", "hail_swath", "hail/live"):
+                    self.assertNotIn(word, text, f"{word!r} in {path.relative_to(self.off)}")
+
+    def test_a_storm_layers_build_without_the_history_has_the_layers_and_no_sheet_words(self):
+        on_map = page(self.on, "map.html")
+        self.assertNotIn('id="hail-sheet"', on_map)           # the live line is part of the history sheet (--hail-history)
+        self.assertNotIn("data-live", on_map)                 # made by the script, and only when a hail layer is on
+        self.assertIn('value="hail_60"', on_map)
+
+    def test_a_layer_that_cannot_be_read_still_builds_with_its_words_and_says_so(self):
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-swath-down-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        result = site.build(out, FailingFetcher(), self.NOW_SWATH, storm_layers=True)
+        self.assertFalse(result["status"]["hail_swath"]["ok"])
+        self.assertIn("hail_swath", [k for k, v in result["status"].items() if not v["ok"]])
+        on = json.loads(page(out, "data/map.json"))
+        for key in ("hail_60", "hail_1440"):
+            L = on["layers"][key]
+            self.assertEqual((L["state"], L["frames"], L["modes"]), ("unavailable", [], {"12h": []}))
+            self.assertTrue(L["state_line"].endswith("This is not an all-clear."), L["state_line"])
+            self.assertIn("is unavailable: ", L["state_line"])
+        self.assertIn("Hail swath problem", page(out, "map.html"))
+        self.assertIn("Hail, last hour is unavailable: ", self.panel(page(out, "map.html")))
+        self.assert_status_ends_with_all_clear(out)
+        self.assert_swath_words_clean(out)
+
+    def test_require_live_fails_when_a_swath_status_is_not_ok(self):
+        from website import swath as sw
+        real = sw.collect
+
+        def one_stale(now, cache_dir, out_dir, towns, get=None, sample=False, offline=False):
+            frames, files, states = real(now, cache_dir, out_dir, towns, get=get, sample=sample, offline=offline)
+            states["hail_1440"]["ok"] = False                  # a stale day picture: not fresh, so not ok
+            return frames, files, states
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-swath-live-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        err = io.StringIO()
+        argv = ["--out", str(out / "site"), "--sample", "--storm-layers", "--require-live", "--now", "2026-10-19T12:00:00Z"]
+        with mock.patch.object(sw, "collect", one_stale), contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(err):
+            self.assertEqual(site.main(argv), 1)
+        self.assertIn("Sources that failed or were stale: hail_swath", err.getvalue())
+
+    def test_the_site_words_say_no_forbidden_term_and_no_dash(self):
+        from website import swath as sw
+        for name, text in list(sw.WORDS_SWATH.items()) + list(site.SWATH_SITE_WORDS.items()):
+            self.assertNotIn("\u2014", text, name)          # no em dash
+            self.assertNotIn("\u2013", text, name)          # no en dash
+            low = text.lower()
+            for word, before in self.NEGATED:
+                for m in re.finditer(re.escape(word), low):
+                    self.assertTrue(low[max(0, m.start() - len(before)):m.start()].endswith(before), f"{name}: {word}")
+            for m in re.finditer(r"all-clear", low):
+                self.assertEqual(low[max(0, m.start() - 7):m.start()], "not an ", f"{name}: all-clear")
+            self.assertNotIn("clear", low.replace("all-clear", ""), f"{name}: clear")
+
+    def test_the_live_swath_section_of_the_map_script_holds_no_threshold_word_unit_or_size_literal(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        start = js.index("live hail swath (--storm-layers builds, B4)")
+        section = js[start:js.index("joined records at a spot (--hail-history builds, B2)")]
+        code = re.sub(r"/\*.*?\*/", "", section, flags=re.S)           # comments out
+        code = re.sub(r"//[^\n]*", "", code)
+        strings = [a or b for a, b in re.findall(r'"((?:[^"\\\n]|\\.)*)"|\'((?:[^\'\\\n]|\\.)*)\'', code)]
+        bare = re.sub(r'"(?:[^"\\\n]|\\.)*"|\'(?:[^\'\\\n]|\\.)*\'', '""', code)
+        # the numbers left in the code: indexes (0, 1, 2) and the HTTP status of a tile with no live file (404, D4)
+        self.assertEqual(set(re.findall(r"(?<![\w.])\d+(?:\.\d+)?", bare)), {"0", "1", "2", "404"})
+        forbidden = ("0.25", "0.75", "1.00", "1.50", "2.00", "2.75", "25.4", "6.35", "pea", "penny", "quarter",
+                     "ping-pong", "hen egg", "baseball", "mothball", "not observed", "not damage", "uncoloured",
+                     "hatched", "valid ", "min ago", "older than", "all-clear", "basemap", "polygon", "geometry",
+                     "estimate", "NOAA", "SAMPLE", "Montana", "in the last", "No radar")
+        for text in strings:
+            for word in forbidden:
+                self.assertNotIn(word, text, f"{word!r} in the string {text!r}")
+        for name in ("function hailView(", "function hailShowable(", "function hailWatch(", "function hailTick(",
+                     "function liveText(", "function liveFile(", "function liveOpen(", "function liveAttach(",
+                     "NO_FILE = 404"):
+            self.assertIn(name, section, name)
+        header = js[:js.index("*/")]
+        self.assertIn("(D7)", header)                                  # the duties are documented in the header
+        self.assertIn("(D16)", header)
+
+    def assert_status_ends_with_all_clear(self, out: Path) -> None:
+        """A failed swath status ends its line with the all-clear sentence on every page that shows the status (live-1):
+        the index, About, the storm reports and a town page."""
+        town = sorted((out / "town").glob("*.html"))[0].relative_to(out).as_posix()
+        for name in ("index.html", "about.html", "reports.html", town):
+            span = re.search(r'<span class="bad">Hail swath \(radar estimate\) problem: .*?</span>', page(out, name), re.S)
+            self.assertIsNotNone(span, name)
+            self.assertTrue(span.group(0).endswith("This is not an all-clear.</span>"), f"{name}: {span.group(0)[-80:]}")
+
+    def assert_swath_words_clean(self, out: Path) -> None:
+        """The words the swath layers show on the map page and the About page keep the rules (rules-6): the two Layers
+        labels, the no-JavaScript panel, the List block (tags stripped), the About bullet and the "Hail swath problem" line."""
+        def plain(html: str) -> str:
+            return " ".join(re.sub(r"<[^>]+>", " ", html).split())
+        map_html, about_html = page(out, "map.html"), page(out, "about.html")
+        labels = [plain(m) for m in re.findall(r"<label[^>]*>.*?</label>", map_html, re.S) if "Hail, last" in m]
+        self.assertEqual(len(labels), 2)
+        block = re.search(r'<section class="storm-sec" data-storm="hail".*?</section>', map_html, re.S)
+        bullet = re.search(r"<li><strong>Hail swath \(radar estimate\)</strong>.*?</li>", about_html, re.S)
+        self.assertIsNotNone(block)
+        self.assertIsNotNone(bullet)
+        panel = self.panel(map_html)
+        start = panel.index("Hail swath (radar estimate)</h3>")
+        end = panel.find("<h3>", start + 5)
+        swath_panel = panel[start:] if end < 0 else panel[start:end]          # the panel's swath part, up to the next heading
+        words = plain(map_html)
+        problem = words[words.index("Hail swath problem"):]
+        problem = problem[:problem.index("This is not an all-clear.") + len("This is not an all-clear.")]
+        for where, text in (("layer labels", " ".join(labels)), ("panel", plain(swath_panel)),
+                            ("list", plain(block.group(0))), ("about bullet", plain(bullet.group(0))),
+                            ("problem line", problem)):
+            self.assert_clean_words(text, where)
+
+    def assert_clean_words(self, text: str, where: str) -> None:
+        """The swath's word rules on a rendered fragment: no dash; a damage, observed-hail or no-hail word only with its
+        negation before it; "all-clear" only as "not an all-clear"; no bare "clear"."""
+        self.assertNotIn("\u2014", text, where)
+        self.assertNotIn("\u2013", text, where)
+        low = text.lower()
+        for word, before in self.NEGATED:
+            for m in re.finditer(re.escape(word), low):
+                self.assertTrue(low[max(0, m.start() - len(before)):m.start()].endswith(before), f"{where}: {word}")
+        for m in re.finditer(r"all-clear", low):
+            self.assertEqual(low[max(0, m.start() - 7):m.start()], "not an ", f"{where}: all-clear")
+        self.assertNotIn("clear", low.replace("all-clear", ""), f"{where}: clear")
+
+    def test_a_storm_layers_build_with_the_hail_history_builds_both_flags_together(self):
+        """The preview's flags together (rules-3): the swath's live folder and the store's tiles share hail/, and the store
+        copy merges into it (build.py _copy_hail, dirs_exist_ok). No FileExistsError; both folders are there."""
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-both-flags-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        result = site.build(out, None, self.NOW_SWATH, sample=True, storm_layers=True, hail_history=True)
+        self.assertTrue(result["status"]["hail_swath"]["ok"], result["status"]["hail_swath"])
+        self.assertTrue(result["status"]["hail_history"]["ok"], result["status"]["hail_history"])
+        map_json = json.loads(page(out, "data/map.json"))
+        self.assertEqual(map_json["hail"]["state"], "sample")
+        pattern = map_json["layers"]["hail_60"]["live"]["pattern"]           # hail/live/60/<stamp>/{tile}.json
+        self.assertTrue((out / pattern.split("{tile}")[0]).is_dir(), pattern)
+        self.assertTrue((out / "hail" / "t").is_dir())
+        for path in out.rglob("*.html"):
+            self.assertNotIn("FileExistsError", path.read_text(encoding="utf-8", errors="replace"), path.name)
+
+    def test_a_stale_hour_file_ends_its_status_on_every_page_with_the_all_clear_sentence(self):
+        from website import swath as sw
+        real = sw.collect
+
+        def hour_stale(now, cache_dir, out_dir, towns, get=None, sample=False, offline=False):
+            frames, files, states = real(now, cache_dir, out_dir, towns, get=get, sample=sample, offline=offline)
+            frames["hail_60"]["state"] = "stale"       # a stale hour file: not fresh, so not ok (a sample frame is ok by design)
+            states["hail_60"]["ok"] = False
+            return frames, files, states
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-swath-stale-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        with mock.patch.object(sw, "collect", hour_stale):
+            result = site.build(out, None, self.NOW_SWATH, sample=True, storm_layers=True)
+        self.assertFalse(result["status"]["hail_swath"]["ok"])
+        self.assertEqual(result["status"]["hail_swath"]["words"], sw.WORDS_SWATH["all_clear"])
+        self.assertIn("Hail, last hour: valid ", result["status"]["hail_swath"]["detail"])
+        self.assertIn("That is more than 20 minutes old", result["status"]["hail_swath"]["detail"])
+        for name in ("index.html", "about.html", "reports.html"):
+            span = re.search(r'<span class="bad">Hail swath \(radar estimate\) problem: .*?</span>', page(out, name), re.S)
+            self.assertIsNotNone(span, name)
+            self.assertTrue(span.group(0).endswith("This is not an all-clear.</span>"), name)
+            self.assertEqual(span.group(0).count("This is not an all-clear."), 1, name)     # once, not doubled
+            self.assertNotIn("..", span.group(0), name)                                    # no doubled full stop
+        banner = re.search(r'<div class="banner banner-problem" role="alert" id="problems">.*?</div>',
+                           page(out, "map.html"), re.S)
+        self.assertIsNotNone(banner, "the single-problem banner on the map page")
+        self.assertEqual(banner.group(0).count("This is not an all-clear."), 1)
+        state = json.loads(page(out, "data/state.json"))["status"]["hail_swath"]
+        self.assertEqual(state["words"], sw.WORDS_SWATH["all_clear"])                    # state.json: the sentence once
+        self.assertNotIn("This is not an all-clear.", state["detail"])
+        self.assertNotIn("..", state["detail"])
+
+    def test_an_unavailable_hour_file_says_the_all_clear_once_on_every_page(self):
+        """rules-12: on an unavailable live-path build (the hour layer's file cannot be read; the other sources are fine,
+        so the banner is the single-problem form), the freshness line, the banner and state.json each carry "This is not
+        an all-clear." exactly once, with no doubled full stop."""
+        from website import swath as sw
+        real = sw.collect
+
+        def hour_down(now, cache_dir, out_dir, towns, get=None, sample=False, offline=False):
+            frames, files, states = real(now, cache_dir, out_dir, towns, get=get, sample=sample, offline=offline)
+            frames["hail_60"] = sw._unavailable(sw.PRODUCT_BY_KEY["hail_60"],
+                                                "the file list for the last hour didn't load: NOAA could not be reached")
+            states["hail_60"].update(state="unavailable", ok=False, detail=frames["hail_60"]["state_line"])
+            return frames, files, states
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-swath-down-once-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        with mock.patch.object(sw, "collect", hour_down):
+            result = site.build(out, None, self.NOW_SWATH, sample=True, storm_layers=True)
+        self.assertFalse(result["status"]["hail_swath"]["ok"])
+        for name in ("index.html", "about.html", "reports.html"):
+            span = re.search(r'<span class="bad">Hail swath \(radar estimate\) problem: .*?</span>', page(out, name), re.S)
+            self.assertIsNotNone(span, name)
+            self.assertEqual(span.group(0).count("This is not an all-clear."), 1, name)
+            self.assertNotIn("..", span.group(0), name)
+        banner = re.search(r'<div class="banner banner-problem" role="alert" id="problems">.*?</div>',
+                           page(out, "map.html"), re.S)
+        self.assertIsNotNone(banner, "the single-problem banner on the map page")
+        self.assertEqual(banner.group(0).count("This is not an all-clear."), 1)
+        state = json.loads(page(out, "data/state.json"))["status"]["hail_swath"]
+        self.assertEqual(state["words"], sw.WORDS_SWATH["all_clear"])
+        self.assertNotIn("This is not an all-clear.", state["detail"])
+        self.assertNotIn("..", state["detail"])
+
+    def test_the_sheet_notes_name_each_kind_of_cell_in_words_and_no_bare_kind_token(self):
+        """The smoke tool's notes for a build with no cell of a kind (browser-17, rules-14, live-14): one phrase per kind,
+        and no bare kind word such as "none cell"."""
+        smoke = smoke_map()
+        frame = {"frames": [1], "title": "Hail, last hour"}
+        data = {"hail": {}, "layers": {"hail_60": dict(frame), "hail_1440": {"frames": [1], "title": "Hail, last 24 hours"}}}
+        with mock.patch.object(smoke, "swath_spots", return_value={}):
+            problems = smoke.check_swath_sheet(None, "http://127.0.0.1/", Path(tempfile.gettempdir()), data, None)
+        for title in ("Hail, last hour", "Hail, last 24 hours"):
+            for phrase in ("with a value", "without an estimate in a tile that has a live file", "in a tile with no live file"):
+                want = (f"note: {title}: this build has no Montana cell {phrase}, so the sheet's live line is not checked")
+                self.assertIn(want, problems)
+        self.assertEqual(len(problems), 6, problems)
+        for msg in problems:
+            self.assertIsNone(re.search(r"\b(?:none|missing|value) cell", msg), msg)
+        self.assertEqual(smoke.KIND_WORDS["none"], "without an estimate in a tile that has a live file")
+
+    def test_the_timeline_words_of_a_hail_layer_carry_no_clock_time(self):
+        from website import swath as sw
+        for name in ("timeline_fresh", "timeline_stale"):
+            self.assertIsNone(re.search(r"\d{1,2}(?::\d{2})?\s?(?:am|pm)|Valid|MDT|MST", sw.WORDS_SWATH[name], re.I), name)
+        self.assertEqual(sw.WORDS_SWATH["timeline_fresh"], "Radar estimate, {age} min ago.")
+        self.assertIn("This is not an all-clear.", sw.WORDS_SWATH["timeline_stale"])
+
+    def swath_section(self) -> str:
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        return js[js.index("live hail swath (--storm-layers builds, B4)"):js.index("joined records at a spot (--hail-history builds, B2)")]
+
+    def test_the_timeline_line_is_the_timeline_words_with_the_sample_label_on_a_sample_build(self):
+        section = self.swath_section()
+        self.assertIn("function swathPre(lay) { return lay && lay.sample ? lay.words.sample_sheet + \" \" : \"\"; }", section)
+        self.assertIn("var pre = swathPre(lay);", section)
+        self.assertIn("pre + fill(w.timeline_fresh, { age: age })", section)
+        self.assertIn("pre + fill(w.timeline_stale, { age: age, limit: lay.fresh_min })", section)   # {limit} is the fresh minutes
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn("return [swathPre(swathLayer()) + swathLayer().state_line];", js)     # the note's words, labelled on a sample build
+        self.assertNotIn("fill(w.fresh, { valid", section)                  # the valid clause stays in the List and the status
+
+    def test_the_hail_state_is_checked_once_a_minute_and_the_docs_say_so(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn("var STATE_TICK = MIN;", js)
+        self.assertIn("setInterval(hailTick, STATE_TICK)", js)
+        self.assertNotIn("MIN / 6", js)                                    # not ten seconds
+        self.assertNotIn("every 10 seconds", js)
+        self.assertIn("is checked every minute (D7)", js)                  # the STATE_TICK comment, above the section
+        # the docs' hail passages say the same cadence: DESIGN section 11, the D37 entry and the ROADMAP's B4 row
+        design = (ROOT / "docs" / "DESIGN.md").read_text(encoding="utf-8").split("## 11. ")[1]
+        decisions = (ROOT / "docs" / "DECISIONS.md").read_text(encoding="utf-8")
+        decisions = decisions[decisions.index("**D37 · "):]
+        roadmap = (ROOT / "docs" / "ROADMAP.md").read_text(encoding="utf-8")
+        roadmap = roadmap[roadmap.index("| Live hail swaths"):][:roadmap[roadmap.index("| Live hail swaths"):].index("\n")]
+        for where, part in (("DESIGN section 11", design), ("DECISIONS D37", decisions), ("ROADMAP B4 row", roadmap)):
+            self.assertNotIn("every 10 seconds", part, where)
+            self.assertNotIn("10-second", part, where)
+
+    def test_the_smoke_picture_gate_for_the_sparse_hail_layers_is_the_d17_rule(self):
+        """D17 (the B4 brief): the gate zooms to a listed value cell at zoom 10 or closer, needs 16 changed pixels at that
+        spot, notes the no-values case and records the count. The 2 percent rule stays with the dense radar and satellite."""
+        smoke = (ROOT / "tools" / "smoke_map.py").read_text(encoding="utf-8")
+        gate = smoke[smoke.index("def check_swath_gate("):smoke.index("def check_swath_tick(")]
+        self.assertIn("GATE_MIN_CHANGED = 16", smoke)
+        self.assertIn("GATE_MIN_ZOOM = 10", smoke)
+        self.assertIn("cell = value_cell(root, L)", gate)                  # a listed cell with a value, nothing else
+        self.assertIn("zoom_on_spot(page, data, lat, lon)", gate)           # zoomed on the spot, not the centre
+        self.assertIn("changed_count_at(without, shown", gate)              # counted in a box around the spot
+        self.assertIn("GATE_SPOT_RADIUS = 80", smoke)
+        self.assertIn("zoom < GATE_MIN_ZOOM - 0.05", gate)
+        self.assertIn("no values in the box: pixel gate not applicable", gate)
+        self.assertIn("pixels changed at the spot", gate)                  # the count is recorded as a note
+        self.assertNotIn("0.02", gate)
+        self.assertIn("TICK_MS = 60_000", smoke)
+
+    def test_the_hail_words_name_the_window_by_its_own_name_and_never_in_the_window(self):
+        """D21: the About bullet and the contract row say "in the last hour" or "in the last 24 hours" (the window's own
+        words), and "this map's area" stands in for "the picture" in every viewer's sentence."""
+        about = page(self.on, "about.html")
+        words = json.dumps(src.CONTRACTS["hail_swath"]) + about
+        self.assertNotIn("in the window", words)
+        self.assertIn("in the last hour (hour layer) or the last 24 hours (24-hour layer)", about)
+        from website import swath as sw
+        self.assertNotIn("in the window", json.dumps(sw.WORDS_SWATH))
+        self.assertIn("this map's area", sw.WORDS_SWATH["montana_outside"])
+
+    def test_the_live_line_reads_no_tile_for_a_point_the_store_puts_outside_montana(self):
+        from website import swath as sw
+        section = self.swath_section()
+        self.assertIn("outside_montana_live", sw.WORDS_SWATH)
+        self.assertIn("w.outside_montana_live", section)
+        self.assertIn('var montana = !cell ? false : H.state === "unavailable" ? "unknown" : '
+                      'hailListed(H, hailTileName(H, cell)) ? "pending" : false;', section)
+        open_live = section[section.index("function liveOpen("):]
+        self.assertNotIn("liveFile(", open_live)                       # liveOpen reads no tile: the shard answers first (F-9)
+        live_montana = section[section.index("function liveMontana("):section.index("function liveCurrent(")]
+        self.assertIn("if (value === true) liveLoad(liveFor);", live_montana)   # only a point the shard puts in Montana
+        self.assertIn("function liveLoad(f) {", section)
+        self.assertEqual(section.count("liveFile("), 2)                 # its definition and its one call, in liveLoad
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        open_hail = js[js.index("function openHail("):js.index("function onHailClick(")]
+        self.assertIn("liveMontana(false);", open_hail)                       # the shard's answer reaches the live line
+        self.assertIn("liveMontana(true);", open_hail)
+        self.assertIn('liveMontana("unknown")', open_hail)                    # a store or shard that did not load is no answer
+
+    def test_a_closed_hail_sheet_takes_its_live_line_with_it(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn("sheetState = null;\n    liveFor = null;\n    liveNode = null;\n", js)
+        # the live line goes right after a dot's address block (B3), or first when the sheet has none (liveAttach)
+        self.assertIn("hailTopEnd = block && block.nodeType === 11 ? block.lastChild : block;", js)
+        self.assertIn("var end = hailTopEnd && hailTopEnd.parentNode === el.sheetBody ? hailTopEnd : null;", js)
+        self.assertIn("el.sheetBody.insertBefore(liveNode, end ? end.nextSibling : el.sheetBody.firstChild);", js)
+
+    def test_the_legend_keeps_the_hail_sentences_in_view_on_phones_and_its_keys_match_the_pictures(self):
+        css = (ROOT / "website" / "static" / "map" / "map.css").read_text(encoding="utf-8")
+        self.assertIn(".legend.swath-words .legend-note:not(:empty) { display: block; }", css)
+        self.assertIn(".legend-uncoloured { margin-top: 3px;", css)
+        self.assertIn(".legend-2col .legend-head, .legend-2col .legend-note, .legend-2col .legend-uncoloured", css)
+        self.assertIn("html:not(.is-card) .legend:not(.show-note) .legend-uncoloured { display: none !important; }", css)
+        # the picture's no-coverage stripes (gridded.HATCH, 1 px every 5 px) in both themes; the outside band as the map draws it
+        self.assertEqual(css.count("--hatch-gap: rgba(142, 142, 147, 0.35);"), 2)
+        self.assertIn(".key-hatch { background: repeating-linear-gradient(-45deg, var(--hatch-gap) 0 1px, transparent 1px 5px);", css)
+        self.assertIn(".key-hatch-out { background: repeating-linear-gradient(-45deg, var(--hatch-out) 0 1px, transparent 1px 6px);", css)
+
+    def test_the_legend_of_a_hail_layer_has_its_own_uncoloured_line_and_only_on_the_flag(self):
+        from website import swath as sw
+        self.assertIn('id="legend-uncoloured"', page(self.on, "map.html"))
+        self.assertNotIn("legend-uncoloured", page(self.off, "map.html"))
+        self.assertNotIn(sw.WORDS_SWATH["uncoloured"].format(window="hour"),
+                         json.loads(page(self.on, "data/map.json"))["layers"]["hail_60"]["legend_note"])
+
+    # B4-6 without git history (the Website workflow checks out shallow): the default build's files as digests, against
+    # the manifest of the base commit's build (SWATH_BASE). Regenerate with write_default_manifest (see its docstring).
+    # D93(a): map.js and map.css are not digested (SHARED_STATIC; the browser code is one file for every build), and the
+    # ?v= hashes that map.html carries for them are normalised, so map.html differs from the base only in those hashes.
+    MANIFEST = ROOT / "tests" / "fixtures" / "default-build-manifest.json"
+    # The default build's other differences from the base, each named with its ruling. A change is (ruling, the base's
+    # text, the text the build has now, how many times the build has it). The test writes each text back to the base's and
+    # the page must then have the base's digest, so a line this table does not name fails the test. D74's rows (the hail
+    # swath row and the address rows) and D85's hail history and NOHRSC rows are flag-gated: the default build has none.
+    ON_PURPOSE = {
+        "about.html": (
+            # D53: the radar paragraph's satellite and radar sentence
+            ("D53", "a blank area is not proof of dry weather", "a blank area is not a statement about the weather", 1),
+            ("D85", "never clears one.", "never removes one.", 1),
+            ("D85, D86(c), D88(d)", "that work is safe.", "that work can go ahead.", 1),
+            ("D85, D86(c)", "When something fails</h2>", "When something goes wrong</h2>", 1),
+            # the source table's rows: the alerts row, the forecast and station rows and the radar row
+            ("D85", "Test messages and replaced updates are left out.",
+             "Test messages and updates that a later message has changed are left out.", 1),
+            ("D85", "the last good lookup is reused if it fails.", "if a lookup does not work, the last good lookup is reused.", 1),
+            ("D80(b), D82(d)", "distance from the town is worked out here", "distance from this spot is worked out here", 1),
+            ("D85", "the last good list is reused if it fails.", "if a list does not load, the last good list is reused.", 1),
+            ("D85", "A file that fails is listed as a problem", "A file that does not pass its check is listed as a problem", 1),
+            ("D85, D86(c)", "never drawn as dry.", "never drawn as a zero reading.", 1),
+        ),
+        "reports.html": (
+            # D91(c): the SPC reports page's lead and its two empty-day lines (the words gate's own sentences)
+            ("D91(c)", "No report is not evidence that no hail fell.", "No report is not the same as no hail.", 1),
+            ("D91(c)", "No hail or wind reports in or near Montana for this day.",
+             "No reports of hail or wind in or near Montana for this day; that is not the same as no hail.", 2),
+        ),
+    }
+
+    def test_the_default_build_matches_the_manifest_of_its_base_commit(self):
+        expected = json.loads(self.MANIFEST.read_text(encoding="utf-8"))
+        work = Path(tempfile.mkdtemp(prefix="hailwatch-identity-"))
+        self.addCleanup(shutil.rmtree, work, True)
+        out = work / "site"
+        done = subprocess.run([sys.executable, "-m", "website.build", "--out", str(out), "--sample",
+                               "--now", "2026-10-19T12:00:00Z"], cwd=ROOT, capture_output=True, text=True, timeout=900)
+        self.assertEqual(done.returncode, 0, done.stderr[-800:])
+        now = default_digests(out)
+        self.assertEqual(sorted(set(now) ^ set(expected["files"])), [], f"base {expected['base']}: files differ")
+        # every file the table does not name has the base's digest
+        changed = sorted(name for name in now if now[name] != expected["files"][name] and name not in self.ON_PURPOSE)
+        self.assertEqual(changed, [], f"base {expected['base']}: these files differ from the base build")
+        # each named page differs from the base only in its named lines (the rulings above)
+        for name, changes in self.ON_PURPOSE.items():
+            problems = on_purpose_problems(name, (out / name).read_bytes(), changes, expected["files"][name])
+            self.assertEqual(problems, [], f"base {expected['base']}: {'; '.join(problems)}")
+
+    def test_a_line_the_table_does_not_name_fails_the_identity(self):
+        """The check is exact: one more word in a named page, not in the table, makes the page differ from the base."""
+        expected = json.loads(self.MANIFEST.read_text(encoding="utf-8"))
+        real = (self.off / "about.html").read_bytes()
+        self.assertEqual(on_purpose_problems("about.html", real, self.ON_PURPOSE["about.html"],
+                                             expected["files"]["about.html"]), [])
+        mutated = real.replace(b"that work can go ahead.", b"that work can go ahead now.", 1)
+        self.assertNotEqual(mutated, real)
+        self.assertTrue(on_purpose_problems("about.html", mutated, self.ON_PURPOSE["about.html"],
+                                            expected["files"]["about.html"]))
+        missing = real.replace(b"a blank area is not a statement about the weather", b"a blank area says nothing about the weather", 1)
+        self.assertTrue(on_purpose_problems("about.html", missing, self.ON_PURPOSE["about.html"],
+                                            expected["files"]["about.html"]))
+class FiveSeasonHistory(unittest.TestCase):
+    """The town page's five-season table and sections, the About words and the copies (B5, --hail-history), on the
+    synthetic store that tests/test_summary.py writes (a spot at Billings with every part present). Nothing here is real."""
+
+    NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+    SECTIONS = ("hail", "wind", "storms", "temperature", "rain", "snow", "flooding", "ice", "heat", "roof", "made")
+    B5_KEYS = ("nclimgrid_daily", "nohrsc_season_snowfall", "ghcn_daily", "iem_watchwarn", "iem_ugcs", "iem_lsr",
+               "nwps_gauges", "usgs_water_api", "census_tiger_counties", "roof_references")
+
+    @classmethod
+    def setUpClass(cls):
+        cls.store = fixture_store("full")
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-b5-on-"))
+        cls.off = Path(tempfile.mkdtemp(prefix="hailwatch-b5-off-"))
+        for path in (cls.store, cls.out, cls.off):
+            cls.addClassCleanup(shutil.rmtree, path, True)
+        cls.result = site.build(cls.out, None, cls.NOW, sample=True, hail_history=True, hail_store_path=str(cls.store))
+        site.build(cls.off, None, cls.NOW, sample=True)
+        cls.town = page(cls.out, "town/billings.html")
+        cls.summary = cls.town[cls.town.index('id="hist-h"'):cls.town.index('id="sec-hail"')]    # the table leads the history
+        cls.details = cls.town[cls.town.index('id="sec-hail"'):cls.town.index('id="other-h"')]  # the sections
+        cls.section = cls.summary + cls.details
+
+    def test_the_sections_come_in_the_brief_order(self):
+        pos = [self.section.index(f'id="sec-{s}"') for s in self.SECTIONS]
+        self.assertEqual(pos, sorted(pos))
+        self.assertLess(self.section.index('<table class="five">'), pos[0])       # the table leads
+        for season in ("2021-22", "2022-23", "2023-24", "2024-25", "2025-26", "Five seasons"):
+            self.assertIn(f'<th scope="col" class="num">{season}</th>', self.section)
+
+    def test_the_forecast_keeps_the_top_and_the_history_follows_under_one_heading(self):
+        # D39: alerts, observed now, the hourly and 7-day forecast, then the one history heading with its summary table
+        # first; a jump link near the top opens it
+        town = self.town
+        anchors = ("alerts-h", "obs-h", "hours-h", "days-h", 'id="history"', "hist-h", "sec-hail", "sec-made", "other-h")
+        order = [town.index(anchor if anchor.startswith('id=') else f'id="{anchor}"') for anchor in anchors]
+        self.assertEqual(order, sorted(order))
+        self.assertEqual(town.count('id="hist-h"'), 1)                    # one heading for the history
+        self.assertLess(town.index('href="#history"'), town.index('id="alerts-h"'))   # the jump link is in the first screen
+        self.assertLess(town.index('<table class="five">'), town.index('id="sec-hail"'))  # the table leads the history
+        self.assertNotIn('id="hours-h"', self.summary)
+        self.assertNotIn('id="hours-h"', self.details)
+        self.assertNotIn('id="obs-h"', self.details)
+
+    def test_no_map_block_lists_every_tile_and_the_split_map_says_which_exist(self):
+        # D40: map.json carries a split map and URL patterns; no block holds every tile name
+        raw = page(self.out, "data/map.json")
+        m = json.loads(raw)["hail"]
+        self.assertNotIn("tiles", m)
+        self.assertNotIn("tile_names", m["climate"])
+        self.assertTrue(m["tile_split"])
+        self.assertLess(len(re.findall(r"r\d{4}_c\d{4}", raw)), 5)
+        self.assertEqual(m["climate"]["tile"], "hail/c/{tile}.json")
+        self.assertEqual(m["stations"]["tile"], "hail/sd/{station}.json")
+        self.assertEqual(m["gauges"]["tile"], "hail/g/{usgs}.json")
+        self.assertEqual(m["county"]["tile"], "hail/k/{county}.json")
+
+    def test_the_about_page_has_the_new_sources_terms_and_the_reference_note(self):
+        about = " ".join(page(self.out, "about.html").split())
+        self.assertIn("Terms of the new sources", about)
+        self.assertIn("license = no restrictions", about)
+        self.assertIn("Observations courtesy of U.S. Geological Survey", about)
+        self.assertIn("These data are in the public domain in the United States.", about)
+        self.assertIn("Five roof references are not quoted: R2 (NWS glossary, severe thunderstorm)", about)
+        self.assertIn("R20 (its title is in the references list above)", about)          # D46: the title is a citation
+        self.assertIn("freeze-thaw damage to roofs (R20, not quoted): it is a secondary source", about)
+        self.assertIn("Iowa State IEM zone outlines (the Montana public forecast zones by date)", about)   # D44
+        self.assertNotIn("coverage rule", about)                          # D13: the stem leaves About
+        self.assertIn("enough-days rule", about)
+        self.assertIn("The history sits below the town's forecast", about)
+
+    def test_the_town_page_has_one_history_heading_and_a_jump_link_in_the_first_screen(self):
+        town = self.town
+        self.assertEqual(town.count('id="hist-h"'), 1)
+        self.assertIn('<a href="#history">Five years of weather at Billings</a>', town)
+        self.assertLess(town.index('href="#history"'), town.index('id="alerts-h"'))
+        self.assertEqual(town.count("River gauge: River gauge"), 0)       # D41: one label a line
+
+    def test_the_cell_sentence_gives_the_radar_cell_and_the_grid_cell_their_own_sizes(self):          # the round-1 check's fix
+        text = html.unescape(self.town)                       # the page escapes the apostrophe in "town's"
+        self.assertIn("The radar rows are for the radar cell at the town's centre, about 0.7 miles north to south and 0.5 miles "
+                      "east to west.", text)
+        self.assertIn("The grid rows are for the grid cell there, about 4.6 km north to south and about 3 km east to west.", text)
+        self.assertNotIn("The grid and radar rows are for that cell", text)
+
+    def test_every_row_names_its_kind_word_and_its_unit(self):
+        heads = re.findall(r'<th scope="row" class="row-head">(.*?)</th>', self.section, re.S)
+        self.assertGreaterEqual(len(heads), 20)
+        for head in heads:
+            kind = re.search(r'<span class="kind">([^<]*)</span>', head)
+            self.assertIsNotNone(kind, head)
+            self.assertRegex(kind.group(1), r"^(Radar estimate|Radar detection|Report|Record|Official record|Warning|Zone product|"
+                                            r"County product|Station reading|Grid estimate|Reference|Data unavailable)")
+            self.assertRegex(kind.group(1), r"(inches|days|degrees Fahrenheit|count|knots|record)")   # the held row: its reason
+
+    def test_every_season_value_carries_its_unit_or_says_data_unavailable(self):
+        cells = re.findall(r'<td class="num"[^>]*>(.*?)</td>', self.section, re.S)
+        self.assertGreater(len(cells), 100)
+        for cell in cells:
+            text = visible(re.sub(r"<sup>.*?</sup>|<span class=\"cov\">.*?</span>", "", cell, flags=re.S)).strip()
+            if text.startswith("Data unavailable") or text.startswith("No "):
+                continue
+            self.assertRegex(text, r"\d", text)
+            self.assertRegex(text, r"\b(in|F|days?|kt|reports?|warnings?|watch(?:es)?|advisor\w*|mph)\b", text)
+
+    def test_a_season_with_missing_days_says_how_many(self):
+        self.assertIn("31 days missing", visible(self.section))      # the fixture's 2023-24 season has 31 missing grid days
+
+    def test_the_partial_line_sits_below_the_table_and_the_radar_sentence_under_it(self):
+        self.assertLess(self.section.index("</table>"), self.section.index("2026-27 so far"))
+        self.assertLess(self.section.index("2026-27 so far"), self.section.index("Radar estimates can miss hail that people"))
+
+    def test_a_cell_that_did_not_load_says_data_unavailable_with_its_reason_in_a_footnote(self):
+        store = fixture_store("climate_unavailable")
+        self.addCleanup(shutil.rmtree, store, True)
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b5-climate-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=str(store))
+        town = page(out, "town/billings.html")
+        section = town[town.index('id="hist-h"'):town.index('id="other-h"')]
+        self.assertRegex(section, r"Data unavailable<sup>1</sup>")
+        footnotes = section[section.index('<ol class="hist-foot">'):]
+        footnotes = footnotes[:footnotes.index("</ol>")]
+        self.assertIn("could not be loaded", visible(footnotes))
+        grid_rows = ("Highest temperature", "Lowest temperature", "Days with a high of 90 F", "Days with a low below 32 F",
+                     "Freeze-thaw days", "Precipitation", "Largest one-day precipitation")
+        for label in grid_rows:                                           # an unloaded grid value is never a zero
+            row = re.search(r'<tr>\s*<th scope="row" class="row-head">' + re.escape(label) + r".*?</tr>", section, re.S)
+            self.assertIsNotNone(row, label)
+            cells = re.findall(r'<td class="num"[^>]*>(.*?)</td>', row.group(0), re.S)
+            self.assertTrue(cells, label)
+            for cell in cells:
+                self.assertTrue(visible(cell).strip().startswith("Data unavailable"), (label, visible(cell)))
+
+    def test_the_about_page_has_the_b5_terms_only_with_the_flag(self):
+        from website import summary as sm, joins as jn
+        on = page(self.out, "about.html")
+        off = page(self.off, "about.html")
+        for text in (sm.WORDS_SUMMARY["analysis_held"], jn.WORDS_JOINS["about_hit_miss"], src.CENSUS_TERMS,
+                     sm.REFERENCE_LINES["R1"]["source"], sm.REFERENCE_LINES["R19"]["source"]):
+            self.assertIn(jesc(text), on, text[:60])
+            self.assertNotIn(jesc(text), off, text[:60])
+        for key in self.B5_KEYS:
+            self.assertIn(jesc(src.CONTRACTS[key]["name"]), on, key)
+            self.assertNotIn(jesc(src.CONTRACTS[key]["name"]), off, key)
+        self.assertNotIn(jesc(src.CONTRACTS["lsr"]["name"]), on)     # superseded by iem_lsr
+        self.assertNotIn(jesc(src.CONTRACTS["nws_zone_products"]["name"]), on)
+
+    def test_every_b5_contract_row_has_units_timing_and_missing_rules(self):
+        for key in self.B5_KEYS:
+            row = src.CONTRACTS[key]
+            for field in ("name", "request", "units", "timing", "missing"):
+                self.assertTrue(row.get(field), f"{key}.{field}")
+        self.assertIn("Flood", src.CONTRACTS["ncei_storm_events"]["request"])                 # the point types B5 joins
+        self.assertIn("left out", src.CONTRACTS["nohrsc_season_snowfall"]["units"] + src.CONTRACTS["nohrsc_season_snowfall"]["missing"])
+
+    def test_the_partial_line_and_the_roof_lines_name_their_kinds_in_the_page(self):
+        self.assertIn("Reference", self.section)
+        self.assertIn("Data unavailable", self.section)
+
+    def test_the_sections_words_say_no_forbidden_term_outside_quotes(self):
+        from website import summary as sm
+        text = visible(self.section)
+        sentences = [s for s in re.split(r"(?<=[.!?])\s+|\n", text) if s.strip()]
+        hits = {s.strip()[:80]: sm.forbidden_hits(s) for s in sentences if sm.forbidden_hits(s)}
+        self.assertEqual(hits, {})
+
+    def test_flag_off_builds_have_no_five_season_section_or_b5_key(self):
+        off = page(self.off, "town/billings.html")
+        self.assertNotIn('id="hist-h"', off)
+        self.assertNotIn("Five years of weather at", off)
+        self.assertNotIn("hail_history", json.loads(page(self.off, "data/map.json")))
+        self.assertNotIn("climate", json.loads(page(self.off, "data/map.json")).get("hail", {}))
+        self.assertFalse((self.off / "hail").exists())
+
+    def test_the_map_block_carries_every_b5_block_from_its_functions(self):
+        m = json.loads(page(self.out, "data/map.json"))["hail"]
+        for key in ("climate", "summary", "snow", "stations", "gauges", "county"):
+            self.assertIn(key, m)
+        self.assertEqual(m["climate"]["state"], "loaded")
+        self.assertEqual(m["snow"]["state"], "unavailable")          # the fixture's snow analysis is not shown
+        self.assertFalse(m["snow"]["shown"])
+        self.assertIn("words", m["summary"])
+        self.assertIn("rows", m["summary"])
+
+    def test_the_hail_copies_are_the_store_folders_and_n_only_when_shown(self):
+        copied = {p.name for p in (self.out / "hail").iterdir() if p.is_dir()}
+        stored = {p.name for p in (self.store / "hail").iterdir() if p.is_dir()}
+        self.assertEqual(copied, stored)                                   # the fixture has no snow folder
+        self.assertNotIn("n", copied)
+
+    def test_a_snow_folder_is_copied_only_when_the_index_says_it_is_shown(self):
+        for shown in (True, False):
+            store = fixture_store("full")
+            self.addCleanup(shutil.rmtree, store, True)
+            (store / "hail" / "n").mkdir()
+            (store / "hail" / "n" / "r0092_c0214.json").write_text("{}", encoding="utf-8")
+            set_index(store, snow={"state": "loaded", "shown": shown, "check": {}, "water_years": []})
+            out = Path(tempfile.mkdtemp(prefix="hailwatch-b5-n-"))
+            self.addCleanup(shutil.rmtree, out, True)
+            site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=str(store))
+            self.assertEqual((out / "hail" / "n").is_dir(), shown, shown)
+
+    def test_a_store_whose_file_changed_after_its_manifest_is_refused_before_any_copy(self):
+        store = fixture_store("full")
+        self.addCleanup(shutil.rmtree, store, True)
+        (store / "hail" / "c" / next(iter(sorted(p.name for p in (store / "hail" / "c").iterdir())))).write_text("{}")
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b5-bad-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        result = site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=str(store))
+        self.assertFalse(result["status"]["hail_history"]["ok"])
+        self.assertFalse((out / "hail").exists())
+        town = page(out, "town/billings.html")
+        self.assertIn("Weather history could not be loaded in this update", town)
+
+    def test_a_b2_only_store_builds_and_every_b5_part_is_unavailable(self):      # D64
+        # the store is the sample fixture's hail/ folder with the B5 parts taken out (write_b2_only_store), so the test
+        # holds whatever the committed fixture gains (the tile lists, the station files and the stations block)
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b5-b2-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        store = write_b2_only_store(out / "store")
+        site.build(out / "site", None, self.NOW, sample=True, hail_history=True, hail_store_path=str(store))
+        m = json.loads(page(out / "site", "data/map.json"))["hail"]
+        for key in ("climate", "snow", "stations", "gauges"):
+            self.assertEqual(m[key]["state"], "unavailable", key)
+            self.assertTrue(m[key]["problem"], key)
+        self.assertIn("Five years of weather at Billings", page(out / "site", "town/billings.html"))
+
+    def test_the_section_router_sends_each_joined_row_to_one_section(self):
+        cases = {
+            "Report: Jun 15, 2025 8:41 pm MDT: hail, 0.75 in (estimated), Public, 4.2 mi NE": "hail",
+            "Report: Jun 16, 2025 5:16 pm MDT: tstm wnd gst, 59 mph (measured), Mesonet, 1.7 mi E": "wind",
+            "Report: Jan 5, 2025 7:00 am MST: freezing rain, 0.10 in (estimated), Public, 1 mi": "ice",
+            "Report: Jan 5, 2025 7:00 am MST: heavy snow, 6.0 in, Public, 1 mi": "snow",
+            "Report: Jul 1, 2024 1:00 pm MDT: extreme heat, 105 F, Public, 2 mi": "heat",
+            "Report: Jul 1, 2024 1:00 pm MDT: heavy rain, 1.20 in (estimated), Public, 2 mi": "rain",
+            "Report: Jul 1, 2024 1:00 pm MDT: flash flood, Public, 2 mi": "flooding",
+            "Report: Jul 1, 2024 1:00 pm MDT: tornado, Public, 2 mi": "storms",
+            "Record: Jul 1, 2024 1:00 pm MDT: debris flow, Public, across zone MTZ001": "flooding",
+            "Station: Jun 16, 2025: 50 kt (58 mph) at Billings/Logan Intl, about 3.9 miles away": "wind",
+            "Detection: Jun 15, 2025: 1 detection, largest 1.75 in": "hail",
+            "Warning: Jun 15, 2025 8:00 pm to 9:00 pm, issuance polygon in effect: Flash flood warning, BYZ; tags: x": "flooding",
+            "Warning: Jun 15, 2025 8:00 pm to 9:00 pm, issuance polygon in effect: Severe thunderstorm warning, BYZ; tags: x": "storms",
+            "Zone product: High wind warning: Jun 15, 2025 2:00 pm MDT to 4:00 pm MDT": "wind",
+            "Zone product: Winter storm warning: Jun 15, 2025": "ice",
+            "Zone product: Red flag warning, fire weather zone Yellowstone (MTZ001): Jun 15, 2025": "storms",
+            # B5 D41: a watch and an advisory keep their kind label and route by the product's name, not by the tags
+            "Watch: Jun 15, 2025 8:00 pm to 9:00 pm: flood watch, BYZ, covered this cell or part of it; tags: none stated":
+                "flooding",
+            "Advisory: Jan 10, 2025 12:00 am MST to Jan 11, 2025 1:00 am MST: areal flood advisory, TFX, covered this cell or "
+            "part of it; tags: none stated": "flooding",
+            "Advisory: Jan 10, 2025 12:00 am MST to Jan 11, 2025 1:00 am MST: winter weather advisory, TFX, covered this cell "
+            "or part of it; tags: wind 45 mph": "ice",
+            "Warning: Jun 15, 2025 8:00 pm to 9:00 pm: severe thunderstorm warning, BYZ, covered this cell or part of it; "
+            "tags: hail 1.75 in": "storms",
+        }
+        for text, want in cases.items():
+            label, body = site._split_kind(text)
+            self.assertEqual(site._section_of(label, body), want, text)
+        self.assertEqual(site._split_kind("no label here"), ("", "no label here"))
+        self.assertEqual(site._split_kind("Watch: a")[0], "Watch")
+        self.assertEqual(site._split_kind("Advisory: a")[0], "Advisory")
+
+    def test_an_unavailable_summary_gives_its_words_and_no_sections(self):
+        from website import joins as jn
+        s = site.summary_unavailable("the history index file is missing")
+        view = site.history_view(s, site.join_view_unavailable(jn), {"state": "unavailable", "unavailable": "x"},
+                                 {"name": "Billings", "slug": "billings"}, self.NOW, None)
+        self.assertEqual(view["state"], "unavailable")
+        self.assertEqual(view["sections"], [])
+        self.assertIn("the history index file is missing", " ".join(view["notices"]))
+
+    def test_a_spot_outside_the_store_says_so_in_words(self):
+        from website import summary as sm
+        s = sm._result("outside", "x", {}, None, sm._empty_table(), None, [], None, None)
+        view = site.history_view(s, {"sections": []}, {"state": "outside"}, {"name": "Glasgow"}, self.NOW, None)
+        self.assertEqual(view["state"], "outside")
+        self.assertEqual(view["notices"], [site.HISTORY_WORDS["outside"]])
+
+
+ICE_LINE = re.compile(r"<li>(?P<text>[^<]*1 inch or more[^<]*on the ground[^<]*)</li>")
+
+
+def ice_line_text(town_page: str) -> str:
+    """The roof section's ice-dam line on a town page (D57): its text, as the page shows it."""
+    found = ICE_LINE.findall(town_page)
+    if len(found) != 1:
+        raise AssertionError(f"expected one ice-dam line on the page, found {len(found)}")
+    return html.unescape(found[0])
+
+
+HISTORY_MAP_GATE = 163_840      # map.json with the history flag, raw bytes: 160 KB (D82(a), restating D66's 140 KB). The gate is
+                                # the budget; the figures measured on the combined store are in
+                                # research/hail-history/validation-evidence/b5-verification.json (every flag, B3 included, is
+                                # recorded there beside it, not gated: D66).
+
+
+def map_json_bytes(out: Path) -> int:
+    """The raw size of the built map.json: the whole file, every block the history flag writes (the joins block too). A gate
+    never measures a part of the file (D82(a)); the every-flag file, B3's tile sets included, is recorded beside the gate (D66)."""
+    return len((out / "data" / "map.json").read_bytes())
+
+
+def site_summary():
+    from website import summary
+    return summary
+
+
+class MapBlocksForTheBrowser(unittest.TestCase):
+    """The map.json blocks the browser fills (B5 part B2, site side; D29, D40, D42, D57): the words, the thresholds, the fixed
+    orders, the file paths and the budgets are in the blocks, and the whole map.json with the history flag stays under 160 KB
+    raw (D82(a)). Nothing here is real data: the sample build reads the committed fixture. HAIL_PARITY_STORE (a built store,
+    the combined store) runs the same checks on the real store: the size, and the ice-dam line on each of the 17 town pages."""
+
+    NOW = datetime(2026, 10, 24, 12, 0, tzinfo=UTC)
+    SECTIONS = ["hail", "wind", "storms", "temperature", "rain", "snow", "flooding", "ice", "heat", "roof", "made"]
+
+    @classmethod
+    def setUpClass(cls):
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-b2-blocks-"))
+        cls.addClassCleanup(shutil.rmtree, cls.out, True)
+        site.build(cls.out, None, cls.NOW, sample=True, hail_history=True)
+
+    def hail_block(self) -> dict:
+        return json.loads(page(self.out, "data/map.json"))["hail"]
+
+    def test_the_summary_block_carries_the_section_order_the_tile_list_path_and_the_rule(self):
+        s = self.hail_block()["summary"]
+        self.assertEqual(s["sections"], self.SECTIONS)                           # the fixed order (D29)
+        self.assertEqual(s["tile_list"], "hail/tl/{tile}.json")                  # the station picks read these files (D36)
+        self.assertEqual(s["tile_list_format"], "hail-stn-tiles-v1")
+        self.assertEqual(s["rule"]["radius_miles"], 40.0)
+        self.assertEqual((s["rule"]["cover_min"], s["rule"]["season_min"], s["rule"]["fresh_days"]), (0.8, 0.95, 30))
+        self.assertNotIn("gust_five_at", s["words"])                             # the season cell names its station (D57)
+        self.assertIn("none_gust_at", s["words"])
+
+    def test_the_section_order_is_one_constant_for_map_json_and_the_town_page(self):          # D87(g), D88(i)
+        from website import summary as sm
+        self.assertEqual(sm.SECTION_ORDER, tuple(sm.SECTION_KEYS))
+        self.assertEqual(list(sm.SECTION_ORDER), self.SECTIONS)
+        block = self.hail_block()["summary"]
+        self.assertEqual(block["section_order"], list(sm.SECTION_ORDER))
+        self.assertEqual(block["sections"], list(sm.SECTION_ORDER))
+        town = page(self.out, "town/billings.html")
+        pos = [town.index(f'id="sec-{sid}"') for sid in sm.SECTION_ORDER]
+        self.assertEqual(pos, sorted(pos), "the town page shows the sections in SECTION_ORDER")
+
+    def test_the_joins_block_carries_the_six_section_order_and_the_per_tile_events_path(self):
+        j = self.hail_block()["joins"]
+        self.assertEqual(j["section_order"], ["reports", "records", "detections", "warnings", "zones", "stations"])
+        self.assertEqual(j["events_tiles"], "hail/j/e/{tile}.json")              # D30: the browser fetches this, never events.json
+        self.assertEqual(j["shards"]["s"], "hail/s/{station}.json")
+
+    def test_the_budget_block_holds_the_phone_view_and_the_per_tile_file(self):                  # D66, D82(b): 700,000 bytes gzip
+        from website import joins as jn
+        self.assertEqual(self.hail_block()["budget"], {"phone_gzip_bytes": site.PHONE_GZIP_BUDGET,
+                                                       "tile_events_gzip_bytes": jn.TILE_EVENTS_BUDGET_GZIP})
+        self.assertEqual(self.hail_block()["budget"]["phone_gzip_bytes"], site.PHONE_GZIP_BUDGET)   # D88(r): the build's constant
+        self.assertEqual(site.PHONE_GZIP_BUDGET, 700_000)                 # D82(b): restated with its reason, no cut
+        self.assertEqual(jn.TILE_EVENTS_BUDGET_GZIP, 100_000)
+
+    def test_map_json_with_the_history_flag_stays_under_160_kb_raw_with_the_new_keys(self):   # D82(a): the whole file
+        size = map_json_bytes(self.out)
+        self.assertLess(size, HISTORY_MAP_GATE, size)
+
+    def test_the_new_keys_the_browser_reads_are_in_the_blocks(self):                       # D68, D71, D79(a), the sections' data
+        h = self.hail_block()
+        summary = h["summary"]
+        names = h["county"]["names"]
+        self.assertEqual(h["county"]["short_names"], {code: name.replace(" County", "") for code, name in names.items()})
+        words = h["stations"]["words"]
+        self.assertEqual({k: words[k] for k in ("station_status_failed", "station_status_not_read",
+                                                "station_status_not_read_many", "station_status_both")},
+                         {"station_status_failed": "did not load", "station_status_not_read": "is not read",
+                          "station_status_not_read_many": "are not read", "station_status_both": "could not be read"})
+        self.assertIn("A station's position comes from its source. Two sources can place one airport a few hundred yards apart, "
+                      "so two rows may give slightly different distances to the same airport.", summary["how_made"])     # D80(c)
+        self.assertEqual(summary["section_kinds"], site_summary().SECTION_KINDS)
+        self.assertEqual(len(summary["indicators"]["roof_lines"]), 23)
+        self.assertEqual(summary["indicators"]["roof_lines"]["hail_warnings"]["label"],
+                         "Severe thunderstorm warnings {covered} (count)")
+        self.assertEqual(summary["codes"]["polygon"]["sv"], ["SV"])
+        self.assertEqual(summary["codes"]["depth_pair"], "DL")
+        self.assertEqual(summary["rule"]["report_miles"], 5.0)
+        self.assertEqual(set(summary["indicators"]["held_names"]), {"ponding", "roof_surface_temperature", "fema_flood_zones",
+                                                                     "lightning", "uv_and_sun", "ground_snow_load", "snotel"})
+
+    def test_the_ice_dam_line_on_the_billings_page_leads_with_station_reading(self):      # D57
+        self.assertTrue(ice_line_text(page(self.out, "town/billings.html")).startswith("Station reading: "))
+
+    def test_with_the_real_store_every_town_page_leads_with_station_reading_and_map_json_is_under_160_kb(self):   # D57, D82(a)
+        store = os.environ.get("HAIL_PARITY_STORE")
+        if not store:
+            self.skipTest("set HAIL_PARITY_STORE to a built store (the combined store) to check the 17 town pages")
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b2-real-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=store)
+        self.assertLess(map_json_bytes(out), HISTORY_MAP_GATE, map_json_bytes(out))
+        towns = json.loads((ROOT / "website" / "towns.json").read_text(encoding="utf-8"))
+        for town in towns:
+            with self.subTest(town["slug"]):
+                self.assertTrue(ice_line_text(page(out, f"town/{town['slug']}.html")).startswith("Station reading: "))
+
+
+# ---------------------------------------------------------------- the five-season table and sections in the browser (B5)
+
+SUM_BLOCK_START = "  var SUM_SEASONS"              # the browser's summary block in map.js (B5, the sheet's table and sections)
+SUM_BLOCK_END = "  // B3 layers: begin"
+# the top-level vars and functions outside the block that the block calls (the hail and join readers and the words helpers);
+# a name that moves or is renamed fails the run with a ReferenceError that names it
+SUM_VARS = ("MIN", "dtfUtcDay", "HAIL_DAY_MS", "HAIL_MICRO", "JROW", "JDET", "JDAY", "JZONE_STOP", "JOIN_PARTS", "KIND_WORD", "FALLBACK_VIEW",
+            "BLANK")
+SUM_HELPERS = ("fill", "own", "missingKey", "hailTile", "hailTileName", "hailShardUrl", "hailCentre", "hailKey", "hailDate",
+               "hailIso", "hailDays", "hailFailure", "joinEvents", "joinFile", "joinZoneOf", "joinPicks", "joinUnavailable",
+               "joinWarningText", "joinClock", "joinCompass", "joinCovers", "joinDay", "joinEnd", "joinInstant", "joinMiles",
+               "joinReason", "joinRecordText", "joinReportText", "joinSpcIso", "joinZoneRecordText", "joinZoneSpan", "hailCell",
+               "hailPoint", "hailInState", "hailMm", "hailInches", "hailClass", "stWord", "pad4", "has", "hailText",
+               "thousands")
+# node runs the sheet's table (sumTable) and, in mode "sheet", renders it (sumRender) into a stand-in for the page's elements,
+# which keep their text and children, so a test reads every line the sheet shows. Only fetch is stubbed (the built site's files).
+NODE_SUMMARY_SCRIPT = r"""
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
+let raw = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => { raw += chunk; });
+process.stdin.on("end", () => {
+  const input = JSON.parse(raw);
+  const fetchFile = (url) => new Promise((resolve) => {
+    fs.readFile(path.join(input.site, url), "utf8", (err, text) => resolve(err ? { ok: false, status: 404 }
+      : { ok: true, status: 200, json: () => new Promise((ok) => ok(JSON.parse(text))) }));
+  });
+  class El {
+    constructor(tag) { this.tag = tag; this.children = []; this.text = ""; this.hidden = false; this.className = ""; }
+    appendChild(c) { this.children.push(c); return c; }
+    insertRow() { const r = new El("tr"); this.children.push(r); return r; }
+    insertCell() { const c = new El("td"); this.children.push(c); return c; }
+    createTHead() { const t = new El("thead"); this.children.push(t); return t; }
+    createTBody() { const t = new El("tbody"); this.children.push(t); return t; }
+    setAttribute() {}
+    get textContent() { return this.text; }
+    set textContent(v) { this.text = String(v); }
+    get classList() { return { add() {}, remove() {}, toggle() {}, contains() { return false; } }; }
+    querySelector() { return null; }
+    closest() { return null; }
+    remove() {}
+  }
+  const texts = (node, out) => { if (node.text) out.push(node.text); node.children.forEach((c) => texts(c, out)); return out; };
+  const document = { createElement: (tag) => new El(tag), createTextNode: (t) => { const e = new El("#text"); e.text = String(t); return e; },
+    getElementById: () => null };
+  const ctx = vm.createContext({ Intl: Intl, Date: Date, Math: Math, JSON: JSON, Promise: Promise, Set: Set, Object: Object,
+    Array: Array, String: String, Number: Number, Error: Error, isFinite: isFinite, RegExp: RegExp, fetch: fetchFile,
+    data: { tz: input.tz }, hailTiles: {}, document: document, window: { console: console }, console: console,
+    texts: texts });
+  vm.runInContext(input.code, ctx);
+  vm.runInContext("this.run = (h, cell) => sumTable(h, cell).then((r) => {" +
+    " const out = { rows: r.rows, partial: r.partial };" +
+    " if (" + (input.mode === "sheet" ? "true" : "false") + ") { const slot = document.createElement('div');" +
+    " sumRender(slot, r); out.sheet = texts(slot, []); } return out; });", ctx);
+  ctx.run(input.h, input.cell).then((out) => process.stdout.write(JSON.stringify(out)),
+    (err) => { process.stderr.write(String((err && err.stack) || err)); process.exit(1); });
+});
+"""
+
+
+def js_var(js: str, name: str) -> str:
+    """One top-level var of map.js ("  var NAME = ..."): its line, or its lines up to the one that closes the value."""
+    lines = js.split("\n")
+    first = next(n for n, line in enumerate(lines) if line.startswith(f"  var {name} "))
+    text, n = lines[first], first
+    while True:
+        code = re.sub(r"\s//[^\"']*$", "", text).rstrip()
+        if code.endswith(";") and text.count("{") + text.count("[") <= text.count("}") + text.count("]"):
+            return "\n".join(lines[first:n + 1])
+        n += 1
+        text = lines[n]
+
+
+def browser_summary_code(js: str) -> str:
+    """The part of map.js the sheet's five-season table runs on: the vars and helpers the block calls, then the block from its
+    first line to the roads and addresses block (B3). Nothing else of the page is run."""
+    start = js.index(SUM_BLOCK_START)
+    end = js.index(SUM_BLOCK_END)
+    start = js.rindex("\n", 0, start) + 1
+    end = js.rindex("\n", 0, end) + 1
+    return "\n".join([js_var(js, name) for name in SUM_VARS] + [js_function(js, name) for name in SUM_HELPERS]
+                     + [js[start:end]])
+
+
+def node_summary(site: Path, h: dict, cell: dict, mode: str = "table") -> dict:
+    """The browser's table at a cell (sumTable under node; mode "sheet" also renders it, as the sheet shows it): the rows by key,
+    the partial line and, in sheet mode, every text the rendered sheet holds."""
+    js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+    payload = {"code": browser_summary_code(js), "site": str(site), "h": h, "cell": cell, "tz": "America/Denver", "mode": mode}
+    done = subprocess.run([shutil.which("node"), "-e", NODE_SUMMARY_SCRIPT], input=json.dumps(payload),
+                          capture_output=True, text=True, timeout=180)
+    if done.returncode:
+        raise AssertionError(f"the browser's five-season table did not run under node: {done.stderr[-900:]}")
+    return json.loads(done.stdout)
+
+
+def block_literals(js: str) -> list[str]:
+    """The string literals of the browser's summary block (double or single quoted), without their quotes. The comments
+    are taken out first, so an apostrophe in a comment starts no literal."""
+    start = js.index(SUM_BLOCK_START)
+    end = js.index(SUM_BLOCK_END)
+    code = re.sub(r"/\*.*?\*/", "", js[start:end], flags=re.S)           # the JSDoc comments first
+    code = re.sub(r"//[^\n]*", "", code)
+    code = re.sub(r"console\.\w+\([^;]*\);", "", code)                  # developer log lines are not sheet text
+    found = re.findall(r'"((?:[^"\\\n]|\\.)*)"|\'((?:[^\'\\\n]|\\.)*)\'', code)
+    return [a or b for a, b in found]
+
+
+class SheetFiveSeasonsInTheBrowser(unittest.TestCase):
+    """The browser's five-season table on the sheet (B5, the browser's round 1 and round 2): it runs map.js's summary code under
+    node on the synthetic store's built site (the fixture), and checks what the sheet shows against the module's rows. The
+    rules: a missing words key shows a placeholder and never stops the table (R1, R2); every note of a row is on the sheet
+    (R4); a records failure keeps its row's label and kind (R5); a zone product that could not be placed is said in its season
+    (R14); the block holds no sheet sentence as a literal (R6)."""
+
+    NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+    CELL = {"row": 921, "col": 2149}                    # the B1 cell of Billings (the town point is 45.7833 N, 108.5007 W)
+
+    @classmethod
+    def setUpClass(cls):
+        # the committed sample fixture (website/data/hail-fixture): its Billings tile holds the per-tile event files the browser
+        # reads (hail/j/e), which the synthetic store of tests/test_summary.py does not
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-sheet-"))
+        cls.addClassCleanup(shutil.rmtree, cls.out, True)
+        site.build(cls.out, None, cls.NOW, sample=True, hail_history=True)
+        cls.h = json.loads(page(cls.out, "data/map.json"))["hail"]
+
+    def copy_h(self) -> dict:
+        """A copy of the built block. The fixture has no climate grid (its climate part is unavailable), so the copy takes a
+        stand-in grid far outside Montana: the cell is then outside the grid and the climate rows say so, and the table's
+        other rows are the ones under test. test_a_store_without_the_climate_grid_still_builds_the_table uses the block as built."""
+        h = json.loads(json.dumps(self.h))
+        if h["climate"].get("grid") is None:
+            h["climate"]["grid"] = {"rows": 1, "cols": 1, "per_degree": 24, "lat0": 0.0, "lon0": 0.0, "units_per_degree": 48,
+                                    "lat_centre_units": [0, 0], "lon_centre_units": [0, 0], "lat_edge_units": 0,
+                                    "lon_edge_units": 0, "rule": "lat (south edge, north edge], lon [west edge, east edge)"}
+        return h
+
+    def test_a_store_without_the_climate_grid_still_builds_the_table(self):                                    # D16
+        out = node_summary(self.out, json.loads(json.dumps(self.h)), self.CELL)
+        self.assertEqual(len(out["rows"]), 24)                  # the climate part says its own words, the rest of the table builds
+
+    def test_the_table_builds_with_placeholders_when_report_types_nouns_or_table_problem_are_missing(self):   # R1, R2
+        h = self.copy_h()
+        del h["summary"]["report_types"]
+        del h["summary"]["nouns"]
+        del h["summary"]["words"]["table_problem"]
+        out = node_summary(self.out, h, self.CELL)
+        self.assertEqual(len(out["rows"]), 24)
+        text = json.dumps(out)
+        self.assertIn("[missing words key: report_types]", text)
+        self.assertIn("[missing words key: nouns]", text)
+        # a part that throws is said with the table_problem words; a missing key there is a placeholder, not a crash
+        h = self.copy_h()
+        del h["joins"]["words"]
+        del h["summary"]["words"]["table_problem"]
+        out = node_summary(self.out, h, self.CELL)
+        self.assertEqual(len(out["rows"]), 24)
+        self.assertIn("[missing words key: table_problem]", json.dumps(out))
+
+    def test_every_row_note_is_on_the_sheet(self):                                                              # R4
+        out = node_summary(self.out, self.h, self.CELL, mode="sheet")
+        sheet = out["sheet"]
+        notes = [n for row in out["rows"].values() for n in row["notes"]]
+        self.assertGreater(len(notes), 5)
+        missing = [n for n in notes if not any(n in text for text in sheet)]
+        self.assertEqual(missing, [], missing[:3])
+
+    def test_every_row_note_is_on_the_sheet_with_an_unread_candidate_and_a_rejected_one(self):               # R4, (3b), D32, D62, D69
+        """The unread line (a Canadian station, not read, nearer than the second pick, so the snowfall row names it) and the
+        rejected line (a station that fails the rule, named with its share) are row notes, and the sheet shows them. A copy of
+        the built site gets the unread candidate on the fixture's Billings tile; the rejected line is the fixture's own."""
+        from website import hail as hs
+        from website import stations as st
+        copy = Path(tempfile.mkdtemp(prefix="hailwatch-unread-"))
+        self.addCleanup(shutil.rmtree, copy, True)
+        shutil.copytree(self.out, copy / "site")
+        tile = hs.tile_name(self.CELL["row"] // hs.TILE, self.CELL["col"] // hs.TILE)
+        path = copy / "site" / "hail" / "tl" / f"{tile}.json"
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        snow = doc["elements"]["SNOW"]
+        snow["unread"] = list(snow["unread"]) + [{"id": "CA000000001", "name": "Milk River", "lat": 45.80, "lon": -108.50,
+                                                 "reason": st.CANADA_REASON}]
+        path.write_text(json.dumps(doc), encoding="utf-8")
+        out = node_summary(copy / "site", self.h, self.CELL, mode="sheet")
+        notes = [n for row in out["rows"].values() for n in row["notes"]]
+        self.assertTrue(any("Milk River is not read (in Canada; the terms for its data are under review)" in n for n in notes),
+                        notes[:3])
+        self.assertTrue(any(" is not used: " in n for n in notes), notes[:3])
+        missing = [n for n in notes if not any(n in text for text in out["sheet"])]
+        self.assertEqual(missing, [], missing[:3])
+
+    def test_with_the_real_store_every_row_note_reaches_the_sheet_at_four_cells(self):                      # R4, (3b), D62
+        """On the combined store every row note of four cells is on the sheet: the gate cell 797,1986, Benchland 792,1998,
+        Billings 921,2149, and cell 602,1396, whose snowfall row names the unread Canadian station Lister."""
+        store = os.environ.get("HAIL_PARITY_STORE")
+        if not store:
+            self.skipTest("set HAIL_PARITY_STORE to a built store (the combined store) to check the sheet at the real cells")
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-sheet-real-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=store)
+        h = json.loads(page(out, "data/map.json"))["hail"]
+        for row, col in ((921, 2149), (792, 1998), (797, 1986), (602, 1396)):
+            with self.subTest(cell=f"{row},{col}"):
+                sheet = node_summary(out, h, {"row": row, "col": col}, mode="sheet")
+                notes = [n for r in sheet["rows"].values() for n in r["notes"]]
+                missing = [n for n in notes if not any(n in text for text in sheet["sheet"])]
+                self.assertEqual(missing, [], missing[:3])
+                if (row, col) == (602, 1396):
+                    self.assertTrue(any("Lister is not read" in n for n in notes), "the unread line at 602,1396")
+
+    def test_a_zone_product_that_could_not_be_placed_is_said_in_its_season_cell(self):                         # R14
+        h = self.copy_h()
+        h["joins"]["zone_unplaced_rows"] = [["HW.W", "MTZ235", "2025-07-18", "2025-07", "the zone code is not in the zone maps"]]
+        row = node_summary(self.out, h, self.CELL)["rows"]["hw_zone"]
+        season_2025_26 = " ".join([row["coverage"][4] or "", row["texts"][4] or ""] + row["notes"])
+        self.assertIn("could not be placed to a zone", season_2025_26)
+        self.assertNotIn("could not be placed to a zone", " ".join([row["coverage"][0] or ""]))
+
+    def test_a_records_failure_keeps_the_row_label_and_kind(self):                                              # R5
+        h = self.copy_h()
+        h["joins"]["parts"]["records"] = "unavailable"
+        row = node_summary(self.out, h, self.CELL)["rows"]["flood_record_n"]
+        self.assertEqual(row["label"], "Flood and flash flood records within 5 miles")
+        self.assertEqual(row["kind"], "Record (NCEI)")
+        self.assertTrue(any("This is not an all-clear." in n for n in row["notes"]), row["notes"])
+
+    def test_no_sheet_sentence_is_a_string_literal_in_the_summary_block(self):                                  # R6, (e)
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        # a sentence is three words or more; the two-word LSR kinds (freezing rain, flash flood) are the data's own words
+        kinds = {"freezing rain", "flash flood", "funnel cloud", "extreme heat"}
+        sentences = [lit for lit in block_literals(js) if len(lit.split()) >= 3 or (len(lit.split()) == 2 and lit not in kinds
+                                                                                       and lit.islower() and " " in lit
+                                                                                       and not lit.startswith(".")
+                                                                                       and not re.search(r"[-_.]", lit))]
+        self.assertEqual(sentences, [], sentences[:5])
+
+
+# ---------------------------------------------------------------- the whole sheet in the browser against the module (B5 round 3)
+
+# node runs the sheet as the page runs it: the table (sumTable and sumRender), the joined records (joinSections), the B1 radar
+# text (hailText) and the eleven sections (histModel and histRender). Each element keeps its text, its children and its
+# attributes, so the test reads every line the sheet holds, the rows behind "Show all" included. Only fetch is stubbed.
+NODE_SHEET_SCRIPT = r"""
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
+let raw = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => { raw += chunk; });
+process.stdin.on("end", () => {
+  const input = JSON.parse(raw);
+  const fetchFile = (url) => new Promise((resolve) => {
+    fs.readFile(path.join(input.site, url), "utf8", (err, text) => resolve(err ? { ok: false, status: 404 }
+      : { ok: true, status: 200, json: () => new Promise((ok) => ok(JSON.parse(text))) }));
+  });
+  class El {
+    constructor(tag) { this.tag = tag; this.children = []; this.text = ""; this.attrs = {}; this.hidden = false; this.className = ""; }
+    appendChild(c) { this.children.push(c); return c; }
+    insertRow() { const r = new El("tr"); this.children.push(r); return r; }
+    insertCell() { const c = new El("td"); this.children.push(c); return c; }
+    createTHead() { const t = new El("thead"); this.children.push(t); return t; }
+    createTBody() { const t = new El("tbody"); this.children.push(t); return t; }
+    setAttribute(k, v) { this.attrs[k] = String(v); }
+    getAttribute(k) { return Object.prototype.hasOwnProperty.call(this.attrs, k) ? this.attrs[k] : null; }
+    get textContent() { return this.text; }
+    set textContent(v) { this.text = String(v); }
+    get classList() { return { add() {}, remove() {}, toggle() {}, contains() { return false; } }; }
+    querySelector() { return null; }
+    closest() { return null; }
+    remove() {}
+  }
+  const document = { createElement: (tag) => new El(tag), createTextNode: (t) => { const e = new El("#text"); e.text = String(t); return e; },
+    getElementById: () => null };
+  const ctx = vm.createContext({ Intl: Intl, Date: Date, Math: Math, JSON: JSON, Promise: Promise, Set: Set, Object: Object,
+    Array: Array, String: String, Number: Number, Error: Error, isFinite: isFinite, RegExp: RegExp, fetch: fetchFile,
+    data: { tz: input.tz }, hailTiles: {}, document: document, window: { console: console }, console: console });
+  vm.runInContext(input.code, ctx);
+  vm.runInContext(`
+    this.texts = (node, out) => { if (node.text) out.push(node.text); node.children.forEach((c) => texts(c, out)); return out; };
+    this.sectionTexts = (root) => {
+      const found = {};
+      const walk = (node, current) => {
+        const id = node.getAttribute("data-section");
+        const here = id !== null ? id : current;
+        if (node.text && here !== null) (found[here] = found[here] || []).push(node.text);
+        node.children.forEach((c) => walk(c, here));
+      };
+      walk(root, null);
+      return found;
+    };
+    this.runCell = async (h, cell) => {
+      const table = await sumTable(h, cell);
+      const joins = await joinSections(h, cell);
+      const doc = await hailTile(hailShardUrl(h, cell));
+      const radar = hailText(h, cell, doc);
+      const model = histModel(h, cell, table, joins, radar);
+      const tableSlot = document.createElement("div");
+      sumRender(tableSlot, table);
+      const sectionSlot = document.createElement("div");
+      histRender(sectionSlot, model);
+      return { table: { rows: table.rows, partial: table.partial }, model: model, radar: radar,
+        tableTexts: texts(tableSlot, []), sectionTexts: sectionTexts(sectionSlot) };
+    };`, ctx);
+  ctx.runCell(input.h, input.cell).then((out) => process.stdout.write(JSON.stringify(out)),
+    (err) => { process.stderr.write(String((err && err.stack) || err)); process.exit(1); });
+});
+"""
+
+# the browser's share rounding (sumSharePct, under node) over the shares the station rule can see: round(k / 2192, 4)
+NODE_SHARE_SCRIPT = r"""
+const input = JSON.parse(require("fs").readFileSync(0, "utf8"));
+const ctx = require("vm").createContext({ Math: Math, Number: Number, String: String, Object: Object, Array: Array, RegExp: RegExp });
+require("vm").runInContext(input.code + "\nthis.pct = (S, xs) => xs.map(function (x) { return sumSharePct(S, x); });", ctx);
+process.stdout.write(JSON.stringify(ctx.pct(input.S, input.shares)));
+"""
+
+# the browser's season rule (D83(b), D87(d)): the 95 percent share of a season's days, the season label of a day and the
+# bounds of a label, called with the summary block the build wrote (the signature may take S first; the script adapts)
+NODE_SEASON_SCRIPT = r"""
+const input = JSON.parse(require("fs").readFileSync(0, "utf8"));
+const ctx = require("vm").createContext({ Math: Math, Number: Number, String: String, Object: Object, Array: Array,
+  RegExp: RegExp, Date: Date, Error: Error, JSON: JSON });
+require("vm").runInContext(input.code + "\nthis.season = {"
+  + " rule: function (S) { return sumSeasonRule(S); },"
+  + " label: function (S, iso) { return sumSeasonOf.length === 2 ? sumSeasonOf(S, iso) : sumSeasonOf(iso); },"
+  + " bounds: function (S, label) { return sumBounds.length === 2 ? sumBounds(S, label) : sumBounds(label); },"
+  + " iso: function (n) { return sumIsoOf(n); } };", ctx);
+const S = input.S;
+const share = ctx.season.rule(S);
+const full = [];
+for (const total of input.totals) {
+  for (let valid = 0; valid <= 366; valid++) full.push([total, valid, valid * share.scale >= total * share.share]);
+}
+const bounds = input.labels.map(function (label) {
+  const b = ctx.season.bounds(S, label);
+  return [label, ctx.season.iso(b.start), ctx.season.iso(b.end)];
+});
+const labels = input.days.map(function (iso) { return [iso, ctx.season.label(S, iso)]; });
+process.stdout.write(JSON.stringify({ share: share, full: full, bounds: bounds, labels: labels }));
+"""
+
+# the four exact ties of the share rule (k / 2192 is a sixteenth: its percent ends in .x5): half to even, as Python's round()
+SHARE_TIES = {137: "6.2", 685: "31.2", 1233: "56.2", 1781: "81.2"}
+
+# the five cells the brief names for the browser against the module: Billings, Benchland, the gate, and two more
+FIVE_CELLS = ((921, 2149), (792, 1998), (797, 1986), (753, 2230), (920, 1899))
+
+# every key of the summary block that map.js reads, by the form the read takes (round 3: the summary contract)
+def summary_reads(js: str) -> dict:
+    words = set(re.findall(r'sumWord\(\s*[\w.]+\s*,\s*"([^"]+)"', js))
+    paths = {p for p in re.findall(r'sdGet\(\s*\w+\s*,\s*"([^"]+)"', js) + re.findall(r'sdList\(\s*\w+\s*,\s*"([^"]+)"', js)
+             if not p.endswith(".")}
+    rule = set(re.findall(r"\bS\.rule\.(\w+)", js)) | set(re.findall(r'own\(\s*S\.rule,\s*"(\w+)"', js))
+    indicators = set(re.findall(r"S\.indicators\.words\.(\w+)", js)) | set(re.findall(r'own\(\s*S\.indicators\.words,\s*"(\w+)"', js))
+    top = set(re.findall(r"\bS\.(\w+)", js)) - {"rule", "words", "indicators", "unplaced", "canada"}
+    # the block's own reads by its object name (h.summary.partial, hd.summary.words, own(h.summary, "tile_list")), R1-F6
+    direct = set(re.findall(r"\bh[d]?\.summary\.(\w+)", js)) | set(re.findall(r'own\(\s*h[d]?\.summary,\s*"(\w+)"', js))
+    return {"words": words, "paths": paths, "rule": rule, "indicators": indicators, "top": top | direct}
+
+
+def node_sheet(site: Path, h: dict, cell: dict) -> dict:
+    """The sheet's table and sections for a cell as the browser's code writes them (under node), with h the map.json hail
+    block the page reads and site the built folder its fetches read."""
+    js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+    payload = {"code": browser_join_code(js) + "\n" + browser_summary_code(js), "site": str(site), "h": h, "cell": cell,
+               "tz": "America/Denver"}
+    done = subprocess.run([shutil.which("node"), "-e", NODE_SHEET_SCRIPT], input=json.dumps(payload), capture_output=True,
+                          text=True, timeout=300)
+    if done.returncode:
+        raise AssertionError(f"the browser's sheet did not run under node: {done.stderr[-900:]}")
+    return json.loads(done.stdout)
+
+
+def module_sheet(site: Path, cell: tuple[int, int], now) -> dict:
+    """The sheet for a cell as the module writes it: summary.describe_sheet (D88(p), S-4), the one function the browser's sheet
+    is compared with. Its keys: summary (table, sections' leads, roof), radar (the B1 words), joined (the join views), built
+    (the rows and notes of the eleven sections) and section_order."""
+    from website import summary as sm
+    row, col = cell
+    return sm.describe_sheet(site, row, col, now)
+
+
+def section_rows(rows: list[dict]) -> list[list[str]]:
+    """The label, text and note of each row, in the form both sides are compared in."""
+    return [[r.get("label", ""), r["text"], r.get("note", "") or ""] for r in rows]
+
+
+class SheetAgreesWithTheModule(unittest.TestCase):
+    """The sheet in the browser against the module at the five cells (B5 round 3, D82(d), D83): the table, every row note,
+    each section's lead, kind, rows and notes, and the roof lines, from the same data. The rows behind "Show all" are in
+    the rendered sheet too (D83(a)). The fixture is the committed sample; the adopted store is HAIL_PARITY_STORE."""
+
+    NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+
+    @classmethod
+    def setUpClass(cls):
+        if shutil.which("node") is None:
+            raise unittest.SkipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-agree-"))
+        cls.addClassCleanup(shutil.rmtree, cls.out, True)
+        site.build(cls.out, None, cls.NOW, sample=True, hail_history=True)
+        cls.h = json.loads(page(cls.out, "data/map.json"))["hail"]
+
+    def cell_differences(self, folder: Path, h: dict, cell: tuple[int, int]) -> list[str]:
+        """One cell: the browser's table, sections and radar against the module's, row by row. Every difference is collected
+        and reported together (with its place), so one run shows the whole list the browser has to mirror."""
+        row, col = cell
+        mod = module_sheet(folder, cell, self.NOW)
+        browser = node_sheet(folder, h, {"row": row, "col": col})
+        summary = mod["summary"]
+        if summary.get("state") not in ("loaded", "partial"):      # partial: the fixture has no climate grid (a stated part)
+            self.skipTest(f"cell {row},{col} is outside the built store ({summary.get('state')})")
+        diffs: list[str] = []
+
+        def check(where: str, got, want) -> None:
+            if got != want:
+                diffs.append(f"{where}: browser {json.dumps(got, ensure_ascii=False)[:220]} != module "
+                             f"{json.dumps(want, ensure_ascii=False)[:220]}")
+
+        # the table: every row's cells, five-season figure, coverage and notes
+        module_rows = {r["key"]: r for r in summary["table"]["rows"]}
+        check("table rows", sorted(browser["table"]["rows"]), sorted(module_rows))
+        for key, mrow in module_rows.items():
+            brow = browser["table"]["rows"].get(key, {})
+            for field in ("texts", "coverage", "values", "five", "five_text", "five_coverage", "five_missing", "notes"):
+                check(f"table {key}.{field}", brow.get(field), mrow[field])
+        check("radar lead", browser["radar"].get("lead"), mod["radar"].get("lead"))
+        # the sections: heading, lead, kind, rows (behind Show all too) and notes, in the brief's order
+        built = mod["built"]
+        by_id = {sec["id"]: sec for sec in browser["model"]["sections"]}
+        check("section order", [sec["id"] for sec in browser["model"]["sections"]], sm_sections())
+        for sec in summary["sections"]:
+            sid = sec["id"]
+            got = by_id.get(sid, {})
+            check(f"{sid} heading", got.get("heading"), sec["heading"])
+            check(f"{sid} lead", got.get("lead"), sec["lead"])
+            check(f"{sid} kind", got.get("kind"), sec["kind"])
+            check(f"{sid} rows", section_rows(got.get("rows", [])), section_rows(built["rows"][sid]))
+            if sid != "roof":
+                check(f"{sid} notes", got.get("notes"), built["notes"][sid])
+            rendered = browser["sectionTexts"].get(sid, [])
+            for text in [r["text"] for r in got.get("rows", [])] + list(got.get("notes", [])):
+                if text not in rendered:
+                    diffs.append(f"{sid}: a text is not in the rendered sheet: {text[:120]}")
+        module_lines = [(ln["label"], ln["text"], ln["kind"]) for g in summary["roof"]["groups"] for ln in g["lines"]]
+        browser_lines = [(ln["label"], ln["text"], ln["kind"]) for g in by_id.get("roof", {}).get("groups") or []
+                         for ln in g["lines"]]
+        check("roof lines", browser_lines, module_lines)
+        check("roof how made", by_id.get("roof", {}).get("notes"), summary["roof"]["how_made"])
+        # nothing the sheet shows is a placeholder (the words the sheet asks for are in the summary block)
+        everything = browser["tableTexts"] + [t for texts_ in browser["sectionTexts"].values() for t in texts_]
+        diffs += [f"placeholder on the sheet: {t[:120]}" for t in everything if "[missing" in t]
+        return diffs
+
+    def compare_cell(self, folder: Path, h: dict, cell: tuple[int, int]) -> None:
+        diffs = self.cell_differences(folder, h, cell)
+        self.assertEqual(diffs, [], f"cell {cell[0]},{cell[1]}: {len(diffs)} difference(s), the browser against the module")
+
+    def test_the_five_cells_agree_on_the_fixture(self):                                                       # D82(d), D83, R1-F2
+        """The committed sample holds the joined records of three tiles only (hail/j). A cell whose tile the sample lacks is a
+        skipped subtest that names the cell, never a silent continue; the present set is asserted, and the adopted store test
+        below compares all five."""
+        present = [cell for cell in FIVE_CELLS
+                   if (self.out / "hail" / "j" / f"{hs.tile_name(cell[0] // hs.TILE, cell[1] // hs.TILE)}.json").exists()]
+        compared = []
+        for cell in FIVE_CELLS:
+            with self.subTest(cell=cell):
+                if cell not in present:
+                    self.skipTest(f"the fixture holds no joined tile for the cell {cell[0]},{cell[1]} (only the adopted store does)")
+                self.compare_cell(self.out, self.h, cell)
+                compared.append(cell)
+        self.assertEqual(sorted(present), sorted(FIVE_CELLS[:3]), "the sample's present tiles")
+        self.assertEqual(sorted(compared), sorted(present))
+
+    def test_the_rendered_sheet_holds_every_row_behind_show_all(self):                                       # D83(a)
+        mod = module_sheet(self.out, FIVE_CELLS[0], self.NOW)
+        browser = node_sheet(self.out, self.h, {"row": FIVE_CELLS[0][0], "col": FIVE_CELLS[0][1]})
+        for sec in browser["model"]["sections"]:
+            rendered = browser["sectionTexts"].get(sec["id"], [])
+            for r in sec["rows"]:
+                self.assertIn(r["text"], rendered)
+        self.assertGreaterEqual(max(len(s["rows"]) for s in browser["model"]["sections"]), 1)
+        self.assertEqual(browser["model"]["showFirst"], self.h["joins"]["show_first"])
+        self.assertTrue(mod["built"]["rows"])
+
+    @unittest.skipUnless(os.environ.get("HAIL_PARITY_STORE"), "set HAIL_PARITY_STORE to the adopted combined store")
+    def test_the_five_cells_agree_on_the_adopted_store(self):                                                 # D82(d), D83, D64
+        folder = Path(tempfile.mkdtemp(prefix="hailwatch-agree-real-"))
+        self.addCleanup(shutil.rmtree, folder, True)
+        site.build(folder, None, self.NOW, sample=True, hail_history=True,
+                   hail_store_path=os.environ["HAIL_PARITY_STORE"])
+        h = json.loads(page(folder, "data/map.json"))["hail"]
+        for cell in FIVE_CELLS:
+            with self.subTest(cell=cell):
+                self.compare_cell(folder, h, cell)
+
+    def test_a_flagged_zone_line_reads_the_all_clear_sentence_once(self):                                    # D98(b), D99(b)
+        """Montana's unplaced zone products (two high wind warnings in 2021-22, one high wind watch in 2024-25) add a statement
+        to the high wind row's coverage lines. The browser prints the statement as summary.WORDS_SUMMARY gives it and composes
+        each line as summary._cover does: the sentence once, at the line's end, never a doubled full stop. The sheet agrees
+        with the module cell by cell, the coverage lines included. The rows go into a copy of the fixture store, with its
+        index and its manifest entry written again (hail.check_manifest)."""
+        store = Path(tempfile.mkdtemp(prefix="hailwatch-flag-store-"))
+        self.addCleanup(shutil.rmtree, store, True)
+        shutil.copytree(hs.FIXTURE_DIR, store, dirs_exist_ok=True)
+        index_path = store / "hail" / "index.json"
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+        index["joins"]["zone_unplaced_rows"] = [["HW.W", "MTZ235", "2021-12-11", "2021-12-07", "not_in_iem_set"],
+                                                ["HW.W", "MTZ235", "2022-01-02", "2021-12-07", "not_in_iem_set"],
+                                                ["HW.A", "MTZ235", "2024-10-01", "2024-09-30", "not_in_iem_set"]]
+        data = hs._pretty(index)
+        index_path.write_bytes(data)
+        manifest_path = store / "hail" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["files"]["hail/index.json"] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+        manifest_path.write_bytes(hs._pretty(manifest))
+        hs.check_manifest(store)
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-flag-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=str(store))
+        h = json.loads(page(out, "data/map.json"))["hail"]
+        self.assertEqual(len(h["joins"]["zone_unplaced_rows"]), 3)
+        for cell in FIVE_CELLS[:3]:                 # the cells the fixture holds (the other two need the adopted store)
+            with self.subTest(cell=cell):
+                self.compare_cell(out, h, cell)
+        rows = node_sheet(out, h, {"row": 921, "col": 2149})["table"]["rows"]
+        flagged = [text for row in rows.values() for text in row["coverage"] + [row["five_coverage"]]
+                   if text and "could not be placed to a zone" in text]
+        self.assertTrue(flagged, "the high wind row says what could not be placed")
+        for text in flagged:
+            self.assertEqual(text.count("This is not an all-clear."), 1, text)
+            self.assertTrue(text.endswith("This is not an all-clear."), text)
+            self.assertNotIn("..", text)
+
+    def test_a_partial_stations_part_adds_the_same_note_in_the_browser_and_the_module(self):                 # D20, D41, B5-12
+        """When the station gusts loaded for some station-years only (the joins block's parts.stations is "partial"), summary.py
+        closes both gust rows' notes with the sentence that names the station-years that did not load, with the reason the
+        block gives and the all-clear sentence once, and the wind section carries it once. The browser mirrors that from the
+        same block: the branch's own store had 65 such station-years, and the preview's parity step found the browser without
+        the note (B5-12). The part goes into a copy of the fixture store, with its index and its manifest entry written again."""
+        store = Path(tempfile.mkdtemp(prefix="hailwatch-partial-store-"))
+        self.addCleanup(shutil.rmtree, store, True)
+        shutil.copytree(hs.FIXTURE_DIR, store, dirs_exist_ok=True)
+        index_path = store / "hail" / "index.json"
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+        index["joins"]["parts"]["stations"] = "partial"
+        index["joins"]["partial"]["stations"] = ["00U 2024", "THM 2025"]
+        index["joins"]["reasons"]["stations"] = "the gust files were not fetched"
+        data = hs._pretty(index)
+        index_path.write_bytes(data)
+        manifest_path = store / "hail" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["files"]["hail/index.json"] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+        manifest_path.write_bytes(hs._pretty(manifest))
+        hs.check_manifest(store)
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-partial-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=str(store))
+        h = json.loads(page(out, "data/map.json"))["hail"]
+        self.assertEqual(h["joins"]["parts"]["stations"], "partial")
+        self.assertEqual(h["joins"]["partial"]["stations"], ["00U 2024", "THM 2025"])
+        for cell in FIVE_CELLS[:3]:                 # the cells the fixture holds
+            with self.subTest(cell=cell):
+                self.compare_cell(out, h, cell)
+        browser = node_sheet(out, h, {"row": FIVE_CELLS[0][0], "col": FIVE_CELLS[0][1]})
+        for key in ("gust_days", "gust_max"):
+            last = browser["table"]["rows"][key]["notes"][-1]
+            self.assertIn("did not load for 00U 2024, THM 2025 (the gust files were not fetched)", last)
+            self.assertEqual(last.count("This is not an all-clear."), 1, last)
+            self.assertTrue(last.endswith("This is not an all-clear."), last)
+        wind = {sec["id"]: sec for sec in browser["model"]["sections"]}["wind"]
+        self.assertEqual(sum(1 for n in wind["notes"] if "did not load for 00U 2024, THM 2025" in n), 1, wind["notes"])
+
+
+def sm_sections() -> list[str]:
+    """The eleven section ids in the brief's order (summary.WORDS_SUMMARY section_titles; Hail first, How this was made last)."""
+    from website import summary as sm
+    return list(sm.WORDS_SUMMARY["section_titles"])
+
+
+class SummaryReadsReader(unittest.TestCase):
+    """The every-key test reads the summary keys map.js uses (R1-F6): the reads of the S copy, of h.summary and hd.summary
+    read directly, and through own(...), sdGet and sumWord (D83, D87(h)). A key read in any of these forms is seen, so a key
+    the build does not write fails the every-key test whichever form the browser uses."""
+
+    def test_each_form_map_js_uses_is_seen(self):
+        js = (
+            'var a = h.summary.seasons; var b = hd.summary.words; var c = own(h.summary, "tile_list");\n'
+            'var d = S.partial; var e = sumWord(h.summary, "table_problem"); var f = S.rule.season_min;\n'
+            'var g = own(S.indicators.words, "held"); var k = sdGet(S, "roof.reference_line");\n'
+        )
+        reads = summary_reads(js)
+        for key in ("seasons", "words", "tile_list", "partial"):
+            self.assertIn(key, reads["top"])
+        self.assertIn("table_problem", reads["words"])
+        self.assertIn("season_min", reads["rule"])
+        self.assertIn("held", reads["indicators"])
+        self.assertIn("roof.reference_line", reads["paths"])
+
+    def test_a_key_the_block_lacks_is_reported_by_the_reader(self):
+        self.assertIn("not_written_key", summary_reads('var x = h.summary.not_written_key;')["top"])
+
+
+class SummaryContract(unittest.TestCase):
+    """The summary block the browser reads: every key map.js reads is written by the build (round 3, F1, D83), the share
+    rounding matches Python at every share the station rule can see (D82, D83(b)), and the sheet's joined code holds no
+    literal fallback for the rows it shows first (D83(a))."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-contract-"))
+        cls.addClassCleanup(shutil.rmtree, cls.out, True)
+        site.build(cls.out, None, datetime(2026, 10, 19, 12, 0, tzinfo=UTC), sample=True, hail_history=True)
+        cls.h = json.loads(page(cls.out, "data/map.json"))["hail"]
+        cls.js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+
+    def test_every_summary_key_the_browser_reads_is_in_the_block(self):                                      # F1, D83
+        d = self.h["summary"]
+        reads = summary_reads(self.js)
+        self.assertEqual(sorted(reads["words"] - set(d["words"])), [], "summary.words keys the build does not write")
+        self.assertEqual(sorted(reads["rule"] - set(d["rule"])), [], "summary.rule keys the build does not write")
+        self.assertEqual(sorted(reads["indicators"] - set(d["indicators"]["words"])), [], "summary.indicators.words keys")
+        self.assertEqual(sorted(reads["top"] - set(d)), [], "summary keys the build does not write")
+        sd = d["section_data"]
+        for path in sorted(reads["paths"]):
+            cur = sd
+            for part in path.split("."):
+                self.assertIsInstance(cur, dict, f"section_data.{path}")
+                self.assertIn(part, cur, f"section_data.{path} is not written")
+                cur = cur[part]
+        self.assertEqual(len(sd["roof"]["lines"]), 23)
+        for line in sd["roof"]["lines"].values():
+            self.assertTrue(line["label"] and line["kind"] and "noun" in line)
+            self.assertTrue(line["noun"] is None or line["noun"] in d["nouns"], line)
+
+    def test_the_section_data_is_the_contract_the_browser_round_two_wrote(self):                             # F1, D83
+        sd = self.h["summary"]["section_data"]
+        self.assertEqual(sd["kind"], {"radar": "Radar estimate", "report": "Report", "record": "Record (NCEI)",
+                                      "reference": "Reference", "unavailable": "Data unavailable"})
+        self.assertEqual(sd["row_labels"], ["Report", "Record", "Detection", "Warning", "Watch", "Advisory", "Zone product",
+                                            "County product", "Station"])
+        self.assertEqual(sd["rules"]["by_label"], {"Station": "wind", "Detection": "hail"})
+        self.assertEqual([r[0] for r in sd["rules"]["rules"]], ["ice", "heat", "flooding", "snow", "hail", "rain", "wind"])
+        self.assertEqual(sd["rules"]["default"], "storms")
+        self.assertEqual(sd["partial_marker"], "not counting")
+        self.assertEqual(sd["words"]["span_to"], "to")
+        self.assertEqual(sd["words"]["report_near"], "{count} within 5 miles{tail}")
+        self.assertEqual(sd["words"]["county_word"], "County")
+        self.assertEqual(sd["roof"]["partial_keys"], ["heat_advisory", "excessive_heat", "ice_storm", "winter_storm"])
+        self.assertEqual(sd["roof"]["reference_line"], "{source}: “{quote}”")
+        self.assertEqual(sd["section_keys"]["hail"], ["radar_max", "radar_1in", "hail_max", "hail_n"])
+        self.assertEqual(sd["extra_notes"], {"snow": ["analysis_held"]})
+        self.assertEqual(sd["season_rows"][0], {"section": "temperature", "kind": "Grid estimate", "keys": ["tmax", "tmin"],
+                                                "names": ["highest", "lowest"]})
+        self.assertEqual(sd["roof"]["lines"]["hail_size_days"]["noun"], "days")
+        self.assertEqual(sd["roof"]["extra"]["hail_warnings"], {"polygon": ["SV"], "sig": "W", "noun": "sv"})
+        self.assertEqual(sd["roof"]["extra"]["heat_advisory"]["sig"], ["Y"])
+        self.assertEqual(sd["kind_what"]["Warning"], self.h["summary"]["indicators"]["words"]["what_warnings"])
+
+    def test_the_rule_percent_is_the_three_values(self):                                                      # D82(c), D83(b)
+        self.assertEqual(self.h["summary"]["rule"]["percent"], {"scale": 100, "decimals": 1, "step": 0.1})
+
+    def test_the_day_noun_and_the_show_first_count_are_written(self):                                         # D83(a), D83(b)
+        self.assertEqual(self.h["summary"]["nouns"]["days"], ["day", "days"])
+        self.assertEqual(self.h["joins"]["show_first"], 10)
+        self.assertEqual(self.h["summary"]["rule"]["season_min"], 0.95)
+        self.assertEqual(self.h["summary"]["units"]["in"]["scale"], 100)
+
+    def test_the_station_words_the_browser_reads_are_in_the_stations_block(self):                            # F8, D71
+        words = set(re.findall(r"stWord\(\s*[\w.]+\s*,\s*\"([^\"]+)\"", self.js))
+        self.assertEqual(sorted(words - set(self.h["stations"]["words"])), [])
+
+    def test_the_browser_rounds_each_share_as_python_does_at_every_share(self):                              # D82, D83(b)
+        from website import summary as sm
+        rule = self.h["summary"]["rule"]
+        shares = [round(k / 2192, 4) for k in range(0, 2193)]
+        payload = {"code": "\n".join(js_function(self.js, name) for name in ("sumPercent", "sumRoundEven", "sumSharePct",
+                                                                             "missingKey", "has", "own")),
+                   "S": {"rule": {"cover_min": rule["cover_min"], "percent": rule["percent"]}}, "shares": shares}
+        done = subprocess.run([shutil.which("node"), "-e", NODE_SHARE_SCRIPT], input=json.dumps(payload),
+                              capture_output=True, text=True, timeout=120)
+        self.assertEqual(done.returncode, 0, done.stderr[-600:])
+        browser = json.loads(done.stdout)
+        python = [sm._share_text(share) for share in shares]
+        differing = [(k, python[k], browser[k]) for k in range(len(shares)) if python[k] != browser[k]]
+        self.assertEqual(differing, [], differing[:5])
+        for k, digits in SHARE_TIES.items():                          # the exact ties: 137, 685, 1233 and 1781 of 2,192
+            with self.subTest(k=k):
+                self.assertEqual(python[k], digits)
+                self.assertEqual(browser[k], digits)
+
+    def test_the_browser_season_rule_is_pythons_at_every_day_count_and_the_bounds(self):                    # D83(b), D87(d), F-09
+        from website import summary as sm
+        from website import stations
+        rule = self.h["summary"]["rule"]
+        first, last = date(2020, 6, 25), date(2027, 7, 5)
+        days = [(first + timedelta(days=k)).isoformat() for k in range((last - first).days + 1)]
+        labels = list(sm.FIVE) + [sm.PARTIAL]
+        payload = {"code": "\n".join([js_var(self.js, "HAIL_DAY_MS")] + [js_function(self.js, name) for name in (
+                       "own", "has", "sumPercent", "sumSeasonRule", "sumSeasonOf", "sumBounds", "sumDayNum", "sumIsoOf")]),
+                   "S": {"rule": rule}, "totals": [365, 366], "labels": labels, "days": days}
+        done = subprocess.run([shutil.which("node"), "-e", NODE_SEASON_SCRIPT], input=json.dumps(payload),
+                              capture_output=True, text=True, timeout=120)
+        self.assertEqual(done.returncode, 0, done.stderr[-600:])
+        browser = json.loads(done.stdout)
+        python_share = int(round(sm.SEASON_SHARE * 100))
+        self.assertEqual(browser["share"], {"scale": 100, "share": python_share})
+        python_full = [[total, valid, valid * 100 >= total * python_share] for total in (365, 366) for valid in range(367)]
+        self.assertEqual(browser["full"], python_full, "the 95 percent rule at every day count 0 to 366")
+        full = {(total, valid): ok for total, valid, ok in browser["full"]}
+        for total, enough, short in ((365, 347, 346), (366, 348, 347)):        # D88(l): 346.75 and 347.7 days need 347 and 348
+            with self.subTest(total=total):
+                self.assertTrue(full[(total, enough)], f"{enough} of {total} days is a season shown")
+                self.assertFalse(full[(total, short)], f"{short} of {total} days is not")
+        self.assertEqual(rule["season"], sm.SEASON_RULE)                        # the block the browser reads is the module's rule
+        self.assertEqual(sm.season_bounds("2023-24"), (date(2023, 7, 1), date(2024, 6, 30)))
+        self.assertEqual((sm.season_bounds("2023-24")[1] - sm.season_bounds("2023-24")[0]).days + 1, 366)   # a leap season
+        for label, start, end in browser["bounds"]:
+            with self.subTest(label=label):
+                self.assertEqual((start, end), tuple(d.isoformat() for d in sm.season_bounds(label)))
+        differing = []
+        for iso, label in browser["labels"]:
+            want = stations.season_of(date.fromisoformat(iso))
+            if want is not None and label != want:
+                differing.append((iso, label, want))
+        self.assertEqual(differing, [], differing[:5])
+
+    def test_the_browser_reads_the_season_bounds_and_the_inch_scale_from_map_json(self):                    # D87(d), F-08, F-12
+        season = js_function(self.js, "sumSeasonOf") + js_function(self.js, "sumBounds")
+        for literal in ('"-07-01"', '"-06-30"', "m >= 7", "07-01", "06-30"):
+            self.assertNotIn(literal, season, "the season bounds are map.json's (summary.rule.season), not literals")
+        inches = js_function(self.js, "hailInches")
+        self.assertNotIn("100", inches, "hailInches reads summary.units.in.scale from map.json, not the literal 100")
+        self.assertIn("scale", inches)
+
+    def test_each_joined_line_feeds_the_section_its_part_names(self):                                        # D82(d)
+        from website import build as bd
+        from website import joins as jn
+        county = jn.WORDS_JOINS["county_lead_none"].format(county_name="Yellowstone", start="1 Jan 2021", end="31 Dec 2025")
+        self.assertEqual(bd._line_part(county, "zones"), "county")
+        self.assertEqual(bd._line_part(jn.WORDS_JOINS["county_unavailable"], "zones"), "county")
+        self.assertEqual(bd._line_part(jn.WORDS_JOINS["zones_fire_none"], "zones"), "fire")
+        self.assertEqual(bd._line_part(jn.WORDS_JOINS["zones_before_line_one"].format(n=1, zone_name="X", zone="MTZ001"), "zones"),
+                         "zones")
+        self.assertEqual(bd._line_part("The newest warning in this build starts on Sep 19, 2026.", "warnings"), "warnings")
+        self.assertEqual(bd.JOIN_PART_SECTIONS["county"], "flooding")
+        self.assertEqual(bd.JOIN_PART_SECTIONS["fire"], "storms")
+
+    def test_the_sheet_code_holds_no_literal_fallback_for_the_rows_it_shows_first(self):                     # D83(a), (e)
+        self.assertNotIn("|| 10", self.js)
+        self.assertNotIn("showFirst: 10", self.js)
+
+    def test_a_sheet_line_with_no_value_is_never_a_placeholder_on_the_fixture(self):                         # (d)
+        browser = node_sheet(self.out, self.h, {"row": FIVE_CELLS[0][0], "col": FIVE_CELLS[0][1]})
+        everything = browser["tableTexts"] + [t for texts_ in browser["sectionTexts"].values() for t in texts_]
+        self.assertTrue(everything)
+        self.assertEqual([t for t in everything if "[missing" in t], [])
+
+    def test_the_billings_page_carries_each_joined_line_under_the_section_it_feeds(self):                     # D82(d)
+        page_html = page(self.out, "town/billings.html")
+        hail_sec = re.search(r'<section class="hist-sec[^"]*" id="sec-hail".*?</section>', page_html, re.S).group(0)
+        storms = re.search(r'<section class="hist-sec[^"]*" id="sec-storms".*?</section>', page_html, re.S).group(0)
+        flooding = re.search(r'<section class="hist-sec[^"]*" id="sec-flooding".*?</section>', page_html, re.S).group(0)
+        wind = re.search(r'<section class="hist-sec[^"]*" id="sec-wind".*?</section>', page_html, re.S).group(0)
+        text = {"hail": " ".join(html_text(hail_sec).split()), "storms": " ".join(html_text(storms).split()),
+                "flooding": " ".join(html_text(flooding).split()), "wind": " ".join(html_text(wind).split())}
+        self.assertIn("The newest detection in this build is from", text["hail"])          # the freshness line of detections
+        self.assertIn("The newest warning in this build starts on", text["storms"])        # the freshness line of warnings
+        self.assertIn("County products could not be loaded in this update", text["flooding"])   # the county line (its own part)
+        self.assertNotIn("County products could not be loaded", text["storms"])
+
+    def test_the_real_store_names_are_the_display_names_the_store_gives(self):                               # D78(c), round 3
+        store = os.environ.get("HAIL_PARITY_STORE")
+        if not store:
+            self.skipTest("set HAIL_PARITY_STORE to the adopted combined store")
+        folder = Path(tempfile.mkdtemp(prefix="hailwatch-names-"))
+        self.addCleanup(shutil.rmtree, folder, True)
+        site.build(folder, None, datetime(2026, 10, 19, 12, 0, tzinfo=UTC), sample=True, hail_history=True,
+                   hail_store_path=store)
+        h = json.loads(page(folder, "data/map.json"))["hail"]
+        benchland = node_sheet(folder, h, {"row": 792, "col": 1998})
+        snow = benchland["table"]["rows"]["snow"]
+        text = " ".join(snow["texts"] + snow["notes"] + [t for texts_ in benchland["sectionTexts"].values() for t in texts_])
+        self.assertIn("Buffalo 1.7 E", text)
+        self.assertIn("Harlowton 11NW", text)
+        for upper in ("BUFFALO", "HARLOWTON", "BILLINGS WTP"):
+            self.assertNotIn(upper, text)
+        billings = node_sheet(folder, h, {"row": 921, "col": 2149})
+        text = " ".join(billings["table"]["rows"]["snow"]["texts"] + billings["table"]["rows"]["snow"]["notes"])
+        self.assertIn("Billings WTP", text)
+        self.assertNotIn("BILLINGS WTP", text)
+
+
+def html_text(fragment: str) -> str:
+    """The visible text of an HTML fragment: its tags removed and its entities read."""
+    import html as html_lib
+    return html_lib.unescape(re.sub(r"<[^>]+>", " ", fragment))
+
+
 if __name__ == "__main__":
     unittest.main()
+
