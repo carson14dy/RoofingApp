@@ -1620,3 +1620,23 @@ points; the reviewers' findings go to the fixers as the workflow runs. The super
   The 25-day bands stand with "125 days or more" as the top band. (l) **Zone counts** carry the newest-warning date (2026-09-19)
   in their words, as built. (m) **Caches.** Each product prunes its download cache to the newest cycle or month; a cache keeps no
   error page (a body that fails the content check is never written).
+
+## Supervisor rulings from the risk-source skeptics (2026-10-26 00:40 UTC; D113)
+The skeptic pass over the 53 risk-source claims ended (109 agents): the figures hold almost everywhere; the refutations are
+wording, currency and licence-scope corrections, which become rules for the build:
+- D113 (a) **No implied endorsement.** NOAA's open-data licence requests attribution and forbids stating or implying NOAA
+  endorsement; every credit line reads "Source: ..." or "... data from ...", never "in partnership with" or "approved by".
+  (b) **Cadence words.** The NOAA smoke analysis updates several times a day (observed 15:48 and 22:48 UTC on one day), so the
+  legend says "updated during the day", never "daily". (c) **Grid words.** An nClimGrid cell in Montana is about 4.6 km north
+  to south and 3 to 3.3 km east to west; the words are "about 1/24 degree cells (roughly 4.6 by 3 km in Montana)". (d) **Dates,
+  not lags.** The store's warning, SWDI and NCEI dates are the newest event dates in the store, so the words read "the newest
+  warning in the store is dated 2026-09-19", never "read through" or "lag"; P4's zones words change to match. (e) **Heat
+  products.** NWS replaced the EH codes with XH (extreme heat) in 2025 (Service Change Notice 24-88); any heat-product count
+  includes both; zone rows are not events, and a per-zone count counts the products that covered the zone, said in those words.
+  (f) **Fire hazard.** The Forest Service hazard raster's catalog sentence opens a Data Use Agreement; counsel reads it before
+  the hazard layer is built; the MTBS outage is 8 AM to 12 PM on 28 October 2026. (g) **Air.** AirNow's Data Exchange
+  Guidelines exist as a PDF on the API docs site: an "Air quality" chip is possible once counsel reads them and a key is held
+  (counsel list item 22); PurpleAir's terms are readable through its app's JSON endpoints and it is not public domain (out).
+  (h) **Flood maps.** USGS flood inundation map data exist for some Montana reaches (the skeptic read them); a later option.
+  (i) **Report figures.** The views report's building counts were off by 60 and 8 against the store (25,202 and 7,960); the
+  record uses the store's figures; the pictures were right.
