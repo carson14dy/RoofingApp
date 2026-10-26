@@ -407,3 +407,9 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   then the final check. The stray /b6_run2.txt cannot be removed by the agent (root-level removal refused); harmless.
 - 13:10 UTC: P3 and P4 fixers done; D135 recorded; tidy script gains T7, T9 and the DESIGN chip sentence; waiting for the
   P1/P2 run (ww7hqfauo) before the tidy round, then the final check.
+
+## 2026-10-26 13:05 UTC: fix round done, tidy round running
+- The six post-integration fixers finished (wf_9df7e041-d5c P1 and P2, wf_c16fbe88-ac0 P3 and P4, wf_6f31ff28-9ce site and docs); their reports are gathered in the scratchpad (b6/fix-reports.json) for the final check. Their open points that need code are the tidy items T1 to T7, T9 to T11 (D134, D135); the rest are ruled or recorded as follow-ups (the cache post steps run inside the 5-minute reserve: the three caches total about 180 MB; a skipped monthly publish shows as a skipped step; the branch filter in hail-store.yml predates B6).
+- Tidy round launched 12:58 UTC as wf_5bf7e48d-350 (two fixers: modules and site). The stored scripts b6-tidy.js and b6-post-check.js had five double-escaped apostrophes that would not parse; fixed on the state branch, the inline run used the fixed text.
+- Disk: 3.5 GB free before the round. Removed four stale scratchpad folders (2.7 GB: the B5 review builds, a P3 skeptic copy, two skeptic caches). The test suite's output folders under /tmp (hailwatch-site-* and three other prefixes, 8,200 folders, about 11 GB, left by test runs that were killed before their atexit cleanup ran) could not be swept: the classifier refused the bulk removal twice. Noted for Carson; the tests themselves clean up on a normal exit.
+- Next: the final check (b6-post-check.js with the eight reports), the D135 bullet in DECISIONS, the signed squash commit with the seven untracked fixtures, push, the branch Website run, the PR on PR 17.
