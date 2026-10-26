@@ -1,0 +1,27 @@
+export const meta = {
+  name: 'b6-tidy',
+  description: 'B6 stage 2: the tidy fixer round after the integration fix round (D134): two fixers on disjoint files in parallel',
+  phases: [{ title: 'Fix', detail: 'two fixers' }],
+}
+const worker = 'haiku'
+const WT = '/home/user/wt/wt-b6'
+const PY = '/home/user/hail-b1/venv/bin/python'
+const ITEM = { type: 'object', properties: { id: { type: 'string' }, state: { type: 'string', enum: ['applied', 'already so', 'not applied'] }, evidence: { type: 'string' }, reason: { type: 'string' } }, required: ['id', 'state', 'evidence'] }
+const REPORT = { type: 'object', properties: { product: { type: 'string' }, items: { type: 'array', items: ITEM }, files_changed: { type: 'array', items: { type: 'string' } }, tests: { type: 'string' }, open: { type: 'array', items: { type: 'string' } } }, required: ['product', 'items', 'files_changed', 'tests', 'open'] }
+const common = (files) => ' The worktree is ' + WT + ' (branch claude/map-b6); the Python is ' + PY + '. You may edit only these files: ' + files + '. Never run a git write command (no add, commit, stash, checkout, reset). Make no network request.' +
+  ' No AI model, vendor or product names in repository files; no em-dashes (U+2014); sentence case; plain words; a missing input shows "Data unavailable", never a zero or an all-clear (rule 5). Another fixer edits other files in the same worktree at the same time: never touch a file outside your list; if a test outside your list fails for a change in progress elsewhere, say so in open.'
+const JOBS = {
+  modules: { files: 'website/basemap2.py, tests/test_basemap2.py, website/landmarks.py, tests/test_landmarks.py, website/sources.py', items:
+    'T1 (D134(a)): basemap2.WORDS["water_line_unavailable"] reads exactly "Detailed water and local parks: Data unavailable for this area in this update. This is not an all-clear." (the D122(b) sentence); the test that asserts every unavailable sentence begins with "Data unavailable." exempts this one key because the words are inside the sentence (say so in the test); tests.test_site has a pin on the exact sentence (tests/test_site.py, test_the_sheet_water_line_carries_the_d122b_words_in_the_vector_module): run ' + PY + ' -m unittest tests.test_site -k water -v (or the test by name) to see it pass. ' +
+    'T2 (F2): landmarks.py _credit writes "Data unavailable" for a missing date in every credit string it writes into hail/base/index.json, never "date not recorded" or "cycle date not recorded"; a test. ' +
+    'T3 (F6): landmarks.WORDS["held_parks"] reads: "The Census park points and their names are held for counsel and not shown." followed by the held reason sentence; no "second public list" wording anywhere in the module; the test follows. ' +
+    'T4 (F5): the iem_ugcs row in website/sources.py CONTRACTS says in its request and timing text that the ugcs snapshot of 2026-10-25 gives the 83 public zone outlines only and that the B6 zone counts use the counted rows from the store\\'s zone and polygon files; no "139 features" claim about the counts; run ' + PY + ' -m unittest tests.test_site -k Contracts -v or the contract tests by name and ' + PY + ' -m unittest tests.test_sources -v if it exists. Run ' + PY + ' -m py_compile on every Python file you touch and ' + PY + ' -m unittest tests.test_basemap2 tests.test_landmarks -v (must pass).' },
+  site: { files: 'website/build.py, website/templates/about.html, tests/test_site.py, docs/DESIGN.md, docs/ROADMAP.md, docs/DECISIONS.md', items:
+    'T5 (D134(b)): every B6 credit line on the About page prints only for a source the store read: read each part\\'s block in hail/base/index.json (terrain layers, the vector sources, the landmark sources) and print a source\\'s "Source:" line only when that source is listed as read or loaded; a failed or unlisted source prints no line (the part\\'s "Data unavailable" sentence stands); the hospital, FAA and PAD-US lines already follow this rule; tests with a synthetic index where one terrain layer, one vector source and one landmark source failed. ' +
+    'T6 (docs): docs/DESIGN.md section 13.3 monthly terrain step row says a 25-minute cap (1,500 s) with --refresh-descriptions (D128(f)); docs/ROADMAP.md replaces every "D106 to D127" range (about lines 43, 115, 118 and 229) with "D106 to D134"; docs/DECISIONS.md gains the D134 bullet after D133 in the same style (the ruling text is in /home/user/wt/wt-session/briefs/hail-b5-brief.md under the 13:00 UTC heading) and its D38 header range reads D31 to D134; the docs-pinning test tests.test_site.HailSwathLayers.test_the_hail_state_is_checked_once_a_minute_and_the_docs_say_so still passes. Run ' + PY + ' -m py_compile website/build.py tests/test_site.py and ' + PY + ' -m unittest tests.test_site -v (must pass except a test that a change in progress in another fixer\\'s file explains; say which).' },
+}
+phase('Fix')
+const fixes = await parallel(Object.keys(JOBS).map(k => () => agent('You are the tidy fixer (' + k + ') of the B6 map build.' + common(JOBS[k].files) + ' Items: ' + JOBS[k].items +
+  ' Apply each item exactly as written (already so with the line where it is); add or update tests. Return the items with state and evidence, the files changed, the test summary and what is open.',
+  { label: 'tidy:' + k, phase: 'Fix', model: worker, schema: REPORT })))
+return { fixes: fixes.filter(Boolean) }
