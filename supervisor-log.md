@@ -521,3 +521,11 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   Website workflow was dispatched on main by hand to publish the climate rows.
 - The S1 branch Website run 139 (06b57f4) failed in the map smoke step on the runner (the build and the parity step
   passed); the failure lines are being read.
+- The S1 branch run 139 failed only on the phone budget: the smoke measured 706,562 bytes gzip for the B3 files and the
+  shell of the 390 px Billings view at zoom 15 against the 700,000 gate (B3 files 273,924 in 18 files; shell and data
+  432,638 in 13 files, the 13th being data/base.json; the live build's map.json is larger than the offline one). Every
+  other check passed (the build, the parity step, the zoom rules, the taps, the swath layers). Locally the same view was
+  696,761. The gate (D82(b)) was set for the B3 page; the sheet and data/base.json are the first B6 bytes in the shell,
+  and S2 to S4 add the layers' files. The supervisor puts the budget to Carson with a recommendation of 900,000 bytes
+  gzip for the B3 files, the shell and the B6 files together at zoom 15 (the frames still listed apart), to be
+  re-measured at S5; the branch's Website runs stay red on this one check until the owner's number is set in S5.
