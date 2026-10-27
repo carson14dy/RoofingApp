@@ -876,6 +876,11 @@ a { color: inherit; }
   line-height: 1.3; overflow-wrap: anywhere; }
 .sheet-body .addr-sec > .muted { margin: 8px 0 0; }
 
+/* the B3 credit box (Leaflet's attribution control, map.js b3Credits, --hail-addresses builds): the map's own glass and ink
+   tokens, so it follows dark mode like every other panel (the browser review of 2026-10-27 found it light on the dark map) */
+.leaflet-container .leaflet-control-attribution { background: var(--glass-strong); color: var(--ink); }
+.leaflet-container .leaflet-control-attribution a { color: var(--ink); }
+
 /* ---------------------------------------------------------------- card mode (?card=1) */
 .card-ui { display: none; }
 /* Embedded in the Veor home page concept (?embed=1): its sidebar replaces the close button and its top
