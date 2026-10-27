@@ -3951,7 +3951,9 @@ def check_options_states(browser, base: str, data: dict) -> list[str]:
 
     # b. a five-year part that loaded in part (the zones of Wind and Flood)
     def zones_partial(doc):
-        doc["history_layers"]["zones"]["state"] = "partial"
+        # a build without the store has no zones block (its history_layers block is unavailable): the change adds one, so
+        # the partial sentence is checked on every build, not only on a --hail-history build
+        doc.setdefault("history_layers", {}).setdefault("zones", {})["state"] = "partial"
     ctx, page, errors = open_at((390, 844), "map.html", changed(zones_partial))
     try:
         words = page_words(page)
@@ -3968,10 +3970,13 @@ def check_options_states(browser, base: str, data: dict) -> list[str]:
 
     # c. an unavailable landmark kind (the school kind) with its own problem sentence
     def school_unavailable(doc):
-        for kind in doc["base"]["landmarks"]["kinds"].values():
-            if kind and kind.get("code") == "s":
-                kind["state"] = "unavailable"
-                kind["problem"] = "Data unavailable. Smoke school words."
+        # a build without the store has no landmark kinds (its landmarks block is unavailable): the change writes the school
+        # kind in, so the chip's own problem sentence is checked on every build
+        kinds = doc.setdefault("base", {}).setdefault("landmarks", {}).setdefault("kinds", {})
+        school = [k for k in kinds.values() if k and k.get("code") == "s"] or [kinds.setdefault("school", {"code": "s"})]
+        for kind in school:
+            kind["state"] = "unavailable"
+            kind["problem"] = "Data unavailable. Smoke school words."
     ctx, page, errors = open_at((390, 844), "map.html?landmarks=s", changed(school_unavailable))
     try:
         words = page_words(page)
@@ -4029,12 +4034,17 @@ def check_options_states(browser, base: str, data: dict) -> list[str]:
     finally:
         ctx.close()
 
-    # f. the sheet's top edge does not cover the Find button at the two wide sizes
+    # f. the sheet's top edge does not cover the Find button at the two wide sizes (a --hail-addresses build with the address
+    #    text on has the button; a build without it gets a note, not a failure)
     for size in ((1280, 800), (1024, 700)):
         ctx, page, errors = open_at(size, "map.html")
         try:
-            go = page.evaluate("() => { const r = document.getElementById('address-go').getBoundingClientRect();"
-                               " return [r.left, r.top, r.right, r.bottom]; }")
+            go = page.evaluate("() => { const b = document.getElementById('address-go'); if (!b) return null;"
+                               " const r = b.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; }")
+            if go is None:
+                problems.append(NOTE + f"options {size[0]} by {size[1]}: no Find button on this build (--hail-addresses off), so the "
+                                "sheet's edge against it is not checked")
+                continue
             x, y = go[0] + 3, go[3] - 3
             covered = page.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y);"
                                     " return !!e && document.getElementById('map-options').contains(e); }", [x, y])

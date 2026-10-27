@@ -3667,6 +3667,100 @@ class B3Completion(unittest.TestCase):
             self.assertIn(module, unit[0].split())
 
 
+class B3SplitMaps(unittest.TestCase):
+    """The B3 blocks' compact split maps (D40; docs/ROADMAP.md engineering follow-up A, D66, D82(b)): build.py b3_map_blocks
+    turns each block's tile list into tile_split, so no block lists every tile name. The browser reads the split maps
+    (map.js b3Listed and b3ListedCount). The every-flag sample build (--sample --hail-history --hail-addresses
+    --storm-layers) holds the addresses; the sample store has no roads or outlines, so the outlines' split map is checked on
+    a loaded block the test writes."""
+
+    NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-b3-split-"))
+        cls.addClassCleanup(shutil.rmtree, cls.out, True)      # only the folder this class made
+        site.build(cls.out, None, cls.NOW, sample=True, hail_history=True, hail_addresses=True, storm_layers=True)
+        cls.hail = json.loads(page(cls.out, "data/map.json"))["hail"]
+
+    def test_no_b3_block_lists_every_tile_name_and_the_split_maps_say_which_have_a_file(self):
+        # D40: each block has tile_split and no tiles list; the split map lists the store's tiles of that block
+        index = json.loads((hs.FIXTURE_DIR / "hail" / "index.json").read_text(encoding="utf-8"))
+        for key in ("addresses", "roads", "buildings"):
+            block = self.hail[key]
+            self.assertNotIn("tiles", block, key)
+            self.assertIn("tile_split", block, key)
+            # the sample store has no roads or outlines block, so their split maps are empty (the state says unavailable)
+            self.assertEqual(tile_names_of(block), sorted(index.get(key, {}).get("tiles", [])), key)
+        self.assertTrue(index["addresses"]["tiles"])
+        self.assertEqual(self.hail["addresses"]["state"], "sample")
+        self.assertEqual((self.hail["roads"]["state"], self.hail["buildings"]["state"]), ("unavailable", "unavailable"))
+        self.assertEqual((self.hail["roads"]["tile_split"], self.hail["buildings"]["tile_split"]), ({}, {}))
+
+    def test_the_buildings_split_map_lists_leaf_names_only(self):
+        # D40 and D34: the outlines' split map lists each tile's leaf names; each leaf's box is derived in the browser from
+        # its quadtree digits (map.js b3NameBox). The block is written here, as a loaded outlines block, so the test has leaves
+        tiles = [f"r{r:04d}_c{c:04d}" for r in (79, 80) for c in range(198, 208)]     # 2 rows of 10 tiles: 20 tiles
+        box = [-108.5, 45.7, -108.49, 45.71]
+        split_boxes = {tile: [[tile + "0", box], [tile + "1", box]] for tile in tiles}   # two leaves per tile
+        counts = {"footprints": 40, "multipart": 0, "with_addresses": 30, "without_address": 10, "matched_rows": 30,
+                  "unmatched_rows": 5, "unmatched_by_class": {}}
+        block = {"state": "loaded", "addresses": "loaded", "tiles": tiles, "split_boxes": split_boxes, "counts": counts,
+                 "overhang_deg": 0.0, "counties": {"state": "unavailable"}, "source": {"file_date": "2026-09-13"}}
+        blocks = site.b3_map_blocks({bd.INDEX_KEY: block}, "on")
+        outlines = blocks["buildings"]
+        self.assertEqual(outlines["state"], "loaded")
+        self.assertNotIn("tiles", outlines)
+        self.assertEqual(outlines["tile_split"], {"79": [[198, 207]], "80": [[198, 207]]})     # the same 20 tiles, compactly
+        split = outlines["split"]
+        self.assertIsInstance(split, dict)
+        self.assertEqual(split, {tile: [name for name, leaf_box in leaves] for tile, leaves in split_boxes.items()})
+        for tile, names in split.items():
+            self.assertIsInstance(names, list, tile)
+            self.assertTrue(names, tile)
+            for name in names:
+                self.assertIsInstance(name, str)
+                self.assertTrue(name.startswith(tile) and len(name) > len(tile), name)
+        # the three B3 blocks together name a tile in a key or a leaf and no tile list: the matches are the keys and the leaves
+        raw = json.dumps({key: blocks[key] for key in ("addresses", "roads", "buildings")})
+        leaves = sum(len(names) for names in split.values())
+        self.assertLess(len(re.findall(r"r\d{4}_c\d{4}", raw)), len(split) + leaves + 20)
+
+    def test_the_browser_reads_the_split_maps(self):
+        # D40: map.js reads each block's tile_split through b3Listed (membership) and b3ListedCount (the test hook's counts)
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn("function b3Listed(", js)
+        self.assertIn("function b3ListedCount(", js)
+        for block in ("roads", "adr", "bld"):
+            self.assertIn(f"b3Listed(B.tiles.{block}, t)", js)
+        self.assertIn("b3ListedCount(B3.tiles.roads)", js)
+        self.assertIn("own(split, String(t.r))", js)             # the row key is the number's decimal form, as str(r) writes it
+        for old in ("tiles.roads[t.name]", "tiles.adr[t.name]", "tiles.bld[t.name]"):
+            self.assertNotIn(old, js)                          # the old set lookups are gone
+        self.assertEqual(js.count(".tiles[t.name]"), 1, "only the counts document (doc.tiles) keeps a name lookup")
+
+    def test_the_address_text_off_mode_keeps_the_split_map_and_drops_the_search_names(self):
+        # D35: --address-text off leaves out the search index's names and the form's words; the split map stays (D40)
+        index = json.loads((hs.FIXTURE_DIR / "hail" / "index.json").read_text(encoding="utf-8"))
+        blocks = site.b3_map_blocks({"addresses": index["addresses"]}, "off")       # the key is addresses.INDEX_KEY
+        addresses = blocks["addresses"]
+        self.assertEqual(addresses["text"], "off")
+        self.assertNotIn("tiles", addresses)
+        self.assertEqual(tile_names_of(addresses), sorted(index["addresses"]["tiles"]))
+        for name in site.ADDRESS_SEARCH_KEYS:
+            self.assertNotIn(name, addresses, name)
+        for name in site.ADDRESS_FORM_WORDS:
+            self.assertNotIn(name, addresses["templates"], name)
+
+    def test_tile_split_round_trips(self):
+        # D40: build.tile_split writes runs of columns per row, and tile_names_of reads them back as sorted names
+        names = ["r0092_c0214", "r0092_c0215", "r0092_c0217", "r0079_c0199"]
+        split = site.tile_split(names)
+        self.assertEqual(split, {"79": [[199, 199]], "92": [[214, 215], [217, 217]]})
+        self.assertEqual(tile_names_of({"tile_split": split}), sorted(names))
+        self.assertEqual(site.tile_split([]), {})
+
+
 # ---------------------------------------------------------------- the five-season history (B5, --hail-history)
 
 def jesc(text: str) -> str:

@@ -661,7 +661,8 @@ Gate examples (the brief's gate B3-4): "401 N 27th St Billings" (an address that
 **Data contract additions (`--hail-addresses` builds only).**
 - `data/map.json["hail"]`:
   - `addresses`: `text` ("on" or "off"), `templates` (the words above and `placed_how`), `zoom` (`dots` 15, `choose` 17) and `dot_radius_px` in every state (D47), `limits` (`tap_radius_px` 12, `result_cap` 20, `rows_per_file` 2,500), `classes` (S, P, G, L, T, U), `search_words`, the file-key rules, `source` (the export and publication dates).
-  - `buildings`: `text`, `zoom` (counts 13 and 14, dots 15, fills 16, emphasis 17), `tap_radius_px` 12, `templates`, the split map and the shard template.
+  - `buildings`: `text`, `zoom` (counts 13 and 14, dots 15, fills 16, emphasis 17), `tap_radius_px` 12, `templates`, the split map (leaf names only, since D144) and the shard template.
+  - Each of the three blocks carries `tile_split`, the compact split map of the tiles that have a file (`{"<row>": [[first column, last column], ...]}`, D40, D144); no block lists every tile name.
   - `roads`: `classes` (each with its name, width and `min_zoom`), `zoom` (`arterials_from` 13, `local_from` 15, `names_from` 16), and the legend and attribution words.
   - `draw`: `cache_bytes` 33,554,432 (32 MiB), `labels` (`per_view` 300, `fit_px` 10, `grid_px` 48, `angle_deg` 5).
   - `attribution`: the source lines of the layers that loaded, shown in Leaflet's attribution control.
@@ -681,7 +682,7 @@ Gate examples (the brief's gate B3-4): "401 N 27th St Billings" (an address that
 | Address lines unavailable | The outline's address lines cannot be read | "Addresses for this building could not be loaded in this update ..." |
 
 **Browser duties (`website/static/map/map.js`, the B3 block; its header documents each step).**
-- The shard names come from the grid's arithmetic, from `data/map.json`, and from the split map; the leaves' bounds come from their quadtree digits (0 NW, 1 NE, 2 SW, 3 SE).
+- The shard names come from the grid's arithmetic, from `data/map.json` (a tile the block's `tile_split` lists), and from the split map; the leaves' bounds come from their quadtree digits (0 NW, 1 NE, 2 SW, 3 SE), for the outlines too since D144.
 - One fetch per shard file, kept in memory under a 32 MiB cap. The least recently used file goes first, and a file in view never does. A failed fetch is logged and asked again after the next move. Nothing throws.
 - One canvas in the hail pane, drawn in this order: the roads by class, the outline fills and hairlines, the emphasis, the dots, the count bubbles and the names last.
 - The tap, the sheet and the search, as above. The search reads the typed text, fetches one letter file, lists the rows and zooms to the chosen one.
@@ -961,7 +962,7 @@ The minimum zooms, by feature:
 | Recent radar hail, `hail/recent/cells.json` | none set | 1,718 bytes; 64 cells |
 | First paint, `data/map.json` | 163,840 bytes raw (D82(a)) | 128,222 bytes raw for the whole file on the history-flag build with the live feeds (2026-10-26, the final modules); 116,336 bytes on the same day's offline build; both under the gate |
 | Second data file, `data/base.json` | within the page budget (D125(d)) | 33,526 bytes raw for the whole file (the final modules, 2026-10-26) |
-| Phone view, zoom 15 over Billings | 700,000 bytes gzip (D82(b)) | 681,569 bytes gzip on 2026-10-25, before the B6 layers are drawn |
+| Phone view, zoom 15 over Billings | 700,000 bytes gzip (D82(b)) | 681,569 bytes gzip on 2026-10-25, before the B6 layers are drawn; 706,562 on the options sheet's first live preview (run 139, 2026-10-27), over the budget; 667,485 on the same store after the compact tile sets (D144) |
 | Monthly terrain step | 25-minute cap (1,500 s), with `--refresh-descriptions` (D128(f)); 60 s request timeout (D112(b), D117(a)) | cold run 1,175 s for 1,818 requests |
 
 The first two rows are the sizes the B6 integrator measured (D131). The earlier figures of 139 and 4,029 bytes were the P4 group sums, not the sizes of these files. The every-flag build, with `--hail-addresses`, is 397,416 bytes raw (385,530 on the offline build); it is recorded and not gated (D131(a)).

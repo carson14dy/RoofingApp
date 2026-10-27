@@ -914,6 +914,11 @@ def b3_map_blocks(found: dict, address_text: str) -> dict:
     roads = st.map_data_streets(found)
     outlines = bd.map_data_buildings(found)
     outlines["text"] = address_text
+    # D40, roadmap follow-up A: no block lists every tile name. Each block's "tiles" becomes its compact split map (tile_split,
+    # the same shape as hail.tile_split); an unavailable block has no "tiles", so it gets {} and keeps its other keys.
+    for block in (addresses, roads, outlines):
+        names = block.pop("tiles", None)
+        block["tile_split"] = tile_split(names or [])
     lines = []
     if b3_loaded(found, ad.INDEX_KEY):
         lines.append(addresses_attribution(found))

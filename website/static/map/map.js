@@ -5936,8 +5936,10 @@
       The sentences this script fills are in hail.buildings.templates and hail.addresses.templates; the form and the legend
       lines are printed by map.html from the page's b3 context, built by build.py b3_words). Python writes every word, number and
       rule. The browser does these steps and no others:
-        - the shard names a view needs: each 0.1-degree tile the view touches (the grid's arithmetic, from map.json), its
-          split leaves named from the split map, and the leaves' bounds from their quadtree digits (0 NW, 1 NE, 2 SW, 3 SE);
+        - the shard names a view needs: each 0.1-degree tile the view touches (the grid's arithmetic, from map.json) that the
+          block's compact split map lists (tile_split: each tile row's runs of columns, D40), its split leaves named from the
+          split map, and the leaves' bounds from their quadtree digits (0 NW, 1 NE, 2 SW, 3 SE). The compact split maps say
+          which tiles have a file; no block lists every tile name (D40);
         - one fetch per shard file, kept in memory with a size cap (data.hail.draw.cache_bytes): the least recently used
           shard goes first, and a shard in view never does. A failed fetch is logged (window.hailMapTest) and the map
           draws without it, so nothing throws;
@@ -6000,19 +6002,18 @@
   }
 
   /** The B3 state: the blocks that loaded (a block that did not load draws nothing, and its legend line says so), the grid,
-      the tile sets, the cache, the pane and the canvas. Nothing is fetched here. */
+      the tile split maps (each block's tile_split), the cache, the pane and the canvas. Nothing is fetched here. */
   function b3Start() {
     var h = hailData();
     if (!h || !h.grid || !(h.roads || h.buildings || h.addresses)) return;
     var live = function (block) { return !!block && (block.state === "loaded" || block.state === "sample"); };
-    var set = function (list) { var s = {}; (list || []).forEach(function (t) { s[t] = true; }); return s; };
     var mode = (h.addresses && h.addresses.text) || (h.buildings && h.buildings.text) || "on";
     B3 = {
       h: h, grid: h.grid, draw: h.draw || {}, zoom: b3Zoom(h),
       root: (app.getAttribute("data-map") || "").replace(/data\/map\.json.*$/, ""),
       roads: live(h.roads) ? h.roads : null, bld: live(h.buildings) ? h.buildings : null, adr: live(h.addresses) ? h.addresses : null,
       textOn: mode !== "off",                 // --address-text off (D35): no address text, no search
-      tiles: { roads: set(h.roads && h.roads.tiles), bld: set(h.buildings && h.buildings.tiles), adr: set(h.addresses && h.addresses.tiles) },
+      tiles: { roads: (h.roads && h.roads.tile_split) || {}, bld: (h.buildings && h.buildings.tile_split) || {}, adr: (h.addresses && h.addresses.tile_split) || {} },
       cache: new Map(), bytes: 0, cap: Number(((h.draw || {}).cache_bytes)) || 0, tick: 0, pinned: {},
       fetches: [], failures: [], failed: {}, gen: 0, ms: [], stats: {}, hits: [], queued: false, down: null, cityNames: null,
       dpr: window.devicePixelRatio || 1, col: {}, sz: {}, nameFont: "", countFont: ""
@@ -6056,8 +6057,8 @@
       redraws: function (n) { var out = []; for (var i = 0; i < n; i++) { map.panBy([i % 2 ? -1 : 1, 0], { animate: false }); b3Draw(); out.push(B3.ms[B3.ms.length - 1]); } return out; },
       zoom: function () { return map.getZoom(); },
       hits: function () { return B3.hits.map(function (h) { return [Math.round(h.x), Math.round(h.y), h.kind, h.kind === "b" ? (h.ref.l || []).length : 1]; }); },
-      state: function () { return { roads: !!B3.roads, bld: !!B3.bld, adr: !!B3.adr, zoom: B3.zoom, tiles: Object.keys(B3.tiles.roads).length,
-        bldTiles: Object.keys(B3.tiles.bld).length, adrTiles: Object.keys(B3.tiles.adr).length, root: B3.root, z: map.getZoom(), cap: B3.cap,
+      state: function () { return { roads: !!B3.roads, bld: !!B3.bld, adr: !!B3.adr, zoom: B3.zoom, tiles: b3ListedCount(B3.tiles.roads),
+        bldTiles: b3ListedCount(B3.tiles.bld), adrTiles: b3ListedCount(B3.tiles.adr), root: B3.root, z: map.getZoom(), cap: B3.cap,
         textOn: B3.textOn, searchOn: !!B3.searchOn, tap: B3.tap, minZoom: map.getMinZoom(), maxZoom: map.getMaxZoom() }; }
     };
     b3Queue();
@@ -6129,6 +6130,13 @@
     return [west, north - td, west + td, north];
   }
 
+  /** Whether a block's compact split map (its tile_split, written by build.py tile_split as D40 writes hail.tile_split;
+      hailListed reads that one) lists the tile {r, c}: the row's runs of columns, [first, last]. */
+  function b3Listed(split, t) { var runs = own(split, String(t.r)) || []; for (var i = 0; i < runs.length; i++) if (t.c >= runs[i][0] && t.c <= runs[i][1]) return true; return false; }
+
+  /** How many tiles a compact split map lists (the test hook's counts). */
+  function b3ListedCount(split) { var n = 0; Object.keys(split || {}).forEach(function (row) { split[row].forEach(function (run) { n += run[1] - run[0] + 1; }); }); return n; }
+
   /** The tile's file name, "r0079_c0199" (the name hail.tile_name writes). */
   function b3TileName(r, c) { return "r" + pad4(r) + "_c" + pad4(c); }
 
@@ -6158,12 +6166,12 @@
     return out;
   }
 
-  /** The shard leaves of one tile for a block: [{name, box}]. A tile with no split is one shard, named as the tile. The
-      buildings' split map gives [name, box] pairs; the roads' and the addresses' give names, and their boxes come from the names. */
-  function b3Leaves(block, t, boxed) {
+  /** The shard leaves of one tile for a block: [{name, box}]. A tile with no split is one shard, named as the tile. Every
+      block's split map lists its leaves' names (build.py, D40), and each leaf's box comes from its name (b3NameBox). */
+  function b3Leaves(block, t) {
     var list = block.split && block.split[t.name];
     if (!list) return [{ name: t.name, box: b3TileBox(B3.grid, t.r, t.c) }];
-    return list.map(function (x) { return boxed ? { name: x[0], box: x[1] } : { name: x, box: b3NameBox(B3.grid, x) }; });
+    return list.map(function (name) { return { name: name, box: b3NameBox(B3.grid, name) }; });
   }
 
   /** Whether two boxes [w, s, e, n] (degrees) overlap. */
@@ -6351,8 +6359,8 @@
     var bvb = grow ? [vb[0] - grow, vb[1] - grow, vb[2] + grow, vb[3] + grow] : vb;
     var btiles = grow ? b3TilesIn(B.grid, bvb) : tiles;
     var pinned = {}, roadEnts = [], bldEnts = [], adrEnts = [], countsDoc = null;
-    var want = function (kind, block, t, boxed, out, view) {
-      b3Leaves(block, t, boxed).forEach(function (leaf) {
+    var want = function (kind, block, t, out, view) {
+      b3Leaves(block, t).forEach(function (leaf) {
         if (!b3Overlaps(leaf.box, view)) return;
         var url = B.root + block.shard.replace("{name}", leaf.name);
         pinned[url] = true;
@@ -6362,11 +6370,11 @@
       });
     };
     tiles.forEach(function (t) {
-      if (wantRoads && B.tiles.roads[t.name]) want("roads", B.roads, t, false, roadEnts, vb);
-      if (wantAddr && B.tiles.adr[t.name]) want("addresses", B.adr, t, false, adrEnts, vb);
+      if (wantRoads && b3Listed(B.tiles.roads, t)) want("roads", B.roads, t, roadEnts, vb);
+      if (wantAddr && b3Listed(B.tiles.adr, t)) want("addresses", B.adr, t, adrEnts, vb);
     });
     btiles.forEach(function (t) {
-      if (wantDots && B.tiles.bld[t.name]) want("buildings", B.bld, t, true, bldEnts, bvb);
+      if (wantDots && b3Listed(B.tiles.bld, t)) want("buildings", B.bld, t, bldEnts, bvb);
     });
     if (wantCounts && B.bld.counts_file) {
       var curl = B.root + B.bld.counts_file;
