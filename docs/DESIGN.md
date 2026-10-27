@@ -962,7 +962,7 @@ The minimum zooms, by feature:
 | Recent radar hail, `hail/recent/cells.json` | none set | 1,718 bytes; 64 cells |
 | First paint, `data/map.json` | 163,840 bytes raw (D82(a)) | 128,222 bytes raw for the whole file on the history-flag build with the live feeds (2026-10-26, the final modules); 116,336 bytes on the same day's offline build; both under the gate |
 | Second data file, `data/base.json` | within the page budget (D125(d)) | 33,526 bytes raw for the whole file (the final modules, 2026-10-26) |
-| Phone view, zoom 15 over Billings | 700,000 bytes gzip (D82(b)) | 681,569 bytes gzip on 2026-10-25, before the B6 layers are drawn; 706,562 on the options sheet's first live preview (run 139, 2026-10-27), over the budget; 667,485 on the same store after the compact tile sets (D144) |
+| Phone view, zoom 15 over Billings | 700,000 bytes gzip (D82(b)) | 681,569 bytes gzip on 2026-10-25, before the B6 layers are drawn; 706,562 on the options sheet's first live preview (run 139, 2026-10-27), over the budget; 667,485 on the same store after the compact tile sets (D144), and 672,551 on the branch's live preview (run 144, live feeds) |
 | Monthly terrain step | 25-minute cap (1,500 s), with `--refresh-descriptions` (D128(f)); 60 s request timeout (D112(b), D117(a)) | cold run 1,175 s for 1,818 requests |
 
 The first two rows are the sizes the B6 integrator measured (D131). The earlier figures of 139 and 4,029 bytes were the P4 group sums, not the sizes of these files. The every-flag build, with `--hail-addresses`, is 397,416 bytes raw (385,530 on the offline build); it is recorded and not gated (D131(a)).
