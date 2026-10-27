@@ -495,3 +495,20 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   (climate_backfill=true); check-in at 02:40.
 - The base map fix workflow (scripts/basemap2-fixes.js, briefs/basemap2-fixes-brief.md) runs on /home/user/wt/wt-bm2,
   branch claude/basemap2-fixes from 3d62235.
+
+## 2026-10-27, 02:00 to 02:20 UTC: S1 done, S2 launched
+- S1 (the options sheet) passed its gates after the resumed fixer: tests.test_site 384 OK and 6 skipped, the whole suite
+  2,558 OK and 12 skipped, the full smoke passed (the phone view 696,761 of 700,000 bytes gzip for the B3 files and the
+  shell), Chromium at 390, 1280 and 320 px light and dark with 113 checks and no console error. Supervisor review: the
+  sheet markup is rendered from SHEET_WORDS (171 keys) through Jinja macros; the fixture tests/fixtures/default-build-s1-
+  rulings.json holds the three template rulings for the identity manifest. Committed signed as 06b57f4 on
+  claude/map-b6-browser and pushed (the branch Website run follows). Rulings D144(a) to (i) in briefs/b6-browser-brief.md.
+- Measured for the budget: map.js 415,816 bytes raw and 120,024 gzip; map.css 15,613 gzip; leaflet.js 42,578 gzip; the
+  zoom 15 Billings view: B3 files 273,924 in 18 files, shell and data 422,837 in 12 files. Comment-only lines are 1,011 of
+  6,912 in map.js and are worth about 5,000 bytes gzip: not the lever.
+- S2 (the base map drawn) launched: briefs/b6-s2-brief.md with rulings D145(a) to (d) (a second script layers.js, the B6
+  bytes measured apart with the page total, roles for every colour, nothing drawn from a guess); scripts/b6-browser-s2.js.
+- Also running: the README update (scripts/readme-update.js, briefs/readme-update-brief.md, worktree wt-readme, branch
+  claude/readme-update) at Carson's request, and the base map fix (wt-bm2).
+- /test_site_run2.log (188 bytes at the filesystem root, written by an S1 agent's chained command) could not be removed:
+  the safety check refuses a root-level removal. Harmless; left.
