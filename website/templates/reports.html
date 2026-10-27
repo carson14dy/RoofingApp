@@ -1,6 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Storm reports · Montana Hail Watch{% endblock %}
+{% block title %}Storm reports · Veor{% endblock %}
 {% block content %}
+{# The storm reports page in the Veor look (docs/DESIGN.md section 14): the map and its key as one framed card, each
+   reporting day a card with its heading, the tables with mono numbers. The words, the states and the table captions
+   are the page's own. #}
+<div class="reports-page">
 <div class="lead">
   <h1>Storm reports</h1>
   <p class="sub">Preliminary hail and wind reports in and near Montana from the Storm Prediction Center, for the last three
@@ -16,25 +20,28 @@
 
 <section aria-labelledby="map-h">
   <div class="section-head"><h2 id="map-h">Map</h2>
-    <a class="section-link" href="map.html?overlay=reports">Open the map</a></div>
-  <iframe class="map map-card" src="map.html?card=1&amp;layer=precip&amp;overlay=reports&amp;v={{ built.strftime('%Y%m%d%H%M') }}"
-    title="Map of storm reports in and near Montana" loading="lazy"></iframe>
-  {# the card also draws the town bubbles and warning outlines, and hides its own legend: key them here #}
-  <ul class="legend" aria-label="Map key">
-    <li><span class="swatch swatch-hail"></span>Hail report (bigger circle, bigger hail)</li>
-    <li><span class="swatch swatch-wind"></span>Wind report</li>
-    <li>Town number: NWS forecast temperature, °F</li>
-    <li>Outline: NWS alert area (red warning, orange watch, gold advisory, grey statement)</li>
-    <li>Alerts without an outline (issued by county or zone) are listed on the <a href="index.html">Now page</a></li>
-  </ul>
+    <a class="section-link" href="index.html?overlay=reports">Open the map</a></div>
+  <div class="map-block">
+    <iframe class="map map-card" src="map.html?card=1&amp;layer=precip&amp;overlay=reports&amp;v={{ built.strftime('%Y%m%d%H%M') }}"
+      title="Map of storm reports in and near Montana" loading="lazy"></iframe>
+    {# the card also draws the town bubbles and warning outlines, and hides its own legend: key them here #}
+    <ul class="legend" aria-label="Map key">
+      <li><span class="swatch swatch-hail"></span>Hail report (bigger circle, bigger hail)</li>
+      <li><span class="swatch swatch-wind"></span>Wind report</li>
+      <li>Town number: NWS forecast temperature, °F</li>
+      <li>Outline: NWS alert area (red warning, orange watch, gold advisory, grey statement)</li>
+      <li>Alerts without an outline (issued by county or zone) are listed in the <a href="index.html#forecast">home page's Forecast</a></li>
+    </ul>
+  </div>
 </section>
 
 <section aria-labelledby="list-h">
   <div class="section-head"><h2 id="list-h">All reports, newest first</h2></div>
+  <div class="report-days">
   {% for day in reports.days %}
   {% set rows = reports['items'] | selectattr('day', 'equalto', day) | list %}
   <div class="report-day">
-    <h3>Reporting day starting {{ (day ~ 'T12:00:00Z')|t('%a %b %-d at %-I %p %Z') }} ({{ rows|length }} report{{ 's' if rows|length != 1 }})</h3>
+    <h3>Reporting day starting {{ (day ~ 'T12:00:00Z')|t('%a %b %-d at %-I %p %Z') }} <span class="day-count">({{ rows|length }} report{{ 's' if rows|length != 1 }})</span></h3>
     {% if rows %}
     <div class="table-box">
       <table>
@@ -44,7 +51,7 @@
         {% for r in rows %}
           <tr>
             <td class="time">{{ r.time|t('%a %-I:%M %p') }}</td>
-            <td><span class="kind kind-{{ r.kind }}">{{ r.kind|title }}</span></td>
+            <td><span class="kind kind-{{ r.kind }}"><span class="swatch swatch-{{ r.kind }}" aria-hidden="true"></span>{{ r.kind|title }}</span></td>
             <td class="n">{% if r.kind == 'hail' %}{{ '%.2f in'|format(r.size_in) if r.size_in else 'not given' }}{% else %}{{ (r.mph ~ ' mph') if r.mph else 'unknown' }}{% endif %}</td>
             <td>{{ r.place }}, {{ r.county }} County, {{ r.state }}</td>
             <td>{{ r.comments }}</td>
@@ -58,5 +65,7 @@
     {% endif %}
   </div>
   {% endfor %}
+  </div>
 </section>
+</div>
 {% endblock %}

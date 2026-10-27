@@ -1077,6 +1077,23 @@ What it settles:
 
 *Why:* Carson asked for everything the new maps do not need to go. The website is the whole product (D27), and the 3D view is out (D107(c)). The app and the research stay in git history, at `33cda31` and `bf2909b`, for anyone who needs them.
 
+**D145 · Veor: the design branch's shell, name and update rule (2026-10-25).** On the new `design` branch
+("where I explore different designs") Carson sent a desktop mockup of an app called Veor and asked for the home
+page to look like it with the site's own map in the middle. After the first build and two review rounds he decided:
+(1) the name is Veor, on every page; (2) the warnings stay one click away (the panel opens on the sample lead as in
+the mockup; the top bar names the most urgent alert and the Forecast button opens the list), which sets aside
+DESIGN.md's threshold T2 for this branch; (3) lead pins with real addresses come from another session, so the map
+stays the site's own until then; (4) every page besides the map takes the look (the shell in
+`website/templates/_veor.html` and `base.html`, tokens in `website/static/veor.css`); (5) the page must update
+itself without fail, so it reloads every 10 minutes whatever the viewer is doing, waiting only for a press to end
+or typing to stop, and carries the viewer's place across the reload (scroll, focus, open sections, the search box,
+the panel and the map's view through the address) rather than reloading only in the background. He also set the
+working mode for the branch: Fable plans, builds the shared parts and rechecks everything; haiku workers restyle
+the pages; nothing is pushed until a verifier on Fable's model and Fable's own browser pass accept it. Trade-offs
+recorded in DESIGN.md section 14: a reload is still a reload for a screen reader; the map's view carry rounds to
+four decimals; the sidebar gains Storm reports and About, which the mockup did not show. The branch was merged onto the B6 browser branch on 2026-10-27 (with the
+section and decision renumbered from 10 and D35, which `main` had already used); merging into `main` is a separate decision.
+
 ## Gotchas found the hard way
 - An absolutely positioned element escapes a scroll box that isn't its containing block: the
   visually hidden "(over limit)" words in the hourly table widened every town page with a flagged

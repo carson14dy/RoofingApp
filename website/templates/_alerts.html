@@ -1,8 +1,8 @@
-{% macro alert_item(a) %}
+{% macro alert_item(a, level=3) %}
 <li class="alert alert-{{ a.kind }}">
   <div class="alert-top">
     <span class="chip chip-{{ a.kind }}">{{ a.kind }}</span>
-    <h3>{{ a.event }}</h3>
+    <h{{ level }}>{{ a.event }}</h{{ level }}>
   </div>
   <p class="alert-area">{{ a.area }}</p>
   <p class="alert-time">

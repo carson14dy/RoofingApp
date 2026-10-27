@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1b1e22" media="(prefers-color-scheme: dark)">
-<title>Map · Montana Hail Watch</title>
+<title>Map · Veor</title>
 <meta name="description" content="Montana weather map: the past hour of NOAA radar, the HRRR model forecast, temperature and wind gusts, NWS warning outlines, storm reports and the NWS forecast for each town.">
 <link rel="icon" href="{{ root }}static/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="{{ root }}static/icon-180.png">
@@ -24,6 +24,13 @@
    page address, which only the browser sees (AGENTS.md rule 4). Setting the class before the
    page paints stops the full-screen controls flashing inside the card. map.js does the rest. */
 if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.add("is-card");
+/* Embedded mode (?embed=1, the full map inside the Veor home page concept): the same map, but its links
+   open in the whole window, not inside the home page's frame, and map.css hides the close and Layers
+   buttons, which the home page's sidebar and top bar replace. */
+else if (/[?&]embed=1(&|$)/.test(location.search)) {
+  document.documentElement.classList.add("is-embed");
+  document.head.appendChild(Object.assign(document.createElement("base"), { target: "_top" }));
+}
 </script>
 <noscript><style>.top .corners, .bottom, .card-ui { display: none !important; }</style></noscript>
 </head>
@@ -314,7 +321,7 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
       <h2>This map needs JavaScript</h2>
       <p>It plays the radar and forecast pictures in your browser. The same warnings and forecasts are on these pages:</p>
       <ul>
-        <li><a href="{{ root }}index.html">Now: warnings and the 12-hour outlook for every town</a></li>
+        <li><a href="{{ root }}index.html#forecast">Now: warnings and the 12-hour outlook for every town</a></li>
         <li><a href="{{ root }}reports.html">Storm reports</a></li>
         {% for slug, name in towns_nav %}<li><a href="{{ root }}town/{{ slug }}.html">{{ name }}</a></li>{% endfor %}
       </ul>

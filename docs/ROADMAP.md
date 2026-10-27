@@ -247,6 +247,11 @@ B6 is the owner's map reference, built on our own public-domain cartography (D10
 - Check "Montana Hail Watch" against existing products and trademarks before printing it anywhere
   (D26).
 - The repo description says "Roofing Weather and Maps Contact app". What should "Contact" cover?
+- Veor, the app shell on every page around the site's map (DESIGN.md section 14, D145), came from the `design`
+  branch (2026-10-25) and is merged on this branch. Decided: the name, the warnings one click away, every page in
+  the look, updates every 10 minutes with the viewer's place carried across. Open: the lead pins from the other
+  session (real addresses) and how they meet the map's bubbles and sheets; a list of leads; whether this branch
+  merges into `main`.
 - Closed: the globe questions about the 3D storm view (the browser rule, a WebGL library and the storm text script). The 3D view is out (D107(c)), and the research folder was removed on 2026-10-26 (D143; last commit `bf2909b`).
 - Still open: may the storm layers (radar echo tops, the GOES picture and the hail swath) ever reach homeowners, adjusters or insurers? No decision answers this yet.
 - Still open, counsel (D-G10 and D-G11 in the globe README at `bf2909b`): counsel reads the publishing terms for NOAA-derived products and the GOES access banner before any NOAA-derived product or GOES layer reaches users. Until then none does.

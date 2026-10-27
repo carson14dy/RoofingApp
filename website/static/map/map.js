@@ -98,6 +98,10 @@
   var app = document.getElementById("app");
   var params = new URLSearchParams(location.search);
   var CARD = params.get("card") === "1";
+  // Embedded (?embed=1, the full map inside the Veor home page concept, index.html on the design branch):
+  // every control works as here, except that the page's own top bar holds the Layers button and the
+  // sidebar replaces the close button (map.html hides both, and sends links to the whole window).
+  var EMBED = !CARD && params.get("embed") === "1";
   var motionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
   // keep these in step with the media queries of the same layouts in map.css
   // (not under 301 px tall or 521 px wide: those fold the legend instead, map.css "very short or narrow")
@@ -262,7 +266,7 @@
     data = null;
     setPlaying(false);
     banner("warn", "<strong>The map data didn't load</strong> (" + esc(why || "it didn't load") + "). No radar, forecast or warnings are shown. " +
-      "This is not an all-clear. <a href=\"index.html\" target=\"_top\">See the Now page</a> or reload.");
+      "This is not an all-clear. <a href=\"index.html#forecast\" target=\"_top\">See the warnings list</a> or reload.");
     whenEl.textContent = "Map data unavailable";
     srcEl.textContent = "";
     el.title.textContent = "No data";
@@ -319,6 +323,11 @@
         openTown(t, t._el);
       }
     }
+    var area = EMBED && !town && findTown(params.get("area") || "");
+    if (area) {                                        // ?area=slug (embedded): the home page's area menu
+      state.userMoved = true;                          // centres that town, with no sheet to close first
+      map.setView([area.lat, area.lon], Math.max(map.getZoom(), 8), { animate: false });
+    }
     var at = hailParam();                              // ?at=lat,lon: the hail history at that spot
     if (at && hailData()) {
       state.userMoved = true;
@@ -326,6 +335,13 @@
         map.setView([at.lat, at.lon], Math.max(map.getZoom(), hailData().at_zoom), { animate: false });
       openHail(at.lat, at.lon, null);
     }
+    // ?view=lat,lon,zoom (embedded): where the viewer had the map before the home page reloaded (copyToHome)
+    var v = EMBED && !town && !at && /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?),(\d+(?:\.\d+)?)$/.exec(params.get("view") || "");
+    if (v) {
+      state.userMoved = true;
+      map.setView([Number(v[1]), Number(v[2])], Number(v[3]), { animate: false });
+    }
+    if (EMBED) map.on("moveend", function () { if (state.ready && !sheetState) copyToHome(new URLSearchParams(location.search)); });
   }
 
   /** The Leaflet map: no tiles (Python drew the basemap), one pane per kind of thing. */
@@ -1621,6 +1637,7 @@
 
   /** Connect buttons, the slider, menus and keys. */
   function wireControls() {
+    if (EMBED) document.documentElement.classList.add("map-ready");   // the home page's Layers button may use ours now
     el.play.addEventListener("click", function () { setPlaying(!state.playing); });
 
     el.seg.addEventListener("click", function (e) {
@@ -1776,11 +1793,24 @@
     el.options.hidden = !open;
     el.layersBtn.setAttribute("aria-expanded", open ? "true" : "false");
     setInert(!!open);
+    var outside = homeLayersButton();                        // embedded (?embed=1): the home page's Layers button shows the state
+    if (outside) outside.setAttribute("aria-expanded", open ? "true" : "false");
     if (open) {
       placeSheet(el.options);
       renderOptions();
       el.optTitle.focus({ preventScroll: true });
-    } else if (refocus) el.layersBtn.focus();
+    } else if (refocus) focusLayersButton();
+  }
+
+  /** Embedded, the home page's Layers button, which stands in for this page's own (hidden there); else null. */
+  function homeLayersButton() {
+    if (!EMBED || window.parent === window) return null;
+    try { return window.parent.document.getElementById("btn-layers-top"); } catch (e) { return null; }
+  }
+
+  /** Back to the button that opened the sheet: the home page's when embedded, else this page's. */
+  function focusLayersButton() {
+    (homeLayersButton() || el.layersBtn).focus();
   }
 
   /** Keep the chosen layer, mode and overlay in the address so a reload keeps them. */
@@ -1797,6 +1827,25 @@
     if (hailAt) q.set("at", hailAt); else q.delete("at");
     var s = q.toString();
     history.replaceState(null, "", location.pathname + (s ? "?" + s : "") + location.hash);
+    if (EMBED) copyToHome(q);
+  }
+
+  /** Embedded: the same choices go into the home page's address too, with the view once the viewer has moved
+      the map, so the home page's reload and its bookmarks keep them (it hands them back to this frame when it
+      loads). */
+  function copyToHome(q) {
+    try {
+      var home = window.parent.location, p = new URLSearchParams(home.search);
+      ["layer", "mode", "overlay", "base", "at"].forEach(function (k) {
+        if (q.has(k)) p.set(k, q.get(k)); else p.delete(k);
+      });
+      if (state.userMoved && map) {
+        var c = map.getCenter();
+        p.set("view", c.lat.toFixed(4) + "," + c.lng.toFixed(4) + "," + map.getZoom().toFixed(2));
+      } else p.delete("view");
+      var s = p.toString();
+      window.parent.history.replaceState(window.parent.history.state, "", home.pathname + (s ? "?" + s : "") + home.hash);
+    } catch (e) { /* not inside the home page */ }
   }
 
   /** "&layer=temp&overlay=reports" for links to the full map (prefix "?" or "&"). */
@@ -2550,7 +2599,7 @@
     if (a.description) html += '<p class="official">' + esc(a.description) + "</p>";
     if (a.instruction) html += "<h3>Instructions</h3><p class=\"official\">" + esc(a.instruction) + "</p>";
     html += '<p class="muted">From ' + esc(a.sender || "the National Weather Service") + ". Official text, shown as issued.</p>";
-    html += '<p><a class="go" href="index.html">All warnings on the Now page</a></p>';
+    html += '<p><a class="go" href="index.html#forecast">All warnings and town forecasts</a></p>';
     openSheet("alert", a.event, html, opener, { back: back });
   }
 
@@ -3677,11 +3726,11 @@
 
   // ------------------------------------------------------------------ card mode (inside other pages)
 
-  /** The card: latest frame, outlines and bubbles; no controls except "Open map". The Now page's
-      caption names the same picture: build.py map_card() picks the frame the way setLayer and
-      buildTimeline open the card (precipitation, 12h timeline, now_index). Change both together. */
+  /** The card: latest frame, outlines and bubbles; no controls except "Open map". build.py map_card()
+      words the picture the home page's map opens on, picking the frame the way setLayer and buildTimeline
+      open the map (precipitation, 12h timeline, now_index). Change both together. */
   function setupCard() {
-    el.cardOpen.href = "map.html" + layerQuery("?");
+    el.cardOpen.href = "index.html" + layerQuery("?");      // the home page holds the full map (design branch)
     el.canvas.removeAttribute("aria-describedby");   // its keys and List button aren't in the card
     renderCardChip();
   }
@@ -3707,8 +3756,8 @@
     var html = '<span class="card-main">' + esc(main) + "</span>" + (k ? '<span class="card-hatch"><span class="key ' +
       (k === "outside" ? "key-hatch-out" : "key-hatch") + '" aria-hidden="true"></span>' +
       '<span class="visually-hidden">. Hatched areas: </span>' + esc(hatchWords(k)[0]) + "</span>" : "");
-    // the Storm reports card: alerts without an outline aren't on it (the Now page card sits beside
-    // the full alert list, so it needn't say). One line on a phone; the page's key says where they are
+    // the Storm reports card: alerts without an outline aren't on it. One line on a phone; the page's
+    // key says where they are (the home page's Forecast)
     var n = state.reports ? noOutlineCount() : 0;
     if (n) html += '<span class="card-alerts"><span class="visually-hidden">. </span>' + esc(n + (n > 1 ? " alerts have" : " alert has") + " no outline") + "</span>";
     if (el.cardChip._html !== html) { el.cardChip.innerHTML = html; el.cardChip._html = html; }

@@ -1,103 +1,474 @@
-{% extends "base.html" %}
 {% from "_alerts.html" import alert_item, office_links %}
-{% block title %}Montana right now · Montana Hail Watch{% endblock %}
-{% block content %}
-<div class="lead">
-  <h1>Montana right now</h1>
-  <p class="sub">Official warnings, radar and the next 12 hours for {{ towns|length }} towns.</p>
-</div>
+{% from "_veor.html" import icons, forecast_icon, alert_badge, sidebar, topbar_start, status_block, shell_script with context %}
+{#- The Veor home page (design branch, Carson's mockup of 2026-10-25): the shell around the site's own interactive
+    map. The sidebar and top bar come from _veor.html; this page adds the area menu, the Layers button, the map
+    (map.html?embed=1 in a frame) and a panel with either a sample lead (the concept's CRM part, labelled sample)
+    or the forecast: the old Now page's freshness line, warnings and town cards, built from the same data.
+    docs/DESIGN.md section 14. -#}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Map · Veor</title>
+<meta name="description" content="Veor: official NWS warnings, a live radar and forecast map and roofing forecasts for Montana, updated on a schedule set to every 10 minutes. A design concept.">
+<link rel="icon" href="{{ root }}static/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="{{ root }}static/icon-180.png">
+<link rel="stylesheet" href="{{ root }}static/fonts/fonts.css">
+<link rel="stylesheet" href="{{ root }}static/style.css?v={{ asset_v['style.css'] }}">
+<link rel="stylesheet" href="{{ root }}static/veor.css?v={{ asset_v['veor.css'] }}">
+{# Scripting off: the old page's 10-minute refresh (the shell's script reloads instead), and the forecast shown
+   under the lead, since nothing can open it #}
+<noscript><meta http-equiv="refresh" content="600"><style>.shell #view-forecast { display: block; }</style></noscript>
+</head>
+{% set good = status.values()|selectattr('ok')|map(attribute='label')|list %}
+{% set bad = status.values()|rejectattr('ok')|list %}
+{% set n_alerts = alerts['items']|length %}
+<body class="shell" data-built="{{ built_ms }}" data-root="{{ root }}" data-home>
+<a class="skip" href="#stage">Skip to the map</a>
+{% if sample %}
+<div class="sample-banner" role="note"><strong>Sample data.</strong> Everything on this page is invented to review the layout. It is not weather.</div>
+{% endif %}
+{{ icons() }}
+<div class="frame" id="frame">
 
-<div class="now-grid">
-  <section aria-labelledby="alerts-h">
-    <div class="section-head">
-      <h2 id="alerts-h">Warnings and advisories<span class="count">{{ alerts['items']|length }}</span></h2>
-    </div>
-    {% if not alerts.ok %}
-    <div class="notice notice-error" role="alert">
-      <p><strong>Couldn't load NWS alerts at {{ alerts.checked|t }}.</strong>
-      {% set n = alerts.from_towns or 0 %}
-      {% if alerts.last_known %}Below is the last list we verified, from {{ alerts.last_known|when }}{% if n %}, with {{ n }} alert{{ 's' if n > 1 }} the town checks found in this update{% endif %}. Alerts may have been issued or ended since.
-      {% else %}{% if n %}Below {{ 'are the alerts' if n > 1 else 'is the alert' }} the town checks found in this update. {% endif %}This is not an all-clear.{% endif %}
-      Check {{ office_links(offices) }}.</p>
-    </div>
-    {% endif %}
-    {% if alerts['items'] %}
-    <ul class="alert-list">
-      {% for a in alerts['items'][:6] %}{{ alert_item(a) }}{% endfor %}
-    </ul>
-    {% if alerts['items']|length > 6 %}
-    <details class="more-alerts">
-      <summary>Show {{ alerts['items']|length - 6 }} more alerts</summary>
-      <ul class="alert-list">{% for a in alerts['items'][6:] %}{{ alert_item(a) }}{% endfor %}</ul>
-    </details>
-    {% endif %}
-    {% elif alerts.ok %}
-    <p class="empty">No active NWS warnings, watches or advisories for Montana at {{ alerts.checked|t }}.
-      That is not an all-clear: storms can form between updates.</p>
-    {% endif %}
-  </section>
+  {{ sidebar(page) }}
 
-  <section aria-labelledby="map-h">
-    <div class="section-head"><h2 id="map-h">Radar, forecast and warning areas</h2>
-      <a class="section-link" href="map.html">Open the map</a></div>
-    <iframe class="map map-card" src="map.html?card=1&amp;layer=precip&amp;v={{ built.strftime('%Y%m%d%H%M') }}"
-      title="{{ card.title }}" loading="lazy"></iframe>
-    {# build.map_card words what the card shows in this update: radar or model picture, outlines, town numbers #}
-    <p class="caption">
-      {{ card.shown }} {{ card.missing }}
-      <a href="map.html">Open the map</a> {{ card.then }}.
-    </p>
-  </section>
-</div>
+  <header class="topbar">
+    {{ topbar_start() }}
+    <label class="area">
+      <span class="visually-hidden">Area</span>
+      <svg class="i pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s-7-6.4-7-11.9a7 7 0 0 1 14 0C19 15.6 12 22 12 22Z"/><circle class="hole" cx="12" cy="10" r="2.6"/></svg>
+      <select id="area">
+        <option value="">All of Montana</option>
+        {% for t in towns %}<option value="{{ t.slug }}">{{ t.name }} area</option>{% endfor %}
+      </select>
+      <svg class="i chev" aria-hidden="true"><use href="#i-chev"/></svg>
+    </label>
+    <button type="button" class="tb-btn" id="btn-forecast" aria-pressed="false" aria-controls="panel">
+      {{ forecast_icon() }}<span class="tb-label">Forecast</span>{{ alert_badge() }}
+    </button>
+    <button type="button" class="tb-btn" id="btn-layers-top" aria-haspopup="dialog" aria-expanded="false"
+      data-wait="The map is still loading. Try Layers again in a moment."
+      data-nodata="The map's data didn't load, so there are no layers to choose. Reload, or open Forecast for the warnings.">
+      <svg class="i" aria-hidden="true"><use href="#i-layers"/></svg><span class="tb-label">Layers</span></button>
+    {{ status_block() }}
+  </header>
 
-<section aria-labelledby="towns-h">
-  <div class="section-head"><h2 id="towns-h">Next 12 hours by town</h2></div>
-  <p class="sub">An hour is flagged for gusts of {{ limits.gust_mph }}&nbsp;mph or more, wind of {{ limits.wind_mph }}&nbsp;mph or more,
-    a {{ limits.pop_pct }}% or higher chance of rain or snow, or temperatures under {{ limits.cold_f }}&nbsp;°F or over {{ limits.hot_f }}&nbsp;°F.
-    These are placeholder limits until the company sets its own.</p>
-  <ul class="town-grid">
-  {% for t in towns %}
-    {% set s = t.summary %}
-    <li>
-      <a class="town-card" href="town/{{ t.slug }}.html">
-        <div class="tc-head">
-          <h3>{{ t.name }}</h3>
-          {% if t.alerts is none %}<span class="chip chip-unknown">Alerts not checked</span>
-          {% elif t.alerts %}<span class="chip chip-{{ t.alerts[0].kind }}">{{ t.alerts[0].event }}{% if t.alerts|length > 1 %} +{{ t.alerts|length - 1 }}<span class="visually-hidden"> more</span>{% endif %}</span>{% endif %}
+  <main class="stage" id="stage">
+    <h1 class="visually-hidden">Veor: Montana weather map and forecast</h1>
+    {# the site's interactive map, whole. build.map_card words the picture it opens on and what this update is
+       missing: the frame's title and its description (the map itself shows the same in its legend and banners) #}
+    <iframe class="stage-map" id="map-frame" src="map.html?embed=1&amp;v={{ built.strftime('%Y%m%d%H%M') }}"
+      title="{{ card.title }}" aria-describedby="map-words"></iframe>
+    <p class="visually-hidden" id="map-words">{{ card.shown }} {{ card.missing }}</p>
+  </main>
+
+  <aside class="panel" id="panel" aria-label="Details">
+
+    <section class="view view-lead" id="view-lead" aria-labelledby="lead-h">
+      <div class="panel-head">
+        <h2 class="panel-title" id="lead-h" tabindex="-1">Lead details <span class="tag">Sample</span></h2>
+        <button type="button" class="x" data-close aria-label="Close lead details"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="ld-hero">
+        <span class="ld-thumb" aria-hidden="true">
+          <svg viewBox="0 0 82 80">
+            <rect class="ground" width="82" height="80"/>
+            <path class="street" d="M-4 22 30 4M8 82 50-2M40 84 86 40M-2 58 84 30M54 82 88 64M-4 40 16 82"/>
+            <g transform="translate(41 5) scale(1.3) translate(-41 -16.5)">
+              <path class="pin" d="M41 69C33 58 22 48.5 22 35.5a19 19 0 0 1 38 0C60 48.5 49 58 41 69Z"/>
+              <path class="house" d="M30.5 37.5 41 28.5l10.5 9V48h-7v-6.5h-7V48h-7Z"/>
+            </g>
+          </svg>
+        </span>
+        <div>
+          <p class="ld-name">Oak Street</p>
+          <span class="pill">New lead</span>
         </div>
-        {# D29: the nearest station with a current reading, or the nearest reading marked stale #}
-        {% set n = t.obs.now %}
-        {% if n %}
-        {% set r = n.obs %}
-        <p class="tc-now"><span class="tc-now-vals">Now
-          {% if r.temp.value is not none %}<b{% if r.temp.value < limits.cold_f or r.temp.value > limits.hot_f %} class="over"{% endif %}>{{ r.temp.value|num }}</b>&nbsp;°F{% endif %}
-          {%- if r.wind.value is not none %} · wind {% if r.wind.value|round == 0 %}calm{% else %}<b{% if r.wind.value >= limits.wind_mph %} class="over"{% endif %}>{{ r.wind.value|num }}</b>&nbsp;mph{% if r.dir %} {{ r.dir }}{% endif %}{% endif %}{% endif %}
-          {%- if r.gust.value is not none %} · gusts <b{% if r.gust.value >= limits.gust_mph %} class="over"{% endif %}>{{ r.gust.value|num }}</b>&nbsp;mph{% elif r.no_gust %} · no gust reported{% endif %}</span>
-          {% set elev = r.elev_ft if r.elev_ft is not none else n.elev_ft %}
-          {# age first, so a narrow card never cuts it off; the station's name is on the town page #}
-          <span class="tc-now-src">{{ r.age_min|ago }}{% if not r.current %}, <strong>stale</strong>{% endif %} · station {{ n.id }}, {{ n.miles|num }}&nbsp;mi away{% if elev is not none %}, {{ elev|feet }}&nbsp;ft{% endif %}</span></p>
-        {% else %}
-        <p class="tc-now tc-now-missing">Station readings unavailable in this update.</p>
-        {% endif %}
-        {% if t.hours %}
-        <dl class="stats">
-          <div><dt>Temperature</dt><dd>{% if s.lo is not none %}{{ s.lo|num }}–{{ s.hi|num }}<small> °F</small>{% else %}—<span class="visually-hidden"> not available</span>{% endif %}</dd></div>
-          <div><dt>Gusts up to</dt><dd{% if s.gust is not none and s.gust >= limits.gust_mph %} class="over"{% endif %}>{% if s.gusts_known %}{{ s.gust|num }}<small> mph</small>{% else %}—<span class="visually-hidden"> not available</span>{% endif %}</dd></div>
-          <div><dt>Rain or snow</dt><dd{% if s.precip is not none and s.precip >= limits.pop_pct %} class="over"{% endif %}>{% if s.precip is not none %}{{ s.precip|num }}<small>%</small>{% else %}—<span class="visually-hidden"> not available</span>{% endif %}</dd></div>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Lead">
+        <button type="button" role="tab" id="tab-overview" aria-selected="true" aria-controls="tp-overview">Overview</button>
+        <button type="button" role="tab" id="tab-notes" aria-selected="false" aria-controls="tp-notes" tabindex="-1">Notes</button>
+        <button type="button" role="tab" id="tab-activity" aria-selected="false" aria-controls="tp-activity" tabindex="-1">Activity</button>
+      </div>
+      <div role="tabpanel" id="tp-overview" aria-labelledby="tab-overview" tabindex="0">
+        <dl class="ld-facts">
+          <div><dt>Source</dt><dd>Added manually</dd></div>
+          <div><dt>Next step</dt><dd>Schedule visit</dd></div>
         </dl>
-        {% if s.first_flag %}
-        <p class="tc-note"><strong>{{ s.flagged }} of {{ s.hours }} hours flagged.</strong> First at {{ s.first_flag.start|t }}: {{ s.first_flag.flags|join(', ') }}.</p>
-        {% elif not s.gusts_known %}
-        <p class="tc-note">Gust forecast unavailable, so gusts weren't checked. No hour reaches the other limits.</p>
-        {% else %}
-        <p class="tc-note">No hour reaches the limits above in this forecast.</p>
+        <section class="ld-sec" aria-labelledby="visit-h">
+          <h3 id="visit-h"><svg class="i" aria-hidden="true"><use href="#i-calendar"/></svg>Visit</h3>
+          <div class="ld-row">
+            <p class="muted">No visit scheduled</p>
+            <button type="button" class="btn" data-soon="Scheduling isn't built yet. This lead is sample data.">
+              <svg class="i" aria-hidden="true"><use href="#i-calendar"/></svg>Schedule visit</button>
+          </div>
+        </section>
+        <section class="ld-sec" aria-labelledby="notes-h">
+          <h3 id="notes-h"><svg class="i" aria-hidden="true"><use href="#i-note"/></svg>Notes</h3>
+          <div class="ld-row">
+            <p class="muted">No notes yet</p>
+            <button type="button" class="btn" data-soon="Notes aren't built yet. This lead is sample data.">
+              <svg class="i" aria-hidden="true"><use href="#i-plus-circle"/></svg>Add note</button>
+          </div>
+        </section>
+      </div>
+      <div role="tabpanel" id="tp-notes" aria-labelledby="tab-notes" tabindex="0" hidden>
+        <p class="ld-empty">No notes yet.</p>
+      </div>
+      <div role="tabpanel" id="tp-activity" aria-labelledby="tab-activity" tabindex="0" hidden>
+        <p class="ld-empty">Added manually. Nothing else has happened on this sample lead.</p>
+      </div>
+      <div class="ld-actions">
+        <button type="button" class="btn btn-lg" data-soon="Notes aren't built yet. This lead is sample data.">
+          <svg class="i" aria-hidden="true"><use href="#i-note"/></svg>Add note</button>
+        <button type="button" class="btn btn-lg btn-primary" data-soon="Projects aren't built yet. This lead is sample data.">
+          <svg class="i" aria-hidden="true"><use href="#i-plus-circle"/></svg>Create project</button>
+      </div>
+      <button type="button" class="ld-open" data-soon="The full lead page isn't built yet. This lead is sample data.">
+        Open full lead<svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+      <p class="concept">Desktop concept · Sample data</p>
+    </section>
+
+    <section class="view view-forecast" id="view-forecast" aria-labelledby="fc-h" hidden>
+      <div class="panel-head">
+        <h2 class="panel-title" id="fc-h" tabindex="-1">Forecast</h2>
+        <button type="button" class="x" data-close aria-label="Close the forecast"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </div>
+      <p class="fc-sub" id="fc-area">All of Montana: official warnings and the next 12 hours for {{ towns|length }} towns.</p>
+      <div class="fc-fresh">
+        <p>Updated <time datetime="{{ built.isoformat() }}">{{ built|when }}</time> · rebuilt on a schedule set to every 10 minutes</p>
+        <p class="sources">{% if good %}Loaded: {{ good|join(', ') }}.{% endif %}
+        {% for s in bad %} <span class="bad">{{ s.label }} problem: {{ s.detail }}.{% if s.words %} {{ s.words }}{% endif %}</span>{% endfor %}</p>
+      </div>
+
+      <section aria-labelledby="alerts-h">
+        <h3 class="fc-h" id="alerts-h">Warnings and advisories<span class="count">{{ n_alerts }}</span></h3>
+        {% if not alerts.ok %}
+        <div class="notice notice-error" role="alert">
+          <p><strong>Couldn't load NWS alerts at {{ alerts.checked|t }}.</strong>
+          {% set n = alerts.from_towns or 0 %}
+          {% if alerts.last_known %}Below is the last list we verified, from {{ alerts.last_known|when }}{% if n %}, with {{ n }} alert{{ 's' if n > 1 }} the town checks found in this update{% endif %}. Alerts may have been issued or ended since.
+          {% else %}{% if n %}Below {{ 'are the alerts' if n > 1 else 'is the alert' }} the town checks found in this update. {% endif %}This is not an all-clear.{% endif %}
+          Check {{ office_links(offices) }}.</p>
+        </div>
         {% endif %}
-        {% else %}
-        <p class="tc-error">Forecast unavailable. {{ t.errors[0] if t.errors }}</p>
+        {% if alerts['items'] %}
+        <ul class="alert-list">
+          {% for a in alerts['items'][:6] %}{{ alert_item(a, 4) }}{% endfor %}
+        </ul>
+        {% if n_alerts > 6 %}
+        <details class="more-alerts">
+          <summary>Show {{ n_alerts - 6 }} more alerts</summary>
+          <ul class="alert-list">{% for a in alerts['items'][6:] %}{{ alert_item(a, 4) }}{% endfor %}</ul>
+        </details>
         {% endif %}
-      </a>
-    </li>
-  {% endfor %}
-  </ul>
-</section>
-{% endblock %}
+        {% elif alerts.ok %}
+        <p class="empty">No active NWS warnings, watches or advisories for Montana at {{ alerts.checked|t }}.
+          That is not an all-clear: storms can form between updates.</p>
+        {% endif %}
+      </section>
+
+      <section aria-labelledby="towns-h">
+        <h3 class="fc-h" id="towns-h">Next 12 hours by town</h3>
+        <p class="sub">An hour is flagged for gusts of {{ limits.gust_mph }}&nbsp;mph or more, wind of {{ limits.wind_mph }}&nbsp;mph or more,
+          a {{ limits.pop_pct }}% or higher chance of rain or snow, or temperatures under {{ limits.cold_f }}&nbsp;°F or over {{ limits.hot_f }}&nbsp;°F.
+          These are placeholder limits until the company sets its own.</p>
+        <ul class="town-grid" id="town-list">
+        {% for t in towns %}
+          {% set s = t.summary %}
+          <li data-slug="{{ t.slug }}">
+            <a class="town-card" href="town/{{ t.slug }}.html">
+              <div class="tc-head">
+                <h4>{{ t.name }}</h4>
+                {% if t.alerts is none %}<span class="chip chip-unknown">Alerts not checked</span>
+                {% elif t.alerts %}<span class="chip chip-{{ t.alerts[0].kind }}">{{ t.alerts[0].event }}{% if t.alerts|length > 1 %} +{{ t.alerts|length - 1 }}<span class="visually-hidden"> more</span>{% endif %}</span>{% endif %}
+              </div>
+              {# D29: the nearest station with a current reading, or the nearest reading marked stale #}
+              {% set n = t.obs.now %}
+              {% if n %}
+              {% set r = n.obs %}
+              <p class="tc-now"><span class="tc-now-vals">Now
+                {% if r.temp.value is not none %}<b{% if r.temp.value < limits.cold_f or r.temp.value > limits.hot_f %} class="over"{% endif %}>{{ r.temp.value|num }}</b>&nbsp;°F{% endif %}
+                {%- if r.wind.value is not none %} · wind {% if r.wind.value|round == 0 %}calm{% else %}<b{% if r.wind.value >= limits.wind_mph %} class="over"{% endif %}>{{ r.wind.value|num }}</b>&nbsp;mph{% if r.dir %} {{ r.dir }}{% endif %}{% endif %}{% endif %}
+                {%- if r.gust.value is not none %} · gusts <b{% if r.gust.value >= limits.gust_mph %} class="over"{% endif %}>{{ r.gust.value|num }}</b>&nbsp;mph{% elif r.no_gust %} · no gust reported{% endif %}</span>
+                {% set elev = r.elev_ft if r.elev_ft is not none else n.elev_ft %}
+                {# age first, so a narrow card never cuts it off; the station's name is on the town page #}
+                <span class="tc-now-src">{{ r.age_min|ago }}{% if not r.current %}, <strong>stale</strong>{% endif %} · station {{ n.id }}, {{ n.miles|num }}&nbsp;mi away{% if elev is not none %}, {{ elev|feet }}&nbsp;ft{% endif %}</span></p>
+              {% else %}
+              <p class="tc-now tc-now-missing">Station readings unavailable in this update.</p>
+              {% endif %}
+              {% if t.hours %}
+              <dl class="stats">
+                <div><dt>Temperature</dt><dd>{% if s.lo is not none %}{{ s.lo|num }}–{{ s.hi|num }}<small> °F</small>{% else %}—<span class="visually-hidden"> not available</span>{% endif %}</dd></div>
+                <div><dt>Gusts up to</dt><dd{% if s.gust is not none and s.gust >= limits.gust_mph %} class="over"{% endif %}>{% if s.gusts_known %}{{ s.gust|num }}<small> mph</small>{% else %}—<span class="visually-hidden"> not available</span>{% endif %}</dd></div>
+                <div><dt>Rain or snow</dt><dd{% if s.precip is not none and s.precip >= limits.pop_pct %} class="over"{% endif %}>{% if s.precip is not none %}{{ s.precip|num }}<small>%</small>{% else %}—<span class="visually-hidden"> not available</span>{% endif %}</dd></div>
+              </dl>
+              {% if s.first_flag %}
+              <p class="tc-note"><strong>{{ s.flagged }} of {{ s.hours }} hours flagged.</strong> First at {{ s.first_flag.start|t }}: {{ s.first_flag.flags|join(', ') }}.</p>
+              {% elif not s.gusts_known %}
+              <p class="tc-note">Gust forecast unavailable, so gusts weren't checked. No hour reaches the other limits.</p>
+              {% else %}
+              <p class="tc-note">No hour reaches the limits above in this forecast.</p>
+              {% endif %}
+              {% else %}
+              <p class="tc-error">Forecast unavailable. {{ t.errors[0] if t.errors }}</p>
+              {% endif %}
+            </a>
+          </li>
+        {% endfor %}
+        </ul>
+        <p class="fc-all" id="fc-all" hidden><button type="button" class="btn" data-area="">Show all {{ towns|length }} towns</button></p>
+      </section>
+
+      <div class="fc-foot">
+        <p>Warnings and forecasts: National Weather Service. Radar estimate and model forecast: NOAA (MRMS, HRRR). Storm reports: NOAA Storm Prediction Center. Map outlines: Natural Earth and the US Census Bureau.</p>
+        <p>Weather information only. It does not confirm roof damage and it is not a decision to work or to stop work: check the sky and the site.</p>
+        <p><a href="{{ root }}reports.html">Storm reports</a> · <a href="{{ root }}about.html">About this site and its sources</a></p>
+      </div>
+    </section>
+  </aside>
+</div>
+<p class="v-toast" id="v-toast" role="status" aria-live="polite"></p>
+{{ shell_script() }}
+<script>
+/* The home page's own controls, on the shell's script (window.Veor, _veor.html). Browser-only (AGENTS.md rule 4):
+   the panel's views and tabs, the area menu and the search (they move the map, a frame of map.html?embed=1, by
+   its page address), the Layers button (it opens the map's own options sheet in that same-site frame), the map's
+   height on phones, and what this page adds to the 10-minute reload's carried place (the panel's scroll and the
+   lead's tab). The words are on the page, from Python; this script only chooses which to show (and names the
+   area in the forecast's first line). */
+(function () {
+  "use strict";
+  function byId(id) { return document.getElementById(id); }
+  var V = window.Veor, say = V.say;
+  var frame = byId("frame"), mapFrame = byId("map-frame"), panel = byId("panel");
+  var fcBtn = byId("btn-forecast"), layersBtn = byId("btn-layers-top"), areaSel = byId("area");
+  var search = byId("search"), q = byId("q");
+  var towns = JSON.parse(byId("towns-data").textContent);          // [[slug, name], ...]
+  var allAreaWords = byId("fc-area").textContent;
+  var narrow = window.matchMedia("(max-width: 1023.98px)");
+  var MAP_KEYS = ["layer", "mode", "overlay", "base", "at", "view"];   // the map's own choices (map.js copyToHome)
+
+  /* The page address holds ?area=, the map's choices (map.js copies them here when it saves its own) and
+     #forecast while the forecast shows, so a reload or a bookmark opens the same view. */
+  function setAddress(params, hash) {
+    if (!window.history || !history.replaceState) return;
+    var s = params.toString();
+    history.replaceState(history.state, "", location.pathname + (s ? "?" + s : "") + hash);
+  }
+
+  /* The panel shows the sample lead, the forecast, or nothing (the map takes its room). A new view starts at its
+     top. focus: move to its heading, scrolled into view on phones, where the panel is under the map. */
+  function show(view, focus) {
+    var was = byId("view-lead").hidden ? (byId("view-forecast").hidden ? null : "forecast") : "lead";
+    if (view !== was) panel.scrollTop = 0;
+    frame.classList.toggle("no-panel", !view);
+    byId("view-lead").hidden = view !== "lead";
+    byId("view-forecast").hidden = view !== "forecast";
+    fcBtn.setAttribute("aria-pressed", view === "forecast" ? "true" : "false");
+    var hash = view === "forecast" ? "#forecast" : "";
+    if (location.hash !== hash) setAddress(new URLSearchParams(location.search), hash);
+    if (view && focus) {
+      var h = byId(view === "forecast" ? "fc-h" : "lead-h");
+      if (narrow.matches) h.scrollIntoView({ block: "start" });
+      h.focus({ preventScroll: true });
+    }
+  }
+  fcBtn.addEventListener("click", function () {
+    var open = fcBtn.getAttribute("aria-pressed") !== "true";
+    show(open ? "forecast" : "lead", open);
+  });
+
+  /* The map frame's address. Before its first page loads the frame is about:blank, so its src stands in. */
+  function frameParams() {
+    try {
+      var at = mapFrame.contentWindow.location;
+      if (/map\.html$/.test(at.pathname)) return new URLSearchParams(at.search);
+    } catch (e) { /* the src below */ }
+    return new URLSearchParams(mapFrame.getAttribute("src").split("?")[1] || "");
+  }
+  /* replace(), so moving the map adds no Back step */
+  function moveMap(p) {
+    var url = "map.html?" + p.toString();
+    try { mapFrame.contentWindow.location.replace(url); } catch (e) { mapFrame.src = url; }
+  }
+  /* A new place for the map: its own choices stay, the place (town, area, hail spot or view) is replaced. */
+  function placeMap(set) {
+    var p = frameParams();
+    ["town", "area", "at", "view"].forEach(function (k) { p.delete(k); });
+    Object.keys(set).forEach(function (k) { if (set[k]) p.set(k, set[k]); });
+    p.set("embed", "1");
+    moveMap(p);
+  }
+  function townName(slug) {
+    var name = null;
+    towns.forEach(function (t) { if (t[0] === slug) name = t[1]; });
+    return name;
+  }
+
+  /* An area: the map centres it, the forecast shows its town card (all the warnings stay), and the page address
+     keeps it. opts.town: open the town's sheet on the map; opts.map false: leave the map where it is. */
+  function setArea(slug, opts) {
+    var name = townName(slug);
+    if (!name) slug = "";
+    areaSel.value = slug;
+    var items = byId("town-list").children;
+    for (var i = 0; i < items.length; i++) items[i].hidden = !!slug && items[i].getAttribute("data-slug") !== slug;
+    byId("fc-all").hidden = !slug;
+    byId("fc-area").textContent = slug ? name + " area: the official warnings for Montana and " + name + "'s next 12 hours." : allAreaWords;
+    var p = new URLSearchParams(location.search);
+    if (slug) p.set("area", slug); else p.delete("area");
+    if (!opts || opts.map !== false) { p.delete("at"); p.delete("view"); }   // the hail spot and the view go with the old place
+    setAddress(p, location.hash);
+    if (!opts || opts.map !== false) placeMap(opts && opts.town ? { town: slug } : { area: slug });
+  }
+  areaSel.addEventListener("change", function () { setArea(areaSel.value); });
+
+  /* On load, the page address's area (or a town, from a town page's "See ... on the map": its sheet opens and
+     the town becomes the area) and the map's choices go to the frame in one move; with none, the frame's own
+     src stands. A place that isn't a town is dropped from the address; ?town= never stays in it. */
+  var start = new URLSearchParams(location.search), wantTown = start.get("town") || "", first = wantTown || start.get("area") || "";
+  var firstOk = !!townName(first), carried = MAP_KEYS.filter(function (k) { return start.has(k); });
+  if (start.has("town") || (start.has("area") && !firstOk)) { start.delete("town"); start.delete("area"); setAddress(start, location.hash); }
+  if (firstOk) setArea(first, { map: false });
+  if (firstOk || carried.length) {
+    var p0 = frameParams();
+    carried.forEach(function (k) { p0.set(k, start.get(k)); });
+    if (firstOk) p0.set(wantTown ? "town" : "area", first);
+    moveMap(p0);
+  }
+
+  /* index.html#forecast (the other pages' links to the warnings list) opens on the forecast. Focus goes to it on a
+     link, not on a reload, so a reload never moves a reader's place. */
+  function fromHash(e) {
+    if (location.hash !== "#forecast") return;
+    var nav = (window.performance && performance.getEntriesByType && performance.getEntriesByType("navigation")[0]) || {};
+    show("forecast", !!e || nav.type !== "reload");
+  }
+  fromHash();
+  window.addEventListener("hashchange", fromHash);
+
+  /* Search: a town opens its sheet on the map (its NWS forecast) and becomes the area; the sample lead opens in
+     the panel. "Billings area", "Billings, MT" and "billings montana" find Billings; "Montana" is all of it. */
+  search.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var typed = q.value.trim();
+    if (!typed) return;
+    var want = typed.toLowerCase().replace(/,?\s*(mt|montana)$/, "").replace(/\s+area$/, "").trim();
+    if (!want) { setArea(""); q.value = ""; return; }
+    var hit = null;
+    towns.forEach(function (t) { if (!hit && t[1].toLowerCase() === want) hit = t; });
+    towns.forEach(function (t) { if (!hit && t[1].toLowerCase().indexOf(want) === 0) hit = t; });
+    if (hit) { setArea(hit[0], { town: true }); q.value = ""; return; }
+    if ("oak street (sample lead)".indexOf(want) === 0) { show("lead", true); q.value = ""; return; }
+    say(search.getAttribute("data-none").replace("{q}", function () { return typed; }));
+  });
+
+  /* Layers: the map's own options sheet. Its button is hidden in the frame; map.js mirrors its aria-expanded onto this
+     button and returns focus here. A press or Escape on this page, outside the frame, closes it, as one inside
+     the frame does. */
+  function innerLayers() {
+    try {
+      var d = mapFrame.contentWindow.document;
+      return d.documentElement.classList.contains("map-ready") ? d.getElementById("btn-layers") : null;
+    } catch (e) { return null; }
+  }
+  layersBtn.addEventListener("click", function () {
+    var b = innerLayers(), failed = false;
+    if (b) { b.click(); return; }
+    try { failed = mapFrame.contentWindow.document.getElementById("app").classList.contains("no-data"); } catch (e) { failed = false; }
+    say(layersBtn.getAttribute(failed ? "data-nodata" : "data-wait"));
+  });
+  function closeLayers() {
+    var b = innerLayers();
+    if (b && b.getAttribute("aria-expanded") === "true") b.click();
+  }
+  document.addEventListener("pointerdown", function (e) { if (!layersBtn.contains(e.target)) closeLayers(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeLayers(); });
+
+  /* Tabs: arrow keys move between them, as in a native tab list. */
+  var tabs = [byId("tab-overview"), byId("tab-notes"), byId("tab-activity")];
+  function pick(tab, focus) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      byId(t.getAttribute("aria-controls")).hidden = !on;
+    });
+    if (focus) tab.focus();
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener("click", function () { pick(t); });
+    t.addEventListener("keydown", function (e) {
+      var to = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+      if (to === undefined) return;
+      e.preventDefault();
+      pick(tabs[(to + tabs.length) % tabs.length], true);
+    });
+  });
+
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest ? e.target.closest("[data-close],[data-view],[data-area]") : null;
+    if (!t) return;
+    if (t.hasAttribute("data-close")) { show(null); fcBtn.focus(); return; }
+    if (t.hasAttribute("data-area")) { setArea(t.getAttribute("data-area")); return; }
+    e.preventDefault();
+    show(t.getAttribute("data-view"), true);
+  });
+
+  /* Phones: the map fills the screen under the top bar, whose height changes with the status (veor.css --above). */
+  function measureAbove() {
+    document.documentElement.style.setProperty("--above", Math.round(byId("stage").getBoundingClientRect().top + window.scrollY) + "px");
+  }
+  V.onAge = measureAbove;
+  measureAbove();
+  window.addEventListener("resize", measureAbove);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureAbove);
+
+  /* The 10-minute reload's carried place, this page's part: the panel's scroll and the lead's tab (the address
+     keeps the area, #forecast and the map's choices; the map adds its view). */
+  V.save = function (s) {
+    s.panel = panel.scrollTop;
+    s.tab = (tabs.filter(function (t) { return t.getAttribute("aria-selected") === "true"; })[0] || tabs[0]).id;
+  };
+  V.restore = function (s) {
+    if (s.tab && byId(s.tab)) pick(byId(s.tab));
+    if (s.panel) panel.scrollTop = s.panel;
+  };
+  V.restoreState();
+
+  /* The map frame's document (each time it loads). Its links to the warnings list (index.html#forecast) open
+     this page's forecast instead of loading the page again. A press inside it holds the reload, as one here
+     does. On phones the map's controls sit in a fixed box inside the frame, so the browser doesn't scroll this
+     page to a control that takes keyboard focus there: this does, clear of the tab bar. */
+  function watchFrame() {
+    var d;
+    try { d = mapFrame.contentWindow.document; } catch (e) { return; }
+    if (!/map\.html$/.test(mapFrame.contentWindow.location.pathname) || d.hailwatchWatched) return;
+    d.hailwatchWatched = true;
+    d.addEventListener("pointerdown", function () { V.pressed(true); }, true);
+    d.addEventListener("pointerup", function () { V.pressed(false); }, true);
+    d.addEventListener("pointercancel", function () { V.pressed(false); }, true);
+    d.addEventListener("click", function (e) {
+      var a = e.target.closest ? e.target.closest('a[href$="#forecast"]') : null;
+      if (!a) return;
+      e.preventDefault();
+      show("forecast", true);
+    });
+    d.addEventListener("focusin", function (e) {
+      if (!narrow.matches || !e.target.matches || !e.target.matches(":focus-visible")) return;
+      var f = mapFrame.getBoundingClientRect(), r = e.target.getBoundingClientRect();
+      var top = f.top + r.top, bottom = f.top + r.bottom, limit = window.innerHeight - byId("side").offsetHeight - 8;
+      if (top < 8) window.scrollBy(0, top - 8);
+      else if (bottom > limit) window.scrollBy(0, Math.min(bottom - limit, top - 8));
+    });
+  }
+  mapFrame.addEventListener("load", watchFrame);
+  watchFrame();
+})();
+</script>
+</body>
+</html>

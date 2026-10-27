@@ -1,64 +1,49 @@
+{#- A page of content in the Veor shell (design branch; docs/DESIGN.md section 14): the sidebar, the top bar
+    (search, Forecast, the status) and the page itself, which scrolls. The map page and the home page have their
+    own layouts (map.html, index.html). -#}
+{% from "_veor.html" import icons, mark, forecast_icon, alert_badge, sidebar, topbar_start, status_block, shell_script with context %}
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="refresh" content="600">
-<title>{% block title %}Montana Hail Watch{% endblock %}</title>
-<meta name="description" content="Official NWS warnings, a live radar and forecast map, roofing forecasts and storm reports for Montana, updated on a schedule set to every 10 minutes.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>{% block title %}Veor{% endblock %}</title>
+<meta name="description" content="Veor: official NWS warnings, a live radar and forecast map, roofing forecasts and storm reports for Montana, updated on a schedule set to every 10 minutes.">
 <link rel="icon" href="{{ root }}static/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="{{ root }}static/icon-180.png">
 <link rel="stylesheet" href="{{ root }}static/fonts/fonts.css">
 <link rel="stylesheet" href="{{ root }}static/style.css?v={{ asset_v['style.css'] }}">
+<link rel="stylesheet" href="{{ root }}static/veor.css?v={{ asset_v['veor.css'] }}">
+{# scripting off: the page's own 10-minute refresh, as before the shell #}
+<noscript><meta http-equiv="refresh" content="600"></noscript>
 </head>
-<body data-built="{{ built_ms }}">
+<body class="shell shell-page" data-built="{{ built_ms }}" data-root="{{ root }}">
 <a class="skip" href="#main">Skip to content</a>
 {% if sample %}
 <div class="sample-banner" role="note"><strong>Sample data.</strong> Everything on this page is invented to review the layout. It is not weather.</div>
 {% endif %}
-<header class="site">
-  <div class="wrap bar">
-    <a class="brand" href="{{ root }}index.html">
-      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M2 27 L11 11 L16 19 L21 9 L30 27 Z" fill="currentColor"/><circle cx="24.5" cy="5.5" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-      <span>Montana Hail Watch</span>
-    </a>
-    <nav class="main" aria-label="Main">
-      <a href="{{ root }}index.html"{% if page == 'now' %} aria-current="page"{% endif %}>Now</a>
-      <a href="{{ root }}map.html">Map</a>
-      <a href="{{ root }}reports.html"{% if page == 'reports' %} aria-current="page"{% endif %}><span class="nav-long">Storm reports</span><span class="nav-short">Reports</span></a>
-      <a href="{{ root }}about.html"{% if page == 'about' %} aria-current="page"{% endif %}>About</a>
-    </nav>
-  </div>
-</header>
-<div class="wrap freshness" id="freshness">
-  <p>Updated <time datetime="{{ built.isoformat() }}">{{ built|when }}</time> · rebuilt on a schedule set to every 10 minutes<span id="age"></span></p>
-  {% set good = status.values()|selectattr('ok')|map(attribute='label')|list %}
-  {% set bad = status.values()|rejectattr('ok')|list %}
-  <p class="sources">{% if good %}Loaded: {{ good|join(', ') }}.{% endif %}
-  {% for s in bad %} <span class="bad">{{ s.label }} problem: {{ s.detail }}.{% if s.words %} {{ s.words }}{% endif %}</span>{% endfor %}</p>
-</div>
-<main id="main" class="wrap">
+{{ icons() }}
+<div class="frame frame-page" id="frame">
+  {{ sidebar(page) }}
+  <header class="topbar">
+    {{ topbar_start() }}
+    <a class="tb-btn" id="btn-forecast" href="{{ root }}index.html#forecast">
+      {{ forecast_icon() }}<span class="tb-label">Forecast</span>{{ alert_badge() }}</a>
+    {{ status_block() }}
+  </header>
+  <main class="page" id="main">
+    <div class="page-inner">
 {% block content %}{% endblock %}
-</main>
-<footer class="wrap site-foot">
-  <p>Warnings and forecasts: National Weather Service. Radar estimate and model forecast: NOAA (MRMS, HRRR). Storm reports: NOAA Storm Prediction Center. Map outlines: Natural Earth and the US Census Bureau.</p>
-  <p>Weather information only. It does not confirm roof damage and it is not a decision to work or to stop work: check the sky and the site.</p>
-</footer>
-<script>
-/* Page-age check. Browser-only: it needs the viewer's clock (AGENTS.md rule 4).
-   The site is rebuilt on a schedule set to every 10 minutes, which GitHub does not always keep. If this copy is older than 25 minutes,
-   say so in words so nobody relies on an old warning list. */
-(function () {
-  var built = Number(document.body.getAttribute("data-built"));
-  var el = document.getElementById("age");
-  if (!el || !built) return;
-  var minutes = Math.round((Date.now() - built) / 60000);
-  if (minutes >= 1) el.textContent = " · " + minutes + " min ago";
-  if (minutes > 25) {
-    document.getElementById("freshness").classList.add("stale");
-    el.innerHTML = " · <strong>" + minutes + " minutes old.</strong> Warnings may have changed since. Reload, or check weather.gov.";
-  }
-})();
-</script>
+      <footer class="page-foot">
+        <p>Warnings and forecasts: National Weather Service. Radar estimate and model forecast: NOAA (MRMS, HRRR). Storm reports: NOAA Storm Prediction Center. Map outlines: Natural Earth and the US Census Bureau.</p>
+        <p>Weather information only. It does not confirm roof damage and it is not a decision to work or to stop work: check the sky and the site.</p>
+        <p><a href="{{ root }}index.html">Map</a> · <a href="{{ root }}reports.html">Storm reports</a> · <a href="{{ root }}about.html">About this site and its sources</a></p>
+      </footer>
+    </div>
+  </main>
+</div>
+<p class="v-toast" id="v-toast" role="status" aria-live="polite"></p>
+{{ shell_script() }}
 </body>
 </html>
