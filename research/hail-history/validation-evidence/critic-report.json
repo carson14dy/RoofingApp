@@ -1,0 +1,230 @@
+{
+ "reviewer": "critic",
+ "readme": "research/hail-history/README.md",
+ "checked_at": "2026-10-18",
+ "scope": "Read in full: mrms-mesh-archive, hosting-and-architecture, point-reports-archives, swdi, warnings-archive, montana-addresses and h1-mesh-store (facts, review, limits, open questions). Read the facts list and the cited items in full for wind-history, geocoding-and-lookup, commercial-and-tools and evaluation-and-wording, plus their review blocks where cited; not every item in those four files was re-read.",
+ "numbers_traced": "About 250 numbers in sections 01, 02, 03, 04, 05, 06, 09 and 10 were traced to facts, file bytes or computed values; every number in sections 01, 05 and 09 was checked.",
+ "mechanical_checks": {
+  "em_dashes": 0,
+  "en_dashes": 0,
+  "banned_names": 0,
+  "relative_links_checked": 307,
+  "relative_links_missing": 0,
+  "anchors_unmatched": 0,
+  "evaluation_templates_verbatim": "11 of 11 templates and the required lines match evaluation-and-wording.json exactly"
+ },
+ "counts": {
+  "findings": 23,
+  "applied": 16,
+  "left_for_supervisor": 7
+ },
+ "findings": [
+  {
+   "section": "09 (9.2 H1 gate)",
+   "claim": "2,192 days stored (2020-10-14 to 2026-10-15) in 47,997,019 B",
+   "evidence": "h1-mesh-store.json build.stored_day_range and stored_days 2192; missing_spc_days includes 2022-06-08; 2020-10-14 to 2026-10-15 inclusive is 2,193 days",
+   "severity": "low",
+   "fix": "State 2,192 of the 2,193 days in that range (SPC 2022-06-08 missing); label the H1 numbers as an unreviewed prototype measurement",
+   "applied": true,
+   "id": "C01"
+  },
+  {
+   "section": "09 (9.2 H0 gate 3; 9.1 OW-H4 and OW-H5)",
+   "claim": "Two-minute frames checked on 2025-06-15/16 and 2022-07-08/09, which agree, and on 2025-06-26, which does not; the first build step rests on this",
+   "evidence": "h1-mesh-store.json verify.two_minute_check and limits[2]; the record has no review object (researcher measurement, no refuter pass)",
+   "severity": "medium",
+   "fix": "Mark the checks as an unreviewed H1 measurement in the gate and in OW-H4 (c) and OW-H5",
+   "applied": true,
+   "id": "C02"
+  },
+  {
+   "section": "08 (8.1, wording of E, M and U)",
+   "claim": "E, M and U are not defined in any IEM or NWS document read (f34, false).",
+   "evidence": "A refuted claim restated as true. evaluation-and-wording.json facts[34] is verified false; point-reports-archives.json facts[18] (verified) quotes the IEM changelog defining E, M and U as Estimated, Measured or Unknown; section 2 gap 10 and section 10 D11 already say so",
+   "severity": "high",
+   "fix": "Replace with: the IEM changelog defines E, M and U as estimated, measured and unknown (pr f18); no NWS definition was read, so the NWS side stays open (ew f34 is refuted on the IEM side)",
+   "applied": true,
+   "id": "C03"
+  },
+  {
+   "section": "08 (8.1 centre choice); 09 (9.2 H5); 06 (6.2 item 5)",
+   "claim": "51.3 mm (2.02 in), 44.45 mm hit threshold, 35.7 mm (1.41 in) and 'the file labels the values mm'",
+   "evidence": "mrms-mesh-archive.json facts[21] and review: GRIB units key reads unknown; NSSL table unreachable; the README's own rule forbids size words until the units gate closes. The file does not label mm",
+   "severity": "medium",
+   "fix": "Write the values as file units, read as mm if the units are mm (unverified); keep inch conversions conditional",
+   "applied": true,
+   "id": "C04"
+  },
+  {
+   "section": "09 (9.1 OW-H1 recommendation)",
+   "claim": "Do not start MESH before 2020-10-14 (MRMS v12)",
+   "evidence": "Conflicts with section 4.1 (no data before 2021-10-17; 2020-10-14 holds 112 of about 720 frames) and with the 1,826-day window starting SPC day 2021-10-16; mrms-mesh-archive.json facts[8]",
+   "severity": "medium",
+   "fix": "One floor: the window starts at SPC day 2021-10-16 (file 2021-10-17); 2020-10-14 is incomplete and outside the window",
+   "applied": true,
+   "id": "C05"
+  },
+  {
+   "section": "10 (D1)",
+   "claim": "the 2020 maxima (146.3, 116.7, 110.6) that were not re-run",
+   "evidence": "mrms-mesh-archive.json facts[27] dates them 2021-06-15, 2023-06-15 and 2023-12-01; the 2020 value is 290.1 on the IEM 2020-10-15 copy",
+   "severity": "low",
+   "fix": "Give the correct dates for each maximum",
+   "applied": true,
+   "id": "C06"
+  },
+  {
+   "section": "04 (4.4 units; 4.7 wind); 06 (6.3 LSR row)",
+   "claim": "LSR hail is read as inches, which the IEM does not state ([pr f21]); the IEM help page states no magnitude unit (pr f21, flag F); though the IEM does not state it",
+   "evidence": "point-reports-archives.json facts[21] is verified false and listed in review.unverified[0]; the README's own convention says flagged facts are not restated as true",
+   "severity": "medium",
+   "fix": "Label as unverified: no IEM document read states a magnitude unit (pr f21)",
+   "applied": true,
+   "id": "C07"
+  },
+  {
+   "section": "04 (4.3 window)",
+   "claim": "the 12:00 file equalled the maximum of 720 two-minute frames on 2025-06-15/16 ([ew f58])",
+   "evidence": "evaluation-and-wording.json facts[58] (verified) covers 6,579 valid cells with zero differences, not the Montana or state cells. The crop equality is mrms facts[14] (not re-run); the state-cell equality is h1 verify.two_minute_check (unreviewed)",
+   "severity": "low",
+   "fix": "Re-cite: mrms f14 for the crop (not re-run) and h1 for state cells (unreviewed)",
+   "applied": true,
+   "id": "C08"
+  },
+  {
+   "section": "01 (table row 4 and SWDI row), 02 (gap 4), 04 (4.5), 06 (6.3)",
+   "claim": "No records 2025-06-15 12:00 to 24:00 UTC (nationwide)",
+   "evidence": "swdi.json facts[5] and urls_checked[19]: the last nx3hail record on 2025-06-15 is 03:32:39 UTC; 10 D7 gives the same; evaluation-and-wording.json facts[39] and [62] give 03:29:26 (Benchland box) and 03:32:15 (Plains box). The gap starts at 03:32:39, not 12:00",
+   "severity": "medium",
+   "fix": "Restate the gap as from 03:32:39 UTC to 24:00 UTC on 2025-06-15 in each of the four places",
+   "applied": true,
+   "id": "C09"
+  },
+  {
+   "section": "07 (7.1 DuckDB row); 05 (gaps)",
+   "claim": "DuckDB was not installed and no Parquet file was written, so no Parquet size is measured",
+   "evidence": "True for the wave-1 W9 pass only; the later unreviewed H1 prototype wrote an events Parquet file (h1-mesh-store.json store_bytes.events_parquet 14,480,420 B; 2,913,472 rows) and ran tests with pyarrow 26.0.0",
+   "severity": "low",
+   "fix": "Say that in wave 1 no Parquet was written; the unreviewed H1 prototype wrote one of 14,480,420 B",
+   "applied": true,
+   "id": "C10"
+  },
+  {
+   "section": "03 (Correction paragraph)",
+   "claim": "The parcel use-constraint element quotes MCA 2-6-1017 and includes 'for no other purpose'",
+   "evidence": "montana-addresses.json terms.msl_parcels quote[0] ends 'provides this product/service for informational purposes only' with no 'no other purpose'; 'for no other purpose' is the structures element (terms.msl_structures_addresses quote[1]). Section 8.3 already says 'for informational purposes only' for parcels",
+   "severity": "medium",
+   "fix": "Parcel element: MCA 2-6-1017 and 'for informational purposes only'; structures element: 'for no other purpose'",
+   "applied": true,
+   "id": "C11"
+  },
+  {
+   "section": "10.1 (W3 row)",
+   "claim": "W3 researcher bytes: not totalled; 41 URL rows sum to 38,282,764 (computed)",
+   "evidence": "warnings-archive.json facts[36] (verified) gives 53,596,201 bytes for successful requests (230 requests logged)",
+   "severity": "low",
+   "fix": "Give 53,596,201 bytes (warn f36; 230 requests logged) with the computed URL sum",
+   "applied": true,
+   "id": "C12"
+  },
+  {
+   "section": "01 (table row 5); 02 (IEM daily row)",
+   "claim": "1,264 station-days at or above 50 kt (2021 to 2026)",
+   "evidence": "wind-history.json facts[24] by year sums to 1,449 for calendar 2021 to 2026; 1,264 is the five-year window 2021-10-17 to 2026-10-17 (wind-history.json review.corrections[4] and confirmed[6])",
+   "severity": "medium",
+   "fix": "Label as the five-year window (2021-10-17 to 2026-10-17); calendar 2021 to 2026 gives 1,449",
+   "applied": true,
+   "id": "C13"
+  },
+  {
+   "section": "01 (bullet 4, wind)",
+   "claim": "station gusts were sampled for one month only",
+   "evidence": "wind-history.json facts[23] and urls_checked[49]: IEM daily MT_ASOS maxima for 2020 to 2026 (seven yearly CSVs, 17,345,008 bytes); only the hourly ASOS peak-wind sample covers June 2025 (facts[28])",
+   "severity": "medium",
+   "fix": "Say hourly station peak winds were sampled for June 2025 only; daily station maxima cover 2020 to 2026",
+   "applied": true,
+   "id": "C14"
+  },
+  {
+   "section": "02 (SWDI row lag); 09 (OW-H4)",
+   "claim": "SWDI lag: 19.5 days in June 2025, 64.4 days in February 2026",
+   "evidence": "swdi.json facts[4] matches the numbers; review.corrections[4] says the June 2025 median is atypical (calendar-2025 median 2.28 days, maximum 119.14 days)",
+   "severity": "low",
+   "fix": "Add the reviewer's calendar-2025 figures and say June 2025 is atypical",
+   "applied": true,
+   "id": "C15"
+  },
+  {
+   "section": "07 (7.4 rights row)",
+   "claim": "use in automated text features (for the review's AI-use question)",
+   "evidence": "docs/handoff/Roofing_Weather_Independent_Review.md line 124 says 'AI use'; generic AI is not a banned name under the brief",
+   "severity": "low",
+   "fix": "Restore the review's wording: 'AI use (the review's term, line 124)'",
+   "applied": true,
+   "id": "C16"
+  },
+  {
+   "section": "09 (9.2 H1 done-when)",
+   "claim": "Done when every stored day has a two-minute check (H1), with the first build step 'H1 continues now as raw values'",
+   "evidence": "Two-minute archive is about 69.1 GB (hosting-and-architecture.json facts[7]); the wave-1 download cap is 300 MB per workstream; section 9.3 asks the owner whether build steps fall under the cap. The done-when cannot be met within the stated budget as written",
+   "severity": "medium",
+   "fix": "Judgment for the supervisor: sample the two-minute check (name the days) or budget the 69 GB download under an owner decision; then the first step is buildable as written",
+   "applied": false,
+   "id": "C17"
+  },
+  {
+   "section": "02, 03, 10 (Microsoft and Google as dataset owners)",
+   "claim": "Microsoft US Building Footprints and Google Open Buildings named as sources",
+   "evidence": "The brief bans model, AI-vendor and AI-product names in any file. Dataset owners are not model names, but both are AI vendors; the assembler left this for the supervisor",
+   "severity": "low",
+   "fix": "Judgment for the supervisor: keep as dataset owners or refer to the datasets by name only",
+   "applied": false,
+   "id": "C18"
+  },
+  {
+   "section": "Status line",
+   "claim": "branch `hail-history`",
+   "evidence": "The worktree branch is the git ref for this worktree (hail-history branch, with the AI product prefix). The short name omits a prefix that is an AI product name. Consistent with the banned-name rule, but not the exact branch",
+   "severity": "low",
+   "fix": "Judgment for the supervisor: confirm the abbreviation",
+   "applied": false,
+   "id": "C19"
+  },
+  {
+   "section": "Status line",
+   "claim": "Status 2026-10-17",
+   "evidence": "The H1 record was checked at 2026-10-18T00:22:45Z and the branch WIP commit is dated 2026-10-18 UTC; the brief asked for 2026-10-17",
+   "severity": "low",
+   "fix": "Judgment for the supervisor: confirm the date",
+   "applied": false,
+   "id": "C20"
+  },
+  {
+   "section": "01 (OW-H4 row); 05 (limits table); 07 (7.2); 09 (OW-H4, P5)",
+   "claim": "about 9.5 starts a day against 144 nominal (observed)",
+   "evidence": "hosting-and-architecture.json facts[60] rests on 4 runs and 3 gaps (median 151.5 min); limits[9] says a schedule needs several days of observations. The sample size is stated in OW-H4, not in section 1",
+   "severity": "low",
+   "fix": "Judgment for the supervisor: add 'from 4 runs' to the section 1 row and section 7.2",
+   "applied": false,
+   "id": "C21"
+  },
+  {
+   "section": "09 (OW-H5 policy)",
+   "claim": "mm assumed, with a plausibility rule; a cap is set at H0",
+   "evidence": "No plausibility rule exists (mrms facts[27]; review.unverified[4]); 4.00 in (101.6 mm) is a candidate cap only, from warnings-archive.json facts[39]",
+   "severity": "low",
+   "fix": "Judgment for the supervisor: H0 should name the cap value and the review route for values above it",
+   "applied": false,
+   "id": "C22"
+  },
+  {
+   "section": "01 (table row 4); 02 (gap 8); 10.1 (W2 row)",
+   "claim": "W2 about 318 MB over the cap",
+   "evidence": "point-reports-archives.json review.scope: 318 MB is the reviewer pass alone; the researcher pass was 116,054,376 B (downloads.total_bytes). The combined workstream total is about 434 MB; the 10.1 table shows both",
+   "severity": "low",
+   "fix": "Judgment for the supervisor: state the combined figure or keep the reviewer-only figure labelled as such",
+   "applied": false,
+   "id": "C23"
+  }
+ ]
+}

@@ -1,0 +1,309 @@
+{
+  "workstream": "W9",
+  "slug": "hosting-and-architecture",
+  "checked_at_utc": "2026-10-17T21:19:12Z",
+  "scope": "Hosting and architecture sizing for W9 (hosting-and-architecture): data sizes, the address-to-cell join, hosting limits and costs, and three architectures. Research only. Nothing committed or pushed; only this JSON was written in the repository.",
+  "method": "Downloads and derived files sit under scratchpad/hail-dl/hosting-and-architecture (folders s3-lists, derived, web, msl-structures, grib-sample, crops). Steps: HEAD of every 12:00 UTC file in the window; listings of June 15 folders and one 1440-minute day folder; a stratified sample of 115 daily files (summer 81, shoulder 24, winter 10, drawn with a fixed seed) decoded with eccodes and cropped to the Montana outline mask; stratified expansion to five years with 95% sampling intervals; a join of the MSL structure points to 0.01 degree cells and 0.1 degree tiles; page fetches of hosting terms and limits with phrase checks on the saved text. Read-only use of W1, W6, W7, p0-gates.json, the worktree basemap and workflow files.",
+  "downloads": {
+    "grib_sample_files": 115,
+    "grib_sample_bytes": 99272834,
+    "msl_structures_zip_bytes": 65788772,
+    "web_page_bytes": 3759128,
+    "s3_listing_bytes": 1150165,
+    "s3_head_requests": 1827,
+    "s3_head_headers_bytes": "not byte-counted (headers only)",
+    "total_counted_bytes": 169970899,
+    "cap_bytes": 300000000,
+    "started_utc": "2026-10-17T21:03:26Z",
+    "sidecar_root": "scratchpad/hail-dl/hosting-and-architecture",
+    "refuter_bytes": 84585798,
+    "combined_bytes": 254556697
+  },
+  "urls_checked": [
+    {"url":"https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits","http_status":200,"bytes":88734,"content_check":"4/4 quoted phrases found in saved page text"},
+    {"url":"https://docs.github.com/en/actions/reference/limits","http_status":200,"bytes":384271,"content_check":"2/2 quoted phrases found in saved page text"},
+    {"url":"https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions","http_status":200,"bytes":227832,"content_check":"2/2 quoted phrases found in saved page text","final_url":"https://docs.github.com/en/billing/concepts/product-billing/github-actions"},
+    {"url":"https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github","http_status":200,"bytes":212818,"content_check":"2/2 quoted phrases found in saved page text"},
+    {"url":"https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features","http_status":200,"bytes":191657,"content_check":"4/4 quoted phrases found in saved page text"},
+    {"url":"https://docs.github.com/en/site-policy/acceptable-use-policies/github-acceptable-use-policies","http_status":200,"bytes":171284,"content_check":"2/2 quoted phrases found in saved page text"},
+    {"url":"https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners","http_status":200,"bytes":308142,"content_check":"page text saved (no phrase check)","final_url":"https://docs.github.com/en/actions/concepts/runners/github-hosted-runners"},
+    {"url":"https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts","http_status":200,"bytes":387975,"content_check":"1/1 quoted phrases found in saved page text","final_url":"https://docs.github.com/en/actions/tutorials/store-and-share-data"},
+    {"url":"https://developers.cloudflare.com/r2/pricing/","http_status":200,"bytes":146038,"content_check":"7/7 quoted phrases found in saved page text"},
+    {"url":"https://developers.cloudflare.com/r2/platform/limits/","http_status":200,"bytes":113907,"content_check":"1/1 quoted phrases found in saved page text"},
+    {"url":"https://developers.cloudflare.com/workers/platform/pricing/","http_status":200,"bytes":284859,"content_check":"3/3 quoted phrases found in saved page text"},
+    {"url":"https://developers.cloudflare.com/workers/platform/limits/","http_status":200,"bytes":250556,"content_check":"1/1 quoted phrases found in saved page text; CPU 10 ms text found: True"},
+    {"url":"https://developers.cloudflare.com/d1/platform/pricing/","http_status":200,"bytes":127843,"content_check":"6/6 quoted phrases found in saved page text"},
+    {"url":"https://developers.cloudflare.com/d1/platform/limits/","http_status":200,"bytes":120105,"content_check":"1/1 quoted phrases found in saved page text"},
+    {"url":"https://registry.opendata.aws/noaa-mrms-pds/","http_status":200,"bytes":15165,"content_check":"3/3 quoted phrases found in saved page text"},
+    {"url":"https://docs.github.com/en/actions/reference/runners/github-hosted-runners","http_status":200,"bytes":435476,"content_check":"1/1 quoted phrases found in saved page text"},
+    {"url":"https://docs.github.com/en/actions/administering-github-actions/usage-limits-billing-and-administration","http_status":200,"bytes":292466,"content_check":"page text saved (no phrase check)","final_url":"https://docs.github.com/en/actions/concepts/billing-and-usage"},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/ (HEAD, bucket root)","http_status":200,"bytes":null,"content_check":"x-amz-bucket-region: us-east-1"},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/CONUS/MESH_Max_1440min_00.50/{YYYYMMDD}/MRMS_MESH_Max_1440min_00.50_{YYYYMMDD}-120000.grib2.gz (HEAD x 1,826; 2021-10-17 to 2026-10-16)","http_status":"200 x 1825; 404 x 1 (2022-06-09)","bytes":901938706,"content_check":"bytes = sum of Content-Length over the 200s; min 39,129, median 332,405, max 1,780,960; per-file log s3-lists/head_1440_12z.json"},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/CONUS/MESH_Max_1440min_00.50/20250616/MRMS_MESH_Max_1440min_00.50_20250616-120000.grib2.gz (HEAD)","http_status":200,"bytes":1486343,"content_check":"Last-Modified Mon, 16 Jun 2025 12:08:20 GMT"},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/?list-type=2&prefix=CONUS/MESH_00.50/20220615/","http_status":200,"bytes":249418,"content_check":"718 keys; object bytes sum 39,933,523; first MRMS_MESH_00.50_20220615-000040.grib2.gz; last MRMS_MESH_00.50_20220615-235839.grib2.gz"},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/?list-type=2&prefix=CONUS/MESH_00.50/20230615/","http_status":200,"bytes":189632,"content_check":"720 keys; object bytes sum 40,751,607; first MRMS_MESH_00.50_20230615-000039.grib2.gz; last MRMS_MESH_00.50_20230615-235840.grib2.gz"},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/?list-type=2&prefix=CONUS/MESH_00.50/20240615/","http_status":200,"bytes":189632,"content_check":"720 keys; object bytes sum 34,421,860; first MRMS_MESH_00.50_20240615-000041.grib2.gz; last MRMS_MESH_00.50_20240615-235840.grib2.gz"},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/?list-type=2&prefix=CONUS/MESH_00.50/20250615/","http_status":200,"bytes":252992,"content_check":"720 keys; object bytes sum 43,436,627; first MRMS_MESH_00.50_20250615-000041.grib2.gz; last MRMS_MESH_00.50_20250615-235840.grib2.gz"},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/?list-type=2&prefix=CONUS/MESH_00.50/20260615/","http_status":200,"bytes":250112,"content_check":"720 keys; object bytes sum 30,659,071; first MRMS_MESH_00.50_20260615-000041.grib2.gz; last MRMS_MESH_00.50_20260615-235841.grib2.gz"},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/?list-type=2&prefix=CONUS/MESH_Max_1440min_00.50/20250616/","http_status":200,"bytes":18379,"content_check":"48 keys; object bytes sum 69,589,312; first MRMS_MESH_Max_1440min_00.50_20250616-000000.grib2.gz; last MRMS_MESH_Max_1440min_00.50_20250616-233000.grib2.gz"},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/CONUS/MESH_Max_1440min_00.50/{YYYYMMDD}/MRMS_MESH_Max_1440min_00.50_{YYYYMMDD}-120000.grib2.gz (GET x 115 sample days)","http_status":"200 x 115","bytes":99272834,"content_check":"gzip magic 1f8b on 115 of 115; eccodes reads one GRIB2 message per file (7000 x 3500, 16 bits, parameter 34, units 'unknown', dataTime 1200); per-file log derived/download_log.json"},
+    {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip (GET)","http_status":200,"bytes":65788772,"content_check":"zip, 11 members; SiteStructureAddressPoint.shp file code 9994, shape type 1; 674,715 .shp records equal DBF records (0 deleted); .prj gives NAD83(2011) / Montana (metre); sha256 7bc7a0fea8a190c0a8cbec2bf4f0facee357bb31314dc6884da07ac94671afba"},
+    {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip (member StructuresFramework_metadata.xml)","http_status":200,"bytes":null,"content_check":"both quoted terms found: True"},
+    {"url":"https://api.github.com/repos/carson14dy/RoofingApp (gh api, REST, read only)","http_status":200,"bytes":null,"content_check":"visibility public; private false; default_branch main"}
+  ],
+  "facts": [
+    {"claim":"Daily 12:00 UTC MESH_Max_1440min files in the five-year window (2021-10-17 to 2026-10-16)","value":"1,826 day slots; 1,825 files exist; 2022-06-09 returns HTTP 404","evidence":"HEAD of every slot (s3-lists/head_1440_12z.json)","verified":true,"kind":"measured","refuter_note":"HEAD scan (1,827 slots): 1,825 HTTP 200; 2022-06-09 404, and that folder also lacks 12:30 (46 of 48 files)."},
+    {"claim":"Gzip bytes of the 1,825 daily 12:00 UTC files","value":"901,938,706 B (0.90 GB); min 39,129 B, median 332,405 B, max 1,780,960 B. The same total is in W1 file mrms-mesh-archive.json (read; agrees).","evidence":"HEAD scan (sum of Content-Length)","verified":true,"kind":"measured"},
+    {"claim":"Summer (Jun to Aug) and winter (Nov to Mar) daily files","value":"Summer: 459 files, median 1,074,164 B, sum 491,833,907 B. Winter: 756 files, median 96,156 B, sum 110,833,894 B.","evidence":"HEAD scan, split by month","verified":true,"kind":"measured"},
+    {"claim":"Bytes by window year (12:00 files)","value":"2021: 76 files, 11,590,496 B; 2022: 364 files, 176,541,653 B; 2023: 365 files, 171,172,744 B; 2024: 366 files, 173,881,154 B; 2025: 365 files, 190,407,386 B; 2026: 289 files, 178,345,273 B","evidence":"HEAD scan","verified":true,"kind":"measured"},
+    {"claim":"Bucket region of the MRMS archive","value":"us-east-1 (x-amz-bucket-region on the bucket root)","evidence":"HEAD on bucket root","verified":true,"kind":"measured"},
+    {"claim":"Objects in one day folder of the 1440-minute product (20250616)","value":"48 objects, 69,589,312 B in total; 12:00 object 1,486,343 B","evidence":"ListObjectsV2 on CONUS/MESH_Max_1440min_00.50/20250616/ and HEAD of its 12:00 object","verified":true,"kind":"measured"},
+    {"claim":"2-minute MESH (CONUS/MESH_00.50) on June 15 of each sample year","value":"2022: 718 objects, 39,933,523 B; 2023: 720 objects, 40,751,607 B; 2024: 720 objects, 34,421,860 B; 2025: 720 objects, 43,436,627 B; 2026: 720 objects, 30,659,071 B. Mean 37,840,538 B per day.","evidence":"ListObjectsV2 per June 15 folder (s3-lists/listings_2min_and_cadence.json)","verified":true,"kind":"measured"},
+    {"claim":"Five-year 2-minute archive size (estimate, not downloaded)","value":"about 69.1 GB (mean of the five June 15 folders x 1,826 days); at the measured download rate of 2.22 MB/s about 8.66 h","evidence":"computed from the listings above","verified":true,"kind":"computed","refuter_note":"Recomputed: 69.10 GB; the 2025 folder re-listed exact (720 objects, 43,436,627 B)."},
+    {"claim":"Grid and packing of the sampled 12:00 files","value":"7000 x 3500 points at 0.01 degree; 16 bits per value; units key 'unknown'; parameter number 34; dataTime 1200 (12:00 UTC); values on a 0.1 step (maximum quantisation error 0.0)","evidence":"eccodes decode of all 115 sample files (derived/aggregate.json decode_checks)","verified":true,"kind":"measured"},
+    {"claim":"Benchland cross-check (maximum MESH within 15 km of 47.0 N, 109.9 W, file units)","value":"2025-06-16 12:00 file: 35.7 (824 cells, 670 at or above zero); 2025-06-15 12:00 file: 77.9 (791 at or above zero). Same as W1 for the same disks (35.7 and 77.9).","evidence":"decode of the sample files; W1 file mrms-mesh-archive.json (read)","verified":true,"kind":"measured","refuter_note":"Timing: 77.9 is the window ending 02:00 UTC on 2025-06-15 (SPC day 06-14); 35.7 is the window ending 22:00 UTC on 2025-06-15 (SPC day 06-15)."},
+    {"claim":"Montana outline on the 0.01 degree grid","value":"Outline (basemap feature, 1 ring, 212 vertices): lon -116.0511 to -104.0414, lat 44.3583 to 49.0. Cells with centres inside: 450,981; about 0.84 km2 each at 47 N (1.112 km N-S, 0.759 km E-W).","evidence":"website/static/map/basemap.json (repo file, read); derived/montana_mask_summary.json","verified":true,"kind":"computed","refuter_note":"Strict even-odd rule gives 450,765; the 216 tie cells on the polygon edge at lon -104.045 make 450,981."},
+    {"claim":"Sizing boxes around the outline","value":"Tight span of cell centres: 464 x 1,201 = 557,264 cells. Covering box (floor and ceil of the bounding box): 466 x 1,203 = 560,598; plus a 2-cell margin 470 x 1,207 = 567,290 (dense sizes). Tight span plus margin: 468 x 1,205 = 563,940.","evidence":"derived/montana_mask_summary.json (grid row and column ranges)","verified":false,"kind":"computed","corrected_from":"Outline bounding box without margin: 466 x 1203 = 560,598 cells. With a 2-cell margin (used for the dense sizes): 470 x 1207 = 567,290 cells.","refuted_by":"466 x 1,203 is a covering box; the cell-centre span was reproduced as 464 x 1,201."},
+    {"claim":"Correction to the brief's W9 size line","value":"The brief's 'Montana at 0.01 degree is about 750 x 1,750 cells' describes its crop (43.0 to 50.5 N, 118.5 to 101.0 W): 750 x 1,750 = 1,312,500 cells, the crop W1 used. The Montana outline is about 466 x 1,203 cells.","evidence":"hail-brief.md (W1 and W9 text); W1 file mrms-mesh-archive.json (crop of 1,312,500 points)","verified":true,"kind":"correction"},
+    {"claim":"0.1 degree tiles (10 x 10 grid cells, aligned to the MRMS grid)","value":"5,808 tiles touch the margin box; 4,597 contain outline cells; 3,823 contain at least one address point","evidence":"derived/montana_mask_summary.json; derived/join_summary.json","verified":true,"kind":"computed"},
+    {"claim":"Address points in the Montana State Library Structures Framework","value":"674,715 points (SHP and DBF agree; 0 deleted; same count as W6); 674,675 inside outline cells; residence-coded 493,975 (Place_Type 'residence' plus 'Residential', the W6 definition)","evidence":"StructuresFramework_shp.zip parsed (derived/join_summary.json)","verified":true,"kind":"measured","refuter_note":"Reproduced: 674,715 SHP and DBF records; 674,675 in outline cells with the tie (674,297 strict); 493,975 residence-coded."},
+    {"claim":"Owner names in the structures file","value":"51 DBF fields; no field name contains OWN","evidence":"SiteStructureAddressPoint.dbf header (field names)","verified":true,"kind":"measured","refuter_note":"No OWN field. ParcelID is filled for 654,152 records (96.95%): drop it from published shards."},
+    {"claim":"Addresses per 0.01 degree cell (all points)","value":"p50 2, p90 18, p99 282, max 1,969; cells with at least one point 49,820 (residence cells 40,972)","evidence":"derived/join_summary.json","verified":true,"kind":"computed","refuter_note":"Reproduced within 18 cells (49,802 vs 49,820 with points); percentiles match."},
+    {"claim":"Addresses per 0.1 degree tile","value":"p50 12, p90 198, p99 3,491, max 33,855; 117 tiles above 1,000 addresses, 26 above 5,000","evidence":"derived/join_summary.json","verified":true,"kind":"computed","refuter_note":"Reproduced within percentile-method differences (p99 3,505 vs 3,491)."},
+    {"claim":"Address-to-cell join (sizing proxy, not a serialised index)","value":"One row per address as (address index, cell index) u32 pairs sorted by cell: 5,397,720 B raw; 1,343,386 B gzip level 9 (exact). Raw u32 cell column alone 103,236 B gzip; the delta-coded column is 80,955 B.","evidence":"derived/join_summary.json (gzip level 9)","verified":false,"kind":"computed","corrected_from":"One row per address as (address index, cell index) u32 pairs sorted by cell: 5,397,720 B raw; 1,343,386 B gzip; the cell-index column alone 80,955 B gzip","refuted_by":"Label error: 80,955 B is the delta-coded cell column; the raw u32 column gzips to 103,236 B. Pair sizes reproduced."},
+    {"claim":"Sample of daily files used for the estimates","value":"115 of 1,825 available days: summer 81 of 459, shoulder (Apr, May, Sep, Oct) 24 of 610, winter (Nov to Mar) 10 of 756. Drawn with numpy default_rng(20261017); 2025-06-15 and 2025-06-16 added. 99,272,834 B.","evidence":"derived/sample_plan.json; derived/download_log.json","verified":true,"kind":"measured"},
+    {"claim":"Code values inside the outline on sampled days","value":"Code -1 is 96.0% of summer cells, 99.7% of shoulder and 100.0% of winter cells; code -3 occurs in 0 cells; no zero values; no other negative codes. The meaning of -1 and -3 is not verified.","evidence":"derived/day_stats.json (per-day counts)","verified":true,"kind":"measured","refuter_note":"Reproduced from day_stats; -3, other negatives and zeros are 0 on all 115 days."},
+    {"claim":"Positive cells per sampled day (outline cells)","value":"Summer mean 18,071 (4.0% of 450,981); largest sampled day 133,429 on 2022-07-09; 2 of 115 sampled days exceed 100,000","evidence":"derived/day_stats.json; derived/stats2.json","verified":true,"kind":"measured","refuter_note":"Reproduced; the 2022-07-09 peak (133,429) was re-decoded exactly."},
+    {"claim":"Sampled days with any value at or above 1.00 in (25.4 file units) inside the outline","value":"summer 48 of 81; shoulder 3 of 24; winter 2 of 10","evidence":"derived/day_stats.json","verified":true,"kind":"measured"},
+    {"claim":"Five-year positive cell-days at outline cells (stratified estimate)","value":"9,245,170 (95% sampling interval 6,736,622 to 11,753,718)","evidence":"derived/stats2.json; a 115-day stratified sample (estimate, not a census of days)","verified":true,"kind":"estimate"},
+    {"claim":"Five-year cell-days at or above 0.25 in (6.35 if file units are mm)","value":"2,548,035 (95% sampling interval 1,629,082 to 3,466,988)","evidence":"derived/stats2.json","verified":true,"kind":"estimate"},
+    {"claim":"Five-year cell-days at or above 1.00 in (25.4 if file units are mm)","value":"193,667 (95% sampling interval 99,295 to 288,040)","evidence":"derived/stats2.json","verified":true,"kind":"estimate"},
+    {"claim":"Check of the sampling estimator against the exact archive bytes","value":"Stratified estimate 891,578,501 B (95% interval 805,170,067 to 977,986,935) against the exact 901,938,706 B: inside the interval; error -1.1%","evidence":"derived/stats2.json and the HEAD scan","verified":true,"kind":"computed"},
+    {"claim":"Outline cells with at least one sampled qualifying day (lower bound on the five-year count)","value":"positive 413,929 (91.8%); at or above 0.25 in 256,344 (56.8%); at or above 0.50 in 133,100 (29.5%); at or above 1.00 in 32,311 (7.2%); at or above 2.00 in 1,881 (0.4%)","evidence":"derived/aggregate.json (per_cell_and_tile_estimates)","verified":true,"kind":"estimate"},
+    {"claim":"Estimated qualifying days per cell over five years (positive values)","value":"median 17.0, p90 42.42, max 262.43 (weights 5.667 summer, 25.417 shoulder, 75.6 winter)","evidence":"derived/aggregate.json","verified":true,"kind":"estimate"},
+    {"claim":"Estimated five-year rows per 0.1 degree tile (positive cell-days)","value":"positive: median 1,842, p90 3,774, p99 5,614, max 8,255; at or above 0.25 in: median 448, p99 2,267, max 3,795; at or above 1.00 in: median 74, p99 589, max 890","evidence":"derived/aggregate.json","verified":true,"kind":"estimate"},
+    {"claim":"Serialised size per event row (gzip)","value":"JSON pairs [cell index, value x 10]: 3.52 B per positive row (3.73 B at or above 0.25 in); columnar gzip proxy (int32 cell and int16 value): 2.56 B per row. Parquet not measured (pyarrow and DuckDB are not installed).","evidence":"derived/aggregate.json","verified":true,"kind":"measured"},
+    {"claim":"Five-year events table size (gzip, estimate)","value":"positive rows: 32,584,386 B (95% interval 23,787,741 to 41,381,031); at or above 0.25 in: 9,546,163 B; columnar gzip proxy for positive rows: 23,704,022 B","evidence":"derived/stats2.json; derived/aggregate.json","verified":true,"kind":"estimate"},
+    {"claim":"Dense daily grid (int16 x 10, gzip per day, 567,290 cells)","value":"summer mean 33,395 B per day; winter mean 1,168 B; five-year total 18,766,062 B (95% interval 14,870,482 to 22,661,643); uncompressed 1.13 MB per day","evidence":"derived/aggregate.json; derived/stats2.json","verified":true,"kind":"estimate"},
+    {"claim":"Row-run count at or above 1.00 in (proxy for swath size; not a vector tile measurement)","value":"five-year estimate 34,591 runs (95% interval 19,713 to 49,468); summer mean 73.3 runs per day","evidence":"derived/stats2.json; derived/aggregate.json","verified":true,"kind":"estimate"},
+    {"claim":"Address index bytes (read from W7, scaled to all address points)","value":"W7 measured 8.31 gzip bytes per address for Park County ZIP shards (variant V3). Scaled to 674,715 addresses: about 5.6 MB. Not measured on the statewide file.","evidence":"research/hail-history/validation-evidence/geocoding-and-lookup.json (read; not re-measured here)","verified":true,"kind":"read","refuter_note":"W7 line 116 confirms V3 8.31 B per address for the Park County test (11,101 non-unit addresses). The statewide 5.6 MB is a scale-up."},
+    {"claim":"Pages publish path of the Website workflow","value":"actions/upload-pages-artifact@v3 (workflow line 164) and actions/deploy-pages@v4 (line 182); the Pages limits page says the 10-builds-per-hour soft limit does not apply to a custom Actions workflow","evidence":".github/workflows/website.yml (worktree file, read); gh-pages-limits page","verified":true,"kind":"read"},
+    {"claim":"Repository visibility","value":"carson14dy/RoofingApp is public (default branch main)","evidence":"gh api repos/carson14dy/RoofingApp","verified":true,"kind":"measured","refuter_note":"REST: public, default branch main. The storm-layers checkout has workflow lines 40, 167, 185; the hail-history worktree has 39, 164, 182."},
+    {"claim":"Scheduled Website runs (4 runs in the P0 record)","value":"median run 73 s; cron */10 gives 144 starts per day, about 175 runner-minutes per day (73 s x 144, computed); no minute charge because the repository is public","evidence":"research/globe/validation-evidence/p0-gates.json section 3 (read; not re-run here)","verified":false,"kind":"read","refuted_by":"144 starts a day is the nominal cron count. P0 records 4 starts in 57 ten-minute slots (7.0%), gaps 141.6 to 264.5 min (median 151.5): about 9.5 a day observed. The 73 s run is confirmed."},
+    {"claim":"Measured download rate in this environment","value":"99,272,834 B in 44.8 s with 4 threads (2.22 MB/s). The 12:00 archive (901,938,706 B) would take about 6.8 min at this rate. Not measured on GitHub-hosted runners.","evidence":"derived/download_log.json and the download run log","verified":true,"kind":"measured","refuter_note":"Single connection (reviewer): 65,788,772 B in 41.3 s = 1.59 MB/s; the 2.22 MB/s figure is a 4-thread run."},
+    {"claim":"Decode time per file in this environment","value":"summer files: mean 0.69 s (shoulder 0.80, winter 0.48). Whole window on one core: about 19.5 min (stratum weighted over 1,825 days); the earlier 20.9 min used the summer mean for every day. About 5 min on 4 cores is an estimate, not measured.","evidence":"derived/day_stats.json; derived/stats2.json","verified":false,"kind":"measured","corrected_from":"summer files: mean 0.69 s. Whole window on one core: about 20.9 min (1,825 days, computed); about 5 min on 4 cores (computed).","refuted_by":"The 20.9 min whole-window figure applied the summer mean to every day; stratum-weighted it is 19.5 min (recomputed)."},
+    {"claim":"GitHub-hosted standard Linux x64 runner","value":"4 processors, 16 GB memory, 14 GB SSD (table row)","evidence":"https://docs.github.com/en/actions/reference/runners/github-hosted-runners","verified":true,"kind":"read"},
+    {"claim":"Job and workflow limits","value":"job execution time 6 hours (GitHub-hosted runners); workflow run time 35 days","evidence":"https://docs.github.com/en/actions/reference/limits","verified":true,"kind":"read"},
+    {"claim":"Pages limits","value":"published site no larger than 1 GB; soft bandwidth limit 100 GB per month; soft limit 10 builds per hour, not applied to a custom Actions workflow","evidence":"https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits","verified":true,"kind":"read"},
+    {"claim":"Repository file limits","value":"files over 100 MiB are blocked; repositories ideally under 1 GB, under 5 GB strongly recommended","evidence":"https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github","verified":true,"kind":"read"},
+    {"claim":"Actions minutes and storage quotas","value":"free for public repositories on standard GitHub-hosted runners; private accounts get 2,000 (Free), 3,000 (Pro, Team) and 50,000 (Enterprise Cloud) minutes per month; artifact quotas are stated for private repositories (500 MB Free)","evidence":"https://docs.github.com/en/billing/concepts/product-billing/github-actions","verified":true,"kind":"read"},
+    {"claim":"Cloudflare R2 prices, free tier and limits","value":"Standard storage $0.015 per GB-month, free up to 10 GB-month; Class A $4.50 per million requests, 1 million free per month; Class B $0.36 per million requests, 10 million free per month; no egress charge; objects up to 5 TiB","evidence":"https://developers.cloudflare.com/r2/pricing/ and https://developers.cloudflare.com/r2/platform/limits/","verified":true,"kind":"read"},
+    {"claim":"Cloudflare Workers Free and Paid","value":"Free: 100,000 requests per day, 128 MB memory, 10 ms CPU time (text found: True). Paid: $5 USD per month minimum, 10 million requests included, $0.30 per additional million","evidence":"https://developers.cloudflare.com/workers/platform/pricing/ and .../limits/","verified":true,"kind":"read"},
+    {"claim":"Cloudflare D1 Free and Paid","value":"Free: 5 million rows read per day, 100,000 rows written per day, 5 GB total storage, 500 MB maximum database. Paid: 25 billion rows read per month then $0.001 per million; 50 million rows written per month then $1.00 per million; storage above 5 GB $0.75 per GB-month; 10 GB maximum database","evidence":"https://developers.cloudflare.com/d1/platform/pricing/ and .../limits/","verified":true,"kind":"read"},
+    {"claim":"Build timing for a daily update","value":"Website build job timeout 15 minutes (timeout-minutes at workflow line 39). A daily update fetches one 12:00 file (smallest 39,129 B, largest 1,780,960 B, summer median 1,074,164 B) and decodes it in about 1 s. A full backfill (about 6.8 min download at the measured rate plus about 5 min decode on 4 cores) does not fit a 10-minute build and belongs in a separate scheduled or manual job.","evidence":".github/workflows/website.yml (worktree file, read); S3 HEAD scan; download and decode timings","verified":true,"kind":"computed","refuter_note":"Scheduled runs are not reliable at the top of the hour (see the schedule facts)."},
+    {"claim":"Window of the 12:00 UTC 1440-minute file (reviewer test)","value":"Trailing: the file stamped D is the maximum over 12:00 UTC on D-1 to 12:00 UTC on D. Twelve 2-hour MESH_Max_120min files stamped 14:00 (D-1) to 12:00 (D) equal it on all 568,026 crop cells for 2025-06-15, 2025-06-16 and 2026-10-16. The forward set matches only 300,912 of 450,765 Montana cells (2025-06-16).","evidence":"S3 GET of 1440 and 120-minute files; eccodes decode and union (reviewer)","verified":true,"kind":"measured"},
+    {"claim":"SPC report day of each 12:00 UTC file","value":"The file stamped D holds SPC report day D-1 (SPC days run 12:00 to 11:59 UTC, per AGENTS.md). A report dated D matches the file stamped D+1.","evidence":"Window fact above; AGENTS.md Conventions","verified":true,"kind":"computed"},
+    {"claim":"Benchland 15 km maxima by window","value":"77.9 comes from the window ending 02:00 UTC on 2025-06-15 (SPC day 06-14). 35.7 comes from the window ending 22:00 UTC on 2025-06-15 (2-hour values 25.0 at 20:00, 35.7 at 22:00; SPC day 06-15).","evidence":"MESH_Max_120min 2025-06-14 14:00 to 2025-06-16 12:00 within 15 km of 47.0 N, 109.9 W","verified":true,"kind":"measured"},
+    {"claim":"Publication time of the 12:00 UTC files","value":"Last-Modified 12:08:16 to 12:08:20 GMT on five real-time days (2026-06-15, 06-16, 10-15, 10-16, 10-17); 2025 archive 12:08:20 (06-16) and 12:28:37 (06-15). 2026 2-hour files were written about 4 minutes after their stamp.","evidence":"HEAD of 12:00 files; GET headers of 2-hour files (reviewer)","verified":true,"kind":"measured"},
+    {"claim":"Fresh HEAD scan of the 12:00 archive and gap","value":"1,825 HTTP 200 and 1 HTTP 404 (2022-06-09) for 2021-10-17 to 2026-10-16; Content-Length sum 901,938,706 B (exact). That day's folder also lacks 12:30 (46 of 48 files). Medians: summer 1,074,164 B; shoulder 460,464.5 B; winter 96,156 B.","evidence":"1,827 HEAD requests (headers only); ListObjectsV2 (reviewer)","verified":true,"kind":"measured"},
+    {"claim":"GRIB header of the 12:00 1440 file","value":"Ni 7000, Nj 3500, 16 bits per value, units unknown, product template 0, stepRange 0 m, dataTime 1200. The 24-hour window is not in the GRIB header; the file name and the union test show it.","evidence":"eccodes keys, 2025-06-16 and 2026-10-16 files (reviewer)","verified":true,"kind":"measured"},
+    {"claim":"Boundary tie at lon -104.045","value":"216 cells lie exactly on the Montana polygon's vertical edges at lon -104.045 (edges span lat 45.88 to 48.37). Strict even-odd gives 450,765 cells and 674,297 addresses; with the tie, 450,981 and 674,675.","evidence":"basemap.json Montana feature (212 vertices); reviewer rasterisation","verified":true,"kind":"measured"},
+    {"claim":"DBF coordinates and parcel key","value":"DBF Longitude and Latitude are 0.00000000 in all 674,715 records, so the shapefile geometry (NAD83(2011) Montana State Plane, metres) is the only coordinate source. ParcelID is filled in 654,152 records (96.95%).","evidence":"SiteStructureAddressPoint.dbf raw bytes and field scan; .prj (reviewer)","verified":true,"kind":"measured"},
+    {"claim":"Peak sampled day re-decoded","value":"2022-07-09 12:00: 133,429 positive cells, 53,081 at or above 6.35 mm (0.25 in) and 3,435 at or above 25.4 mm (1.00 in), over the inclusive outline (exact). Second-largest sampled day 2025-06-16: 129,132 positive cells.","evidence":"S3 GET 1,350,081 B (reviewer decode)","verified":true,"kind":"measured"},
+    {"claim":"Stratified totals recomputed from the sidecar","value":"From the 115 days in day_stats.json with weights 459/81, 610/24, 756/10: positive cell-days 9,245,170; at or above 0.25 in 2,548,035; at or above 1.00 in 193,667; bytes 891,578,501; events JSON gzip 32,584,386; dense grid 18,766,062. Intervals as stated. All exact.","evidence":"derived/day_stats.json (reviewer recompute)","verified":true,"kind":"computed"},
+    {"claim":"GitHub scheduled-workflow rules","value":"Scheduled workflows run only on the default branch. In a public repository they are disabled after 60 days with no repository activity. Runs can be delayed under high load (the start of every hour), and some queued jobs may be dropped. Minimum interval 5 minutes.","evidence":"events-that-trigger-workflows page, GET 200, 1,076,249 B (reviewer)","verified":true,"kind":"read"},
+    {"claim":"Observed Website schedule (P0 record)","value":"4 scheduled runs; 4 of 57 ten-minute slots had a start (7.0%); gaps 141.57, 151.52 (median) and 264.52 min; median run 73.0 s. Observed about 9.5 starts a day against the nominal 144.","evidence":"research/globe/validation-evidence/p0-gates.json section3_schedule (read)","verified":true,"kind":"read"},
+    {"claim":"Artifact storage and minutes by plan (private repositories)","value":"Artifact storage: Free 500 MB, Pro 1 GB, Team 2 GB, Enterprise Cloud 50 GB. Minutes a month: 2,000, 3,000, 3,000, 50,000. No public-repository artifact quota appears on the page.","evidence":"billing page table, GET 200, 227,832 B (reviewer)","verified":true,"kind":"read"},
+    {"claim":"Runner disk and backfill limits (computed)","value":"Standard public-repository Linux x64 runner: 14 GB SSD, so the 2-minute archive (about 69.1 GB) cannot be staged on one runner; the 12:00 archive (0.90 GB) can. A Free-plan D1 backfill of about 9.25 M positive rows needs about 93 days at 100,000 rows written a day.","evidence":"runner reference page (reviewer fetch); D1 pricing page; stats2 estimate","verified":true,"kind":"computed"},
+    {"claim":"Throughput and tools available (reviewer)","value":"One connection: 65,788,772 B in 41.3 s (1.59 MB/s); at that rate the 12:00 archive takes about 9.4 min and the 2-minute archive about 12 h. pyarrow, duckdb, pyogrio, fiona, shapely, h3, mapbox_vector_tile and pmtiles are not installed; pyproj 3.8.0, numpy 2.5.3 and eccodes 2.50.0 import.","evidence":"GET of StructuresFramework_shp.zip; python import checks (reviewer)","verified":true,"kind":"measured"}
+  ],
+  "terms": {
+    "noaa_mrms_registry": {
+      "url": "https://registry.opendata.aws/noaa-mrms-pds/",
+      "quotes": [
+        "NOAA data disseminated through NODD are open to the public and can be used as desired.",
+        "NOAA requests attribution for the use or dissemination of unaltered NOAA data.",
+        "However, it is not permissible to state or imply endorsement by or affiliation with NOAA.",
+        "If you modify NOAA data, you may not state or imply that it is original, unaltered NOAA data."
+      ]
+    },
+    "github_actions_clauses": {
+      "url": "https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features",
+      "quotes": [
+        "You may only access and use GitHub Actions to develop and test your application(s).",
+        "If using GitHub-hosted runners, any other activity unrelated to the production, testing, deployment, or publication of the software project associated with the repository where GitHub Actions are used.",
+        "Any activity that places a burden on our servers, where that burden is disproportionate to the benefits provided to users (for example, don't use Actions as a content delivery network or as part of a serverless application, but a low benefit Action could be ok if it's also low burden); or",
+        "GitHub Pages may not be used in violation of the Agreement, the GitHub Acceptable Use Policies, or the GitHub Pages service limitations set forth in the Pages documentation. (link spacing removed)"
+      ],
+      "note": "Same clauses as p0-gates.json section 4 (clause A). Re-found on the page in this run. Whether publishing derived data through Actions and Pages falls under these clauses is for counsel."
+    },
+    "github_pages_commercial_sentence": {
+      "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits",
+      "quote": "GitHub Pages is not intended for or allowed to be used as a free web-hosting service to run your online business, e-commerce site, or any other website that is primarily directed at either facilitating commercial transactions or providing commercial software as a service (SaaS).",
+      "note": "Whether the company's weather site is primarily directed at facilitating commercial transactions is not decided here (owner and counsel)."
+    },
+    "github_acceptable_use_bandwidth": {
+      "url": "https://docs.github.com/en/site-policy/acceptable-use-policies/github-acceptable-use-policies",
+      "quote": "If we determine your bandwidth usage to be significantly excessive in relation to other users of similar features, we reserve the right to suspend your Account, throttle your file hosting, or otherwise limit your activity until you can reduce your bandwidth consumption."
+    },
+    "github_billing_public": {
+      "url": "https://docs.github.com/en/billing/concepts/product-billing/github-actions",
+      "quote": "GitHub Actions usage is free for self-hosted runners and for public repositories that use standard GitHub-hosted runners."
+    },
+    "msl_structures_metadata": {
+      "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip (member StructuresFramework_metadata.xml)",
+      "quotes": [
+        "All data contained in the Framework are publicly available and non-sensitive.",
+        "The Library did not produce it for, nor is it suitable for legal, engineering, or surveying purposes.",
+        "The Library provides these data in good faith but does not represent or warrant its accuracy, adequacy, or completeness."
+      ]
+    },
+    "cloudflare_r2_egress": {
+      "url": "https://developers.cloudflare.com/r2/pricing/",
+      "quote": "There are no charges for egress bandwidth for any storage class."
+    },
+    "not_read": [
+      "Cloudflare self-serve subscription terms (only pricing and limits pages were read)",
+      "GitHub Pages service agreement beyond the limits and additional-products pages",
+      "NOAA NODD program page beyond the registry page",
+      "Montana State Library download terms beyond the metadata member"
+    ],
+    "github_scheduled_workflows": {
+      "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows",
+      "quotes": [
+        "In a public repository, scheduled workflows are automatically disabled when no repository activity has occurred in 60 days.",
+        "If the load is sufficiently high enough, some queued jobs may be dropped."
+      ],
+      "note": "Reviewer fetch 2026-10-17."
+    }
+  },
+  "limits": [
+    "Sample-based estimates: 115 of 1,825 days, weighted by stratum. The 95% intervals cover sampling error only, not measurement error, unit error or code meaning. Summer is well sampled (81 of 459 days); shoulder and winter are thin (24 of 610; 10 of 756). Two days were added by hand (2025-06-15, 2025-06-16).",
+    "Units: GRIB units read 'unknown' in every file. Inch equivalents assume file values are mm; W1 and mrms.json record the unit as unverified. Values at 0.25, 0.50, 0.75 and 1.00 inch equivalents are conditional on that assumption.",
+    "Codes: -1 is treated as no event and -3 as no event; the meaning of -1, -3, -99 and -999 is unverified (NSSL table unreachable: HTTP 503 and TLS failures recorded in p0-gates.json and W1). Only positive file values are counted as events.",
+    "Positive MESH values are radar estimates, not observed hail or damage. The table counts cell-days with positive estimates; no report or inspection is implied.",
+    "The Montana outline is a simplified 2017 state boundary (basemap, from the us-atlas Census file); outline cell counts are approximate.",
+    "Parquet and vector tiles were not measured: pyarrow, DuckDB, tippecanoe and GDAL are not installed, and binary packages were not installed. A gzip columnar proxy (2.56 B per row) and a row-run proxy stand in.",
+    "Timings and throughput are from this environment (4 threads, 2.22 MB/s); GitHub-hosted runners were not tested.",
+    "Address points are the MSL Structures Framework (all structure types, 674,715). W6's housing-unit count (514,803) is inferred and unverified here; the Census API returned a missing-key page to W6 and no key was requested.",
+    "The 12:00 UTC file's 24-hour window is taken from W1, which reports an exact match to the 2-minute frames; not re-verified here.",
+    "Daily arrival: one observation (2025-06-16 12:00 file, Last-Modified 12:08:20 GMT). A schedule needs several days of observations.",
+    "Archive counts in the sample files are file values; no point report, storm report or damage record was matched here.",
+    "The existing site size was not measured (the site is built in CI); the estimates here cover only the hail additions.",
+    "Observed scheduled Website runs (P0 sample): about 9.5 a day, not 144; a daily job needs an off-hour start, a retry and a manual trigger.",
+    "The 12:00 UTC file covers the 24 hours ending at its stamp (SPC day D-1): shift date matches by one day."
+  ],
+  "open_questions": [
+    "Owner and counsel: do the GitHub Actions clauses (gh-terms-1, -2, -3) and the Pages commercial sentence allow publishing a derived per-address hail history through Actions and Pages? Recorded for counsel; no conclusion here.",
+    "Owner: accept an off-site host for R2 or a Workers API (architectures B and C), given the site rule and D32 pending? Architecture A needs no new host.",
+    "What do the MRMS codes -1, -3, -99 and -999 mean, and are the values in mm? Needs the NSSL table or an NCEP definition, which were unreachable in this run and in W1.",
+    "Closed in review: the 12:00 UTC file is the trailing 24 hours (three-day test); the NCEP product guide itself was not read.",
+    "Public-repository artifact storage quota and maximum artifact size: not found on the pages read. Private-repository table read in review; no public figure found.",
+    "Measure Parquet and vector tile sizes (pyarrow, tippecanoe) if the owner approves installing binary packages; W8 lists the tools.",
+    "Measure download throughput and decode time on a GitHub-hosted runner before a backfill job is scheduled.",
+    "Partly answered in review: five real-time days show 12:08 UTC; the schedule reliability is the open risk.",
+    "Shard size: the largest tile holds 33,855 addresses; decide whether tiles need splitting for the address index.",
+    "Is the 2-minute archive (about 69 GB) needed at all? If not, the site needs only the 12:00 UTC series.",
+    "Owner: drop ParcelID and any parcel join from published shards (parcel files carry owner fields per W6)?",
+    "Owner: observed scheduled Website runs are about 9.5 a day (P0 record); choose the daily job time and a manual fallback."
+  ],
+  "programs": [
+    {"name":"GitHub Pages","kind":"service","what_it_gives":"Static hosting for the site and shards; published site up to 1 GB; soft bandwidth 100 GB per month; custom Actions workflow avoids the 10-builds-per-hour soft limit.","cost_or_licence":"No charge stated on the limits page read; terms clauses in the terms section.","verified_from":"https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits"},
+    {"name":"GitHub Actions (hosted runners)","kind":"service","what_it_gives":"Build and backfill jobs: 6-hour job limit, 35-day run limit, 4 processors, 16 GB memory, 14 GB SSD on the standard Linux x64 runner.","cost_or_licence":"Free for public repositories on standard runners; private accounts: 2,000 (Free), 3,000 (Pro, Team), 50,000 (Enterprise Cloud) minutes per month.","verified_from":"https://docs.github.com/en/billing/concepts/product-billing/github-actions ; https://docs.github.com/en/actions/reference/limits ; https://docs.github.com/en/actions/reference/runners/github-hosted-runners"},
+    {"name":"Cloudflare R2","kind":"service","what_it_gives":"S3-compatible object storage for archive and shards; 5 TiB per object; no egress charge.","cost_or_licence":"$0.015 per GB-month above 10 GB-month free; Class A $4.50 per million (1 million free); Class B $0.36 per million (10 million free).","verified_from":"https://developers.cloudflare.com/r2/pricing/ ; https://developers.cloudflare.com/r2/platform/limits/"},
+    {"name":"Cloudflare Workers","kind":"service","what_it_gives":"Request handler for a lookup API (architecture C).","cost_or_licence":"Free: 100,000 requests per day; Paid: $5 USD per month minimum, 10 million requests included, $0.30 per additional million.","verified_from":"https://developers.cloudflare.com/workers/platform/pricing/ ; https://developers.cloudflare.com/workers/platform/limits/"},
+    {"name":"Cloudflare D1","kind":"service","what_it_gives":"SQLite-compatible database for the events table (architecture C).","cost_or_licence":"Free: 5 million rows read per day, 100,000 written per day, 5 GB total, 500 MB per database; Paid: rates in facts.","verified_from":"https://developers.cloudflare.com/d1/platform/pricing/ ; https://developers.cloudflare.com/d1/platform/limits/"},
+    {"name":"NOAA MRMS on the AWS Open Data bucket (noaa-mrms-pds)","kind":"data","what_it_gives":"Source of the 12:00 UTC daily maxima (1,825 files, 0.90 GB) and the 2-minute frames (listed, not downloaded).","cost_or_licence":"Open data; attribution requested and no endorsement implied (registry terms).","verified_from":"https://registry.opendata.aws/noaa-mrms-pds/ ; S3 listings"},
+    {"name":"Montana State Library MSDI Structures Framework (SiteStructureAddressPoint)","kind":"data","what_it_gives":"674,715 address and structure points with coordinates (the join); public, non-sensitive per metadata; no owner field.","cost_or_licence":"Free download; disclaimer and no-warranty terms in the metadata member.","verified_from":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip"},
+    {"name":"eccodes 2.50.0 (Python binding)","kind":"software","what_it_gives":"GRIB2 decode of all sampled files and the 7000 x 3500 grid geometry.","cost_or_licence":"Licence not checked in W9 (see W8).","verified_from":"installed in this environment; used in the decode script"},
+    {"name":"numpy 2.5.3 and pyproj 3.8.0","kind":"software","what_it_gives":"Array statistics, masks and gzip sizes (numpy); NAD83(2011) Montana State Plane to WGS84 (pyproj).","cost_or_licence":"Licence not checked in W9 (see W8).","verified_from":"installed in this environment; used in the join and decode scripts"},
+    {"name":"pygrib 2.1.8 (installed, not used)","kind":"software","what_it_gives":"Alternative GRIB reader; eccodes was used directly.","cost_or_licence":"Not checked.","verified_from":"installed version check"},
+    {"name":"pyarrow and DuckDB (not installed)","kind":"software","what_it_gives":"Would give measured Parquet and SQL sizes.","cost_or_licence":"Not installed (binary packages; policy).","verified_from":"import check failed in this environment"}
+  ],
+  "architectures": [
+    {"name":"A. Static shards only (GitHub Pages)","holds":"Positive-cell events per 0.1 degree tile (gzip JSON), address-to-cell pointers, address index per tile; daily update adds one 12:00 file's rows.","bytes":"events 32,584,386 B (interval 23,787,741 to 41,381,031); join pointers 1,343,386 B; address index about 5,606,882 B (W7 rate). Total about 39.5 MB, 4.0% of the 1 GB published limit (computed). Dense daily grid alternative: 18,766,062 B.","monthly_cost":"No charge stated for Pages on the limits page read; public repository, so Actions minutes are free. Soft limits: 100 GB per month bandwidth.","per_lookup":"Median tile about 6,592 B (events 1,842 rows x 3.52 B, plus 12 addresses x 8.31 B); p99 tile about 48,799 B; largest tile (33,855 addresses) about 310,433 B. Lookups before the 100 GB soft limit: about 15.2 million (median), 2.05 million (p99), 0.32 million (largest tile). Computed, not a traffic forecast.","can_answer":"Five-year count of positive MESH cell-days (radar estimate) for each 0.01 degree cell and 0.1 degree tile, for addresses already in the index; daily refresh from a daily build.","cannot_answer":"Wind (no wind data in this sizing); warnings (W3); point reports (W2); a free-text address that is not in the index (needs a geocoder, W7); anything newer than the last build.","rule_or_decision":"Fits the current site rule (the browser fetches only site files). Build must not commit shards to main (repository size guidance). The 10-minute build (15-minute job timeout) cannot carry the backfill; only the daily update belongs in it.","risk":"Counsel questions on publishing through Actions and Pages (terms section). Largest tile is 33,855 addresses, so the index may need splitting. Scheduled runs are unreliable (about 9.5 a day observed; dropped at top-of-hour load): the daily job needs a retry and a manual trigger."},
+    {"name":"B. Static site plus object storage (Cloudflare R2)","holds":"Site files as in A; the raw 12:00 UTC archive (0.90 GB) or shards in R2 for re-derivation and future data.","bytes":"Raw archive 901,938,706 B fits the 10 GB-month free storage (computed). 2-minute archive about 69.1 GB would be 59.1 GB above the free tier.","monthly_cost":"$0 at this scale: daily writes of 4,597 tile objects = 137,910 Class A per month (free 1,000,000). The 2-minute archive would cost about $0.89 per month for storage, plus about $1.42 one-time for 1,314,720 Class A writes if loaded in one month (computed from R2 prices).","per_lookup":"Same bytes as A, fetched from R2 (one Class B read per tile; 10 million free per month). Egress is free.","can_answer":"Everything in A, plus re-derivation from the raw archive and storage of 2-minute frames if a product needs them.","cannot_answer":"Same limits as A. Adds an off-site host to the browser path.","rule_or_decision":"Blocked by the current site rule (the browser fetches only site files) unless the owner accepts an off-site host (D32 is pending in the brief).","risk":"Off-site fetches; R2 storage is Standard class only for the free tier."},
+    {"name":"C. Small service with a database (Cloudflare Workers and D1)","holds":"Events table in D1 (cell, day, value) and an address table; a Worker answers lookups.","bytes":"Events as 8 bytes per positive row before indexes: 73,961,360 B (74 MB) against the 500 MB free database limit (index overhead not measured). Address table not measured.","monthly_cost":"$0 on the free plans at this scale, with limits: Workers 100,000 requests per day; D1 5 million rows read per day (about 294,118 median-cell lookups per day). Peak sampled day (2022-07-09) had 133,429 positive rows, above the 100,000 free rows written per day, so daily writes need batching or the 0.25 in table (53,081 rows that day). Paid plan: $5 USD per month minimum.","per_lookup":"Typical cell reads about 17.0 rows (median estimate); Workers Free CPU limit 10 ms per request (text found: True).","can_answer":"Arbitrary point or address queries with server-side logic; new data without rebuilding the site; per-request filtering.","cannot_answer":"Works without a server only in A and B; C needs a running service (uptime, updates, abuse controls).","rule_or_decision":"Breaks the static-site rule in AGENTS.md (Python builds all pages) and the browser-fetches-site-files rule; needs a new decision.","risk":"Free-plan write cap on peak days; per-request CPU budget; database size limit. A backfill of about 9.25 M positive rows takes about 93 days of Free-plan writes."}
+  ],
+  "backfill": {
+    "archive_12z_download_min_at_measured_rate": 6.8,
+    "archive_12z_decode_min_single_core": 20.9,
+    "archive_12z_decode_min_4_cores_est": 5.2,
+    "two_minute_archive_download_hours_at_measured_rate": 8.66,
+    "note": "Measured in this environment, not on GitHub-hosted runners; the 6-hour job limit applies to the runner.",
+    "runner_disk_gb": 14,
+    "two_minute_archive_fits_one_runner": false,
+    "d1_free_backfill_days": 93,
+    "single_connection_MBps": 1.59
+  },
+  "skipped": [
+    "Full 12:00 UTC archive (0.90 GB) was not downloaded: over the 300 MB cap. A 115-day stratified sample (99 MB) was used; the total came from HEAD requests.",
+    "The 2-minute MESH archive (about 69 GB) and the 30-minute 1440-minute files (43.5 GB in W1's listing) were not downloaded; only the June 15 folders were listed.",
+    "Parquet, DuckDB, GDAL, tippecanoe and PMTiles were not installed or run; pip installs of binary packages were not attempted.",
+    "The Census API was not queried (keyless requests return a missing-key page; no key was requested).",
+    "NSSL and vLab pages were not re-read (HTTP 503 and TLS failures in the upstream records).",
+    "The MSL parcel files and the ORION database were not downloaded (owner fields present in the parcel files, W6).",
+    "Architecture costs for a private VPS or a commercial service were not priced."
+  ],
+  "problems": [
+    "gh repo view failed (GraphQL blocked for this session); the repository visibility came from the REST endpoint instead.",
+    "NSSL MRMS tables unreachable (HTTP 503 and TLS failures in the upstream records); code meanings stay unverified.",
+    "Parquet could not be measured (pyarrow not installed); gzip columnar proxy used.",
+    "GitHub Actions artifact size limit and the public-repository artifact quota were not found on the pages read."
+  ],
+  "review": {
+    "checked_at_utc": "2026-10-17T23:14:45Z",
+    "scope": "Refuter pass: fresh HEAD scan of 1,827 12:00 UTC slots; S3 listings; decode of 65 MRMS GRIB files; fresh download, hash and full parse of the structures zip with a re-run join; stratified recompute from the sidecar; fresh fetch of 17 terms and limits pages; REST visibility; cross-checks against W1, W7, P0 and the basemap.",
+    "refuted_claims": [
+      "Scheduled Website runs: 'cron */10 gives 144 starts per day' as an expected load; observed about 9.5 a day (P0: 4 of 57 slots).",
+      "Address-to-cell join: '80,955 B gzip' for the cell-index column is the delta-coded column; raw u32 gzips to 103,236 B.",
+      "Sizing box '466 x 1203 = 560,598' as the outline bounding box without margin; the cell-centre span is 464 x 1,201 = 557,264.",
+      "Decode 'whole window about 20.9 min': the summer mean was applied to every day; stratum-weighted is 19.5 min."
+    ],
+    "corrections": [
+      "24-hour window (open question): trailing, confirmed on three days by exact union matches.",
+      "Daily arrival: 12:08 UTC on five real-time days, not one observation; 2-hour files about 12:04 UTC.",
+      "2022-06-09: 12:00 and 12:30 both absent (46 of 48 files), not only 12:00.",
+      "Benchland 'same as W1': values reproduced, but 77.9 is from the window ending 02:00 UTC on 2025-06-15 (SPC day 06-14); the SPC day 06-15 peak is 35.7.",
+      "Montana outline: 450,981 includes tie cells on the edge; strict 450,765. Sizing boxes restated (tight 464 x 1,201).",
+      "Address index 8.31 B per address is the W7 Park County test; the statewide 5.6 MB is a scale-up.",
+      "Addresses per cell and tile reproduced within 18 cells, 11 residence cells, and percentile-method differences.",
+      "Scheduled runs do not follow the nominal 10-minute cron in practice.",
+      "Reviewer process note: the first union test included two windows after the target stamp; with exactly the twelve trailing windows the 2025-06-15 file matches exactly."
+    ],
+    "confirmed": [
+      "Five-year total 901,938,706 B over 1,825 files; per-year and season totals; min, median and max 39,129, 332,405 and 1,780,960 B.",
+      "Seasonal medians 1,074,164 (summer) and 96,156 (winter) B; shoulder 460,464.5 B.",
+      "2022-06-09 HTTP 404 for 12:00; bucket region us-east-1.",
+      "Stratified estimates and intervals: 9,245,170; 2,548,035; 193,667; 891,578,501 B; 32,584,386 B events; 18,766,062 B dense.",
+      "Peak day 2022-07-09 counts (133,429; 53,081; 3,435); strata 81/24/10; sample bytes 99,272,834; run-log timings.",
+      "Benchland counts 824 cells, 791 and 670 at or above zero; values 77.9 and 35.7 (also in W1).",
+      "Grid 7000 x 3500 at 0.01 degree, 16 bits, units unknown, dataTime 1200.",
+      "Tiles: 4,597 contain outline cells (exact).",
+      "Structures: 674,715 SHP and DBF records; 51 fields; no OWN field; 493,975 residence-coded; zip bytes and sha256 match.",
+      "Join: raw 5,397,720 B and gzip 1,343,386 B (exact); 2025 2-minute folder 720 objects, 43,436,627 B.",
+      "Terms quotes verbatim on live pages (Pages, Actions, billing, large files, gh-terms-1 to -3, Pages clause, AUP, NOAA registry); R2, Workers and D1 prices and limits; runner row 4 CPU, 16 GB, 14 GB SSD.",
+      "Repository visibility public (REST); worktree workflow lines 15, 39, 164, 182."
+    ],
+    "unverified": [
+      "Per-cell and per-tile estimates (median 17.0 days; tile rows 1,842) and the 0.50 and 2.00 in counts: need per-cell day grids.",
+      "Parquet, vector tile, PMTiles and columnar sizes (tools not installed).",
+      "Four-core decode time and GitHub-hosted runner throughput (not measured).",
+      "The window test covers 2025-06-14 to 06-17 and 2026-10-15 to 10-17 only; MRMS version changes since 2020 not checked.",
+      "NSSL code meanings for -1, -3, -99 and -999 (W1 domain).",
+      "Arrival times before 2025; 2-minute totals for years other than 2025."
+    ],
+    "reviewer_checks": [
+      {"url":"https://noaa-mrms-pds.s3.amazonaws.com/CONUS/MESH_Max_1440min_00.50/{day}/...-120000.grib2.gz (HEAD x 1,827)","content_check":"1,825 x 200 summing 901,938,706 B; 2022-06-09 404; 2026-10-17 200 at 333,980 B"},
+      {"url":"S3 ListObjectsV2 CONUS/MESH_Max_1440min_00.50/ 20220608, 20220609, 20220610, 20250615, 20250616, 20261016, 20261017","content_check":"46 objects on 20220609 (12:00 and 12:30 absent); 48 on the others"},
+      {"url":"S3 GET CONUS/MESH_Max_120min_00.50 stamps 2025-06-14 14:00 to 2025-06-17 12:00 (36) and 2026-10-15 14:00 to 2026-10-17 12:00 (24); MESH_Max_1440min_00.50 for 2025-06-15, 06-16, 2026-10-15, 10-16","content_check":"gzip magic on all; trailing union equals the 1440 file on all 568,026 crop cells for 2025-06-15, 2025-06-16 and 2026-10-16"},
+      {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip","http":200,"bytes":65788772,"content_check":"sha256 7bc7a0fe...671afba matches the sidecar; SHP 674,715 points; DBF 674,715 records, 0 deleted, 51 fields; ParcelID 654,152; DBF lon and lat all 0; metadata quotes found"},
+      {"url":"docs.github.com pages limits; actions limits; billing concepts (Actions); large files; additional products terms; acceptable use policies; runners reference; billing and usage; store-and-share-data","http":200,"bytes":2392513,"content_check":"all quoted phrases found verbatim; bytes equal the sidecar copies"},
+      {"url":"https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows","http":200,"bytes":1076249,"content_check":"60-day disable, load and dropped-jobs sentences, default-branch rule and 5-minute minimum found"},
+      {"url":"developers.cloudflare.com r2, workers and d1 pricing and limits pages","http":200,"content_check":"bytes equal the sidecar copies; free tiers, Standard-only caution, Workers and D1 rates found"},
+      {"url":"https://registry.opendata.aws/noaa-mrms-pds/","http":200,"bytes":15165,"content_check":"four NOAA quotes and the 2-minute cycle found"},
+      {"url":"https://api.github.com/repos/carson14dy/RoofingApp (gh api, REST)","content_check":"visibility public; private false; default_branch main"},
+      {"url":"hail-history worktree .github/workflows/website.yml; sidecar derived files; W1, W7, P0 and basemap.json (read)","content_check":"cron */10 at line 15; timeout 15 at line 39; Pages actions at 164 and 182; W1 holds 901938706; W7 line 116 V3 8.31; P0 4 runs, 73.0 s, gap median 151.52 min; basemap Montana feature, 212 vertices"}
+    ]
+  }
+}

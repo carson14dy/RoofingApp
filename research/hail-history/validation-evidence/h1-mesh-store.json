@@ -1,0 +1,685 @@
+{
+ "workstream": "H1",
+ "slug": "mesh-store-prototype",
+ "checked_at_utc": "2026-10-18T00:22:45Z",
+ "scope": "Prototype of a daily radar hail-estimate store from the 12:00 UTC MRMS MESH_Max_1440min_00.50 files for the Montana grid cells, with the 2-minute frame check. Measurement only: not a product, not a damage record, not an inspection, and no report is not no hail.",
+ "files": [
+  "research/hail-history/prototype/mesh_history.py",
+  "research/hail-history/prototype/README.md",
+  "research/hail-history/prototype/tests/test_mesh_history.py",
+  "research/hail-history/prototype/tests/fixtures/mesh1440_20250616_benchland_8x10.json"
+ ],
+ "store_location": "scratchpad hail-store/h1-mesh (not in the repository); downloads in scratchpad hail-dl/mesh-backfill",
+ "commands": [
+  "curl -I HEAD probes: bucket 12:00 files 2020-10-13 to 2020-10-15, 2025-06-16, 2026-10-17; IEM copies at the MESH_Max_1440min folder",
+  "fetch --start 2022-06-09 --end 2022-06-10 --cache <scratch>/hail-dl/mesh-backfill --workers 4 (test: missing day and bucket day)",
+  "fetch --start 2020-10-14 --end 2026-10-16 --cache <scratch>/hail-dl/mesh-backfill --workers 4",
+  "decode --file <scratch>/hail-dl/mesh-backfill/files/MRMS_MESH_Max_1440min_00.50_20250616-120000.grib2.gz --npz <scratch>/hail-store/decode-20250616.npz",
+  "fixture --file <same file> --row0 784 --col0 1986 --nrow 8 --ncol 10 --out tests/fixtures/mesh1440_20250616_benchland_8x10.json",
+  "build --start 2025-06-15 --end 2025-06-17 --store <scratch>/hail-store/smoke --procs 3, then lookup (smoke test)",
+  "build --start 2020-10-14 --end 2026-10-16 --cache <scratch>/hail-dl/mesh-backfill --store <scratch>/hail-store/h1-mesh --procs 4",
+  "lookup --store <scratch>/hail-store/h1-mesh --lat 47.085 --lon -110.045 [--all-days]; lookup --lat 47.08 --lon -110.02",
+  "fetch --start 2020-10-14 --end 2026-10-16 --cache <scratch>/hail-dl/mesh-backfill --recheck-missing (after the IEM folder fix)",
+  "verify --store <scratch>/hail-store/h1-mesh --cache <scratch>/hail-dl/mesh-backfill --out <scratch>/hail-store/verify.json",
+  "inline python -I checks: bucket listings of MESH_00.50 for 2025-06-25/26, 2025-06-15/16, 2022-07-08/09; 721-frame download and recompare for 2025-06-26; IEM 12:00 copy comparison",
+  "python -I -m unittest discover -s tests -v (30 tests, venv interpreter)"
+ ],
+ "environment": {
+  "python": "3.13.16 (/usr/bin/python3); also a 3.12.3 binary without numpy or pygrib (not used)",
+  "numpy": "2.5.3",
+  "pygrib": "2.1.8",
+  "eccodes": "2.50.0",
+  "requests": "2.34.2",
+  "pyarrow": "26.0.0, pip installed into a venv made with --system-site-packages, outside the repository",
+  "cores": 4,
+  "memory_mib": 16093
+ },
+ "fetch": {
+  "stamps_requested": 2194,
+  "requested_range_file_dates": [
+   "2020-10-14",
+   "2026-10-16"
+  ],
+  "bucket_200": 2192,
+  "iem_copies_used": 0,
+  "missing_both_sources": [
+   "2020-10-14",
+   "2022-06-09"
+  ],
+  "errors": 0,
+  "bytes_total": 1055825199,
+  "bytes_pre_window_files_2020-10-15_to_2021-10-16": {
+   "files": 367,
+   "bytes": 153886493
+  },
+  "bytes_five_year_window_files_2021-10-17_to_2026-10-16": {
+   "files": 1825,
+   "bytes": 901938706
+  },
+  "files_by_stamp_year": {
+   "2020": 78,
+   "2021": 365,
+   "2022": 364,
+   "2023": 365,
+   "2024": 366,
+   "2025": 365,
+   "2026": 289
+  },
+  "bytes_by_stamp_year": {
+   "2020": 10618418,
+   "2021": 154858571,
+   "2022": 176541653,
+   "2023": 171172744,
+   "2024": 173881154,
+   "2025": 190407386,
+   "2026": 178345273
+  },
+  "wall_seconds_full_run": 70.7,
+  "workers": 4,
+  "iem_fix_note": "The first run built the IEM fallback folder from the product name, which IEM does not use; the folder is MESH_Max_1440min. The two missing stamps were re-checked after the fix: 404 at the bucket and at IEM. The store is unchanged by the fix.",
+  "last_modified": {
+   "files": 2192,
+   "more_than_24h_after_stamp": 644,
+   "by_stamp_year": {
+    "2020": 78,
+    "2021": 365,
+    "2022": 201
+   },
+   "largest_months": {
+    "2023-03": 566,
+    "2025-09": 92,
+    "2025-10": 78
+   },
+   "median_hours_after_stamp": 0.14
+  }
+ },
+ "decode": {
+  "grid": "7000 x 3500 points, 0.01 degree, row 0 north, one GRIB2 message per file, grid_png, 16 bits per value on the decoded files",
+  "header_keys": {
+   "parameterNumber": 34,
+   "units": "unknown",
+   "dataTime": "1200",
+   "stepRange": "0m"
+  },
+  "state_cells_strict": 450765,
+  "state_cells_inclusive": 450981,
+  "tie_cells_on_lon_-104.045": 216,
+  "frame_box_crop": {
+   "rows": 750,
+   "cols": 1750,
+   "cells": 1312500
+  },
+  "example_file_2025-06-16_12z": {
+   "sha256": "77d0b56ca51c00424b6cc8524545186a68849952d66b525177b7e4a71b7b27e2",
+   "bytes": 1486343,
+   "positive_cells": 129078,
+   "minus1_cells": 321687,
+   "minus3_cells": 0,
+   "zero_cells": 0,
+   "max_mm": 98.7,
+   "quantisation_max_error_tenths": 1.1e-13,
+   "at_or_above_0.25in": 56849,
+   "0.75in": 13482,
+   "1.00in": 6757,
+   "1.50in": 1486,
+   "2.00in": 332
+  },
+  "timing_single_process_ms": {
+   "daily_file_40_random": {
+    "median_total": 335.2,
+    "median_read_and_decode": 307.0,
+    "mean_total": 419.9,
+    "max_total": 1226.6
+   },
+   "two_minute_frame_40_random": {
+    "median_total": 278.7,
+    "mean_total": 297.7,
+    "max_total": 549.9
+   }
+  }
+ },
+ "build": {
+  "procs": 4,
+  "stored_days": 2192,
+  "stored_day_range": [
+   "2020-10-14",
+   "2026-10-15"
+  ],
+  "missing_spc_days": [
+   "2020-10-13",
+   "2022-06-08"
+  ],
+  "build_seconds": 231.5,
+  "command_real_s": 240.3,
+  "command_user_s": 682.4,
+  "command_sys_s": 164.4,
+  "events_rows": 2913472,
+  "shards": 4595
+ },
+ "days_and_windows": {
+  "five_year_spc_days": [
+   "2021-10-16",
+   "2026-10-15"
+  ],
+  "five_year_days_in_window": 1826,
+  "five_year_days_present": 1825,
+  "pre_window_days_stored": 367
+ },
+ "positive_cell_days": {
+  "scope": "all stored SPC days; strict mask (450,765 cells)",
+  "positive_at_or_above_0.1mm": 11054458,
+  "at_or_above": {
+   "0.25": 2913472,
+   "0.75": 488874,
+   "1.00": 236389,
+   "1.50": 62376,
+   "2.00": 15878
+  },
+  "by_year": {
+   "2020": {
+    "days": 79,
+    "positive": 3298,
+    "ge_0.25": 72,
+    "ge_0.75": 14,
+    "ge_1.00": 13,
+    "ge_1.50": 11,
+    "ge_2.00": 5
+   },
+   "2021": {
+    "days": 365,
+    "positive": 1044427,
+    "ge_0.25": 274213,
+    "ge_0.75": 50898,
+    "ge_1.00": 24771,
+    "ge_1.50": 6691,
+    "ge_2.00": 1622
+   },
+   "2022": {
+    "days": 364,
+    "positive": 1856354,
+    "ge_0.25": 564770,
+    "ge_0.75": 117931,
+    "ge_1.00": 62436,
+    "ge_1.50": 17765,
+    "ge_2.00": 4072
+   },
+   "2023": {
+    "days": 365,
+    "positive": 2160888,
+    "ge_0.25": 481823,
+    "ge_0.75": 55282,
+    "ge_1.00": 22143,
+    "ge_1.50": 4613,
+    "ge_2.00": 996
+   },
+   "2024": {
+    "days": 366,
+    "positive": 1755504,
+    "ge_0.25": 446625,
+    "ge_0.75": 71620,
+    "ge_1.00": 34524,
+    "ge_1.50": 9332,
+    "ge_2.00": 2461
+   },
+   "2025": {
+    "days": 365,
+    "positive": 2352499,
+    "ge_0.25": 690653,
+    "ge_0.75": 130965,
+    "ge_1.00": 64611,
+    "ge_1.50": 16864,
+    "ge_2.00": 4599
+   },
+   "2026": {
+    "days": 288,
+    "positive": 1881488,
+    "ge_0.25": 455316,
+    "ge_0.75": 62164,
+    "ge_1.00": 27891,
+    "ge_1.50": 7100,
+    "ge_2.00": 2123
+   }
+  },
+  "five_year_window": {
+   "positive": 10007756,
+   "at_or_above_0.25in": 2639246,
+   "0.75in": 437974,
+   "1.00in": 211614,
+   "1.50in": 55682,
+   "2.00in": 14258
+  },
+  "days_with_no_positive_cell": 304,
+  "top_days_by_positive_cells_spc_day_and_count": [
+   [
+    "2022-07-08",
+    133313
+   ],
+   [
+    "2025-06-15",
+    129078
+   ],
+   [
+    "2022-07-09",
+    118075
+   ],
+   [
+    "2022-07-06",
+    113187
+   ],
+   [
+    "2025-08-07",
+    103245
+   ],
+   [
+    "2026-09-06",
+    100446
+   ]
+  ]
+ },
+ "per_cell_day_counts_five_year_window": {
+  "cells": 450765,
+  "positive_any": {
+   "p50": 22,
+   "p90": 35,
+   "p99": 47,
+   "max": 256,
+   "mean": 22.2,
+   "cells_with_at_least_one": 450685
+  },
+  "at_or_above_0.25in": {
+   "p50": 5,
+   "p90": 11,
+   "p99": 17,
+   "max": 130,
+   "mean": 5.86,
+   "cells_with_at_least_one": 428844
+  },
+  "at_or_above_0.75in": {
+   "p50": 1,
+   "p90": 3,
+   "p99": 5,
+   "max": 33,
+   "mean": 0.97,
+   "cells_with_at_least_one": 230458
+  },
+  "at_or_above_1.00in": {
+   "p50": 0,
+   "p90": 2,
+   "p99": 3,
+   "max": 20,
+   "mean": 0.47,
+   "cells_with_at_least_one": 144561
+  },
+  "at_or_above_1.50in": {
+   "p50": 0,
+   "p90": 1,
+   "p99": 2,
+   "max": 7,
+   "mean": 0.12,
+   "cells_with_at_least_one": 49186
+  },
+  "at_or_above_2.00in": {
+   "p50": 0,
+   "p90": 0,
+   "p99": 1,
+   "max": 4,
+   "mean": 0.03,
+   "cells_with_at_least_one": 13786
+  }
+ },
+ "codes": {
+  "cell_days": 988076880,
+  "minus1_cell_days": 977022422,
+  "minus1_share_pct": 98.88,
+  "minus3_cell_days": 0,
+  "other_negative_cell_days": 0,
+  "nan_cell_days": 0,
+  "zero_cell_days": 0,
+  "days_with_any_minus3": 0,
+  "by_season_from_verify": {
+   "DJF": {
+    "cells": 243863865,
+    "days": 541,
+    "minus1": 243853812,
+    "minus3": 0,
+    "other_neg": 0,
+    "share_minus1_pct": 100.0,
+    "share_minus3_pct": 0.0,
+    "share_other_neg_pct": 0.0,
+    "zero": 0
+   },
+   "JJA": {
+    "cells": 248371515,
+    "days": 551,
+    "minus1": 239616877,
+    "minus3": 0,
+    "other_neg": 0,
+    "share_minus1_pct": 96.48,
+    "share_minus3_pct": 0.0,
+    "share_other_neg_pct": 0.0,
+    "zero": 0
+   },
+   "MAM": {
+    "cells": 248822280,
+    "days": 552,
+    "minus1": 247391140,
+    "minus3": 0,
+    "other_neg": 0,
+    "share_minus1_pct": 99.42,
+    "share_minus3_pct": 0.0,
+    "share_other_neg_pct": 0.0,
+    "zero": 0
+   },
+   "SON": {
+    "cells": 247019220,
+    "days": 548,
+    "minus1": 246160593,
+    "minus3": 0,
+    "other_neg": 0,
+    "share_minus1_pct": 99.65,
+    "share_minus3_pct": 0.0,
+    "share_other_neg_pct": 0.0,
+    "zero": 0
+   }
+  }
+ },
+ "store_bytes": {
+  "per_day_arrays_total": 15554422,
+  "per_day_arrays_by_year": {
+   "2020.bin": 7688,
+   "2021.bin": 1494550,
+   "2022.bin": 2583916,
+   "2023.bin": 3087512,
+   "2024.bin": 2466209,
+   "2025.bin": 3276402,
+   "2026.bin": 2638145
+  },
+  "per_day_encoding_used": {
+   "sparse_format_1_days": 2192,
+   "dense_format_0_days": 0,
+   "blob_bytes_min": 13,
+   "blob_bytes_max": 167379
+  },
+  "day_index_json": 209642,
+  "events_parquet": 14480420,
+  "events_rows": 2913472,
+  "cell_counts_parquet": 3043461,
+  "json_shards": {
+   "count": 4595,
+   "max": 10334,
+   "median": 2650,
+   "total": 13415025
+  },
+  "daily_stats_json": 1093627,
+  "grid_json": 36359,
+  "mask_bin": 164063,
+  "store_total": 47997019
+ },
+ "lookup_timings": {
+  "in_process_200_random_cells_ms": {
+   "p50": 2.79,
+   "p95": 6.33,
+   "max": 223.28
+  },
+  "all_days_scan_ms_three_points": [
+   328.4,
+   316.3,
+   317.1
+  ],
+  "cli_cold_seconds_three_runs": [
+   0.455,
+   0.495,
+   0.455
+  ]
+ },
+ "lookup_example": {
+  "query": [
+   47.085,
+   -110.045
+  ],
+  "cell_distance_km": 0.0,
+  "cell_centre": [
+   47.085,
+   -110.045
+  ],
+  "days_at_or_above_0.25in_five_year": 7,
+  "largest": "1.41 in (35.7 mm) on SPC day 2025-06-15, file 2025-06-16 12:00 UTC",
+  "list_spc_day_mm": [
+   [
+    "2022-07-06",
+    18.4
+   ],
+   [
+    "2023-04-18",
+    6.9
+   ],
+   [
+    "2024-06-20",
+    7.6
+   ],
+   [
+    "2025-06-15",
+    35.7
+   ],
+   [
+    "2025-07-28",
+    7.7
+   ],
+   [
+    "2026-05-29",
+    7.3
+   ],
+   [
+    "2026-09-06",
+    32.9
+   ]
+  ],
+  "days_with_any_positive_five_year": 25
+ },
+ "verify": {
+  "benchland": {
+   "spc_day": "2025-06-15",
+   "file_stamp": "2025-06-16",
+   "store_equals_file": true,
+   "brief_centre_46.9N_109.9W_15km": {
+    "cells_in_disk": 824,
+    "no_data": 150,
+    "positive": 674,
+    "max_mm": 51.4,
+    "max_in": 2.02,
+    "max_cell": [
+     46.775,
+     -109.925
+    ],
+    "max_cell_km": 14.03
+   },
+   "spc_report_point_47.08N_110.02W_15km": {
+    "cells_in_disk": 824,
+    "no_data": 100,
+    "positive": 724,
+    "max_mm": 51.3,
+    "max_in": 2.02,
+    "max_cell": [
+     47.025,
+     -110.135
+    ],
+    "max_cell_km": 10.64
+   },
+   "context_file_2025-06-15_spc_day_2025-06-14_at_46.9N_109.9W": {
+    "max_mm": 77.9,
+    "max_cell": [
+     46.905,
+     -109.985
+    ],
+    "max_cell_km": 6.48
+   },
+   "note": "The 15 km maximum depends on the centre point. The W1 check at 47.0 N, 109.9 W gave 35.7 mm, the value at the cell 47.085 N, 110.045 W."
+  },
+  "peak_day": {
+   "spc_day": "2022-07-08",
+   "file_stamp": "2022-07-09",
+   "positive_cells_strict_store": 133313,
+   "positive_cells_inclusive_mask": 133429,
+   "tie_cells_positive": 116,
+   "w9_reported_inclusive_count": 133429,
+   "max_mm_strict": 65.5
+  },
+  "two_minute_check": [
+   {
+    "spc_day": "2025-06-15",
+    "file_stamp": "2025-06-16",
+    "frames_iem_listed": 720,
+    "frames_bucket_listed": 720,
+    "bucket_minutes_with_two_frames": 0,
+    "state_cells": 450765,
+    "cells_equal": 450765,
+    "file_higher": 0,
+    "file_lower": 0,
+    "max_abs_diff_mm": 0.0,
+    "result": "The 12:00 file equals the maximum of its frames on every state cell."
+   },
+   {
+    "spc_day": "2025-06-25",
+    "file_stamp": "2025-06-26",
+    "frames_iem_listed": 717,
+    "frames_bucket_listed": 721,
+    "bucket_minutes_with_two_frames": 4,
+    "result_with_iem_frames": {
+     "cells_equal": 444414,
+     "file_higher": 4206,
+     "file_lower": 2145,
+     "max_abs_diff_mm": 34.5
+    },
+    "result_with_bucket_frames": {
+     "cells_equal": 444466,
+     "file_higher": 4181,
+     "file_lower": 2118,
+     "cells_differ": 6299,
+     "max_abs_diff_mm": 34.5,
+     "file_positive": 17165,
+     "frames_max_positive": 16011,
+     "largest_differences_mm": [
+      {
+       "file": 42.1,
+       "frames_max": 8.2,
+       "lat": 47.425,
+       "lon": -105.765
+      },
+      {
+       "file": 39.6,
+       "frames_max": 5.1,
+       "lat": 47.585,
+       "lon": -106.435
+      },
+      {
+       "file": 35.9,
+       "frames_max": 1.5,
+       "lat": 47.575,
+       "lon": -106.445
+      }
+     ]
+    },
+    "iem_copy_of_12z_against_bucket_frames": {
+     "cells_equal": 450713,
+     "file_higher": 27,
+     "file_lower": 25,
+     "max_abs_diff_mm": 2.7
+    },
+    "bucket_copy_against_iem_copy_cells_differ": 6351,
+    "last_modified": {
+     "bucket_12z": "Thu, 26 Jun 2025 12:26:45 GMT",
+     "iem_12z": "Thu, 26 Jun 2025 12:08:14 GMT"
+    },
+    "result": "The 12:00 file does not equal the maximum of its frames. The cause is not established. The IEM copy agrees with the same frames except at 52 cells, so the bucket copy is the outlier on this day."
+   },
+   {
+    "spc_day": "2022-07-08",
+    "file_stamp": "2022-07-09",
+    "frames_iem_listed": 720,
+    "frames_bucket_listed": 720,
+    "bucket_minutes_with_two_frames": 0,
+    "state_cells": 450765,
+    "cells_equal": 450765,
+    "file_higher": 0,
+    "file_lower": 0,
+    "max_abs_diff_mm": 0.0,
+    "result": "The 12:00 file equals the maximum of its frames on every state cell."
+   }
+  ],
+  "round_trip_three_random_days_equal": [
+   {
+    "equal": true,
+    "spc_day": "2024-02-03"
+   },
+   {
+    "equal": true,
+    "spc_day": "2025-10-02"
+   },
+   {
+    "equal": true,
+    "spc_day": "2025-10-06"
+   }
+  ],
+  "checks_against_w9_sampled_estimates": {
+   "positive_cell_days": {
+    "exact_strict": 11054458,
+    "w9_estimate": 9245170,
+    "w9_interval": [
+     6736622,
+     11753718
+    ]
+   },
+   "at_or_above_0.25in": {
+    "exact_strict": 2913472,
+    "w9_estimate": 2548035,
+    "w9_interval": [
+     1629082,
+     3466988
+    ]
+   },
+   "at_or_above_1.00in": {
+    "exact_strict": 236389,
+    "w9_estimate": 193667,
+    "w9_interval": [
+     99295,
+     288040
+    ]
+   },
+   "note": "W9 estimated on the inclusive outline (450,981 cells); the exact counts here use the strict mask, so the comparison is approximate."
+  }
+ },
+ "tests": {
+  "command": "python -I -m unittest discover -s tests -v",
+  "venv_result": "30 tests OK with pyarrow 26.0.0",
+  "system_python_result": "27 passed, 3 skipped (pyarrow store tests)"
+ },
+ "limits": [
+  "Units: values are read as millimetres. The GRIB unit key reads 'unknown', and the NSSL table that would settle it could not be read in this session (TLS verification failed). Inch values assume millimetres.",
+  "Codes -1 and -3 are treated as no data. Their meaning is not verified. Code -3 never occurs in the Montana cells on any stored day, so the -3 share here is zero; this describes these cells only.",
+  "The 12:00 file equals its 2-minute frame maximum on 2025-06-16 and 2022-07-09 (every state cell). It does not on 2025-06-26 (6,299 cells). The W1 claim that it is the trailing 24-hour maximum is therefore supported on two of three checked days, not proven for the archive.",
+  "Copy choice: the store uses the bucket copy and the IEM copy only where the bucket says 404 (never needed). On 2025-06-26 the bucket copy is the one that disagrees with its frames. 644 bucket files have Last-Modified more than 24 hours after their stamp (566 in March 2023). W1 found content differences between copies on four days; only 2025-06-26 was tested here.",
+  "Missing days: SPC 2020-10-13 (file 2020-10-14) and SPC 2022-06-08 (file 2022-06-09). Both are 404 at the bucket and at IEM. The 2022-06-09 folder also lacks its 12:30 file (46 of 48). No value here does not mean no hail.",
+  "Large values: 58 events are at or above 100 mm (4 inches). The largest is 136.8 mm (5.4 in) on SPC day 2021-09-03 at 45.025 N, 104.375 W, then 132.4 mm on SPC day 2022-08-10 at 48.935 N, 107.625 W. Neither is checked against reports or frames here. A plausibility rule is needed before use.",
+  "The 15 km maximum depends on the centre point (51.4 mm at 46.9 N, 109.9 W; 35.7 mm at 47.0 N, 109.9 W). Disks use cell centres inside the disk. Counts are per cell, not area-weighted; a cell is about 0.84 square km at 47 N.",
+  "IEM 2-minute file names are truncated to the minute on 2025-06-25 and 2025-06-26. A minute with two frames keeps one IEM file, which is why the IEM frame count was 717 and the bucket count 721. The bucket listing was used for the frame set.",
+  "eccodes writes 'Truncating time: non-zero seconds' to stderr for 2-minute frames whose names carry seconds. The values are not affected.",
+  "Timings were measured in this session on 4 cores, not on GitHub-hosted runners.",
+  "The per-day bit depth was checked on the decoded files (16 bits). It was not recorded for every file. W1 measured 16 bits on 15 sampled dates.",
+  "Tests were run on Python 3.13.16 only. Python 3.12 has no numpy or pygrib in this environment."
+ ],
+ "open_questions": [
+  "Which copy of a 12:00 file is right where bucket and IEM differ? On 2025-06-26 the IEM copy agrees with the bucket's 2-minute frames and the bucket copy does not.",
+  "Why does the bucket 12:00 file for 2025-06-26 differ from its frames when its Last-Modified is 18 minutes after its stamp?",
+  "What are the units, and what do codes -1 and -3 mean? The NSSL table needs to be read from a session with access.",
+  "Are values at or above 100 mm real? A plausibility rule belongs to W10.",
+  "Does the trailing 24-hour window hold on every day? Two of three checked days match.",
+  "Do 2-minute bit-depth changes or MRMS version changes (v12.1 and later) affect MESH? Not tested here.",
+  "The 2026-10-16 SPC day needs file 2026-10-17 12:00 UTC, which the bucket holds (333,980 bytes, Last-Modified 2026-10-17 12:08:17 GMT). It is outside the requested range and was not fetched."
+ ],
+ "not_done": [
+  "No 2-minute reconstruction for the whole archive; three days were checked.",
+  "The W1 copy-difference days 2025-06-27, 2026-05-26 and 2026-09-11 were not checked against frames.",
+  "No validation against point reports (that is W10's evaluation).",
+  "The store exists only in the scratchpad; nothing is published or committed."
+ ]
+}
