@@ -262,6 +262,11 @@ def check(root: Path, shots: Path | None = None, addresses: bool = False, store:
                       ("check_imagery_refused", lambda: check_imagery_refused(browser, base, data)),
                       ("check_hail", lambda: check_hail(browser, base, root, data, shots))
                       if "hail" in data else ("check_no_hail", lambda: check_no_hail(browser, base, data)))
+            if (data.get("base") or {}).get("state") in ("loaded", "partial"):      # B6 stage S2: the base map and its figures
+                extras += (("check_base_map", lambda: check_base_map(browser, base, root, data, shots)),
+                           ("base_figures", lambda: base_figures(browser, base, root, data)),
+                           ("check_base_unavailable", lambda: check_base_unavailable(browser, base, root, data)),
+                           ("check_base_eviction", lambda: check_base_eviction(browser, base, data)))
             if "hail" in data and data["hail"].get("joins"):
                 extras += (("check_joins", lambda: check_joins(browser, base, root, data, shots)),)
             if addresses:
@@ -2224,11 +2229,15 @@ def b3_kind(url: str) -> str:
 
 
 def response_part(url: str) -> str:
-    """Which part of the page a response belongs to, for the budget's split: the B3 files (b3_kind), the precipitation
-    frames (map/frames/) or the shell and data (the page, its scripts and styles, the map data and the basemap)."""
+    """Which part of the page a response belongs to, for the budget's split: the B3 files (b3_kind), the B6 files (the base map's
+    store folder hail/base/, data/base.json and static/map/layers.js: listed apart, B6 stage S2), the precipitation frames
+    (map/frames/) or the shell and data (the page, its scripts and styles, the map data and the basemap)."""
     if b3_kind(url) != "other":
         return "B3 files"
-    if "/map/frames/" in "/" + urlsplit(url).path.lstrip("/"):
+    path = "/" + urlsplit(url).path.lstrip("/")
+    if "/hail/base/" in path or path.endswith(("/data/base.json", "/static/map/layers.js")):
+        return "B6 files"
+    if "/map/frames/" in path:
         return "precipitation frames"
     return "shell and data"
 
@@ -2362,20 +2371,38 @@ def check_zoom_rules(browser, base: str, data: dict) -> list[str]:
     return problems
 
 
+def wait_first_base_draw(page) -> None:
+    """Waits until the base map has drawn its first view (the page's default fit), then lets the tiles of that fit arrive, so the
+    first fit is fetched and counted the same way in every run (fixer S2, finding 12). A page with no base map draws nothing."""
+    try:
+        page.wait_for_function("() => !!(window.hailMapLayersTest && window.hailMapLayersTest.stats().draws.length)", timeout=20000)
+    except Exception:                                                       # noqa: BLE001 - the figures say what was counted
+        return
+    page.wait_for_timeout(1500)
+
+
+BASE_LONG_STEPS = 24                    # steps of 600 px east from Billings at zoom 15, crossing the -108 band edge
+BASE_LONG_PAN_FETCHES = 2               # the base map files that long pan asks for (band B n44w108 and band C n45w108; S2 measure)
+
+
 def check_budget_and_pan(browser, base: str, data: dict) -> list[str]:
     """A 390 px phone view of Billings at zoom 15 fetches under the phone budget map.json carries (D30, D82(b)), counted on
-    the B3 files and the shell (the note gives the whole page split by part), and a pan across Billings at zoom 15 makes
-    fewer than PAN_FETCH_LIMIT requests, all to this site, with every redraw under the draw budget."""
+    the B3 files and the shell (the note gives the whole page split by part, the first fit named apart), and a pan across Billings
+    at zoom 15 makes fewer than PAN_FETCH_LIMIT requests counting the B3 files and the base map's together, all to this site, with
+    every redraw under the draw budget. A long pan across the -108 band edge asks for BASE_LONG_PAN_FETCHES base map files."""
     problems: list[str] = []
     budget = map_budget(data, "phone_gzip_bytes")
     lat, lon = B3_BILLINGS
     seen: list = []
     ctx, page = b3_open(browser, base, 390, 844, listen=lambda r: seen.append(r))    # every response, from the first request
+    wait_first_base_draw(page)
+    first_fit = len(seen)                                                   # the responses of the page's default fit
     b3_view(page, lat, lon, ADDRESS_GATE_ZOOM, settle_ms=2500)
-    sizes = {"shell and data": 0, "precipitation frames": 0, "B3 files": 0}
-    counts = {"shell and data": 0, "precipitation frames": 0, "B3 files": 0}
+    sizes = {"shell and data": 0, "precipitation frames": 0, "B3 files": 0, "B6 files": 0}
+    counts = {"shell and data": 0, "precipitation frames": 0, "B3 files": 0, "B6 files": 0}
+    fit = {"bytes": 0, "files": 0}
     unread = 0
-    for response in seen:
+    for index, response in enumerate(seen):
         part = response_part(response.url)
         try:
             size = len(gzip.compress(response.body(), 6))
@@ -2384,6 +2411,9 @@ def check_budget_and_pan(browser, base: str, data: dict) -> list[str]:
             continue
         sizes[part] += size
         counts[part] += 1
+        if index < first_fit and part == "B6 files":
+            fit["bytes"] += size
+            fit["files"] += 1
     total = sum(sizes.values())
     if unread:
         problems.append(f"{unread} responses could not be read to measure them")
@@ -2398,28 +2428,406 @@ def check_budget_and_pan(browser, base: str, data: dict) -> list[str]:
                     f"gzip against the budget of {budget} (B3 files {sizes['B3 files']} in "
                     f"{counts['B3 files']} files; shell and data {sizes['shell and data']} in {counts['shell and data']} "
                     f"files); the precipitation frames {sizes['precipitation frames']} bytes gzip in "
-                    f"{counts['precipitation frames']} files, a layer that predates B3, listed apart (page total {total})")
+                    f"{counts['precipitation frames']} files, a layer that predates B3, listed apart; the B6 files (the base map: "
+                    f"layers.js, data/base.json and hail/base/) {sizes['B6 files']} bytes gzip in {counts['B6 files']} files, "
+                    f"listed apart, not in the gate (B6 stage S2); the first fit's B6 files {fit['bytes']} bytes gzip in "
+                    f"{fit['files']} files are part of that; page total {total} (without the first fit {total - fit['bytes']})")
     ctx.close()
 
     ctx, page = b3_open(browser, base, 1280, 800)
     b3_view(page, lat, lon, ADDRESS_GATE_ZOOM)
     page.evaluate("() => window.hailMapTest.reset()")
+    base_mark = page.evaluate("() => window.hailMapLayersTest.stats().fetched.length")
     for dx, dy in ((300, 0), (300, 0), (-300, 300), (-300, 0), (0, -300), (600, 0)):
         page.evaluate("([x, y]) => window.hailMapTest.pan(x, y)", [dx, dy])
         page.wait_for_timeout(1200)
     urls = page.evaluate("() => window.hailMapTest.fetches()")
+    base_urls = page.evaluate("() => window.hailMapLayersTest.stats().fetched")[base_mark:]
     draws = page.evaluate("() => window.hailMapTest.draws()")
     if any(url.startswith(("http://", "https://")) and not url.startswith(base) for url in urls):
         problems.append("the pan asked for a B3 file from another site")
-    if len(urls) >= PAN_FETCH_LIMIT:
-        problems.append(f"a pan across Billings at zoom {ADDRESS_GATE_ZOOM} made {len(urls)} requests; the limit is "
-                        f"{PAN_FETCH_LIMIT}")
+    if len(urls) + len(base_urls) >= PAN_FETCH_LIMIT:
+        problems.append(f"a pan across Billings at zoom {ADDRESS_GATE_ZOOM} made {len(urls)} B3 requests and {len(base_urls)} "
+                        f"base map requests; the limit for both together is {PAN_FETCH_LIMIT}")
     if draws and max(draws) >= ADDRESS_DRAW_MS:
         problems.append(f"a redraw while panning took {max(draws):.1f} ms (budget {ADDRESS_DRAW_MS})")
-    problems.append(f"note: pan across Billings at zoom {ADDRESS_GATE_ZOOM}: {len(urls)} requests "
-                    f"({', '.join(urlsplit(u).path.split('/hail/')[-1] for u in urls)}); redraws ms "
-                    f"{[round(ms, 1) for ms in draws]}")
+    problems.append(f"note: pan across Billings at zoom {ADDRESS_GATE_ZOOM}: {len(urls)} B3 requests "
+                    f"({', '.join(urlsplit(u).path.split('/hail/')[-1] for u in urls)}) and {len(base_urls)} base map requests; "
+                    f"redraws ms {[round(ms, 1) for ms in draws]}")
+    page.evaluate("() => window.hailMapTest.reset()")
+    long_mark = page.evaluate("() => window.hailMapLayersTest.stats().fetched.length")
+    for _ in range(BASE_LONG_STEPS):
+        page.evaluate("() => window.hailMapTest.pan(600, 0)")
+        page.wait_for_timeout(1200)
+    long_b3 = page.evaluate("() => window.hailMapTest.fetches()")
+    long_base = page.evaluate("() => window.hailMapLayersTest.stats().fetched")[long_mark:]
+    if len(long_base) != BASE_LONG_PAN_FETCHES:
+        problems.append(f"a long pan of {BASE_LONG_STEPS} steps east from Billings at zoom {ADDRESS_GATE_ZOOM} made "
+                        f"{len(long_base)} base map requests; expected {BASE_LONG_PAN_FETCHES} (the band edge at -108)")
+    problems.append(f"note: long pan, {BASE_LONG_STEPS} steps of 600 px east: {len(long_b3)} B3 requests and {len(long_base)} base map "
+                    f"requests ({', '.join(urlsplit(u).path.split('/hail/')[-1] for u in long_base) or 'none'})")
     ctx.close()
+    return problems
+
+
+# ---------------------------------------------------------------- the base map (B6 stage S2: layers.js, DESIGN 13.2 and 13.7)
+
+BASE_VIEWS = ((6, (46.9, -110.4)), (9, B3_BILLINGS), (12, B3_BILLINGS), (15, B3_BILLINGS))   # statewide, then Billings
+BASE_CONTEXTS = (("phone", (390, 844), "light"), ("desktop", (1280, 800), "light"),
+                 ("phone dark", (390, 844), "dark"), ("desktop dark", (1280, 800), "dark"))
+BASE_DRAW_MS = 50                              # a redraw after a pan takes under this (the B6 brief)
+BASE_STATEWIDE = (46.9, -110.4)                # the statewide view of the figures (zoom 8)
+BASE_LABEL_SHOW = "bm-hide"                    # map.js tidyLabels puts this class on a label it hides
+
+
+def base_cell_box(name: str, deg: int) -> tuple:
+    """The box [west, south, east, north] of a cell named like "n44w106" (its south-west corner), of a size in degrees."""
+    m = re.fullmatch(r"([ns])(\d+)([ew])(\d+)", name)
+    lat = int(m.group(2)) * (-1 if m.group(1) == "s" else 1)
+    lon = int(m.group(4)) * (-1 if m.group(3) == "w" else 1)
+    return (lon, lat, lon + deg, lat + deg)
+
+
+def base_overlaps(a: tuple, b: list) -> bool:
+    return a[0] <= b[2] and a[2] >= b[0] and a[1] <= b[3] and a[3] >= b[1]
+
+
+def base_wanted(base: dict, grid: dict | None, zoom: float, view: list) -> set:
+    """The band files a view needs, by the rules layers.js follows: band A from its first zoom, band B and band C cells in view
+    from theirs, band D tiles in view that were built, the places always and the peaks from band B's first zoom."""
+    v = base["vector"]
+    if v.get("state") == "unavailable":
+        return set()
+    z, cells, size = v["zooms"], base["cells"], v["cells_deg"]
+    want = {"hail/base/places.json"}
+    if zoom >= z["A"][0]:
+        want.add("hail/base/v/a.json")
+    if zoom >= z["B"][0]:
+        want.add("hail/base/peaks.json")
+        for name in cells["B"]:
+            if base_overlaps(base_cell_box(name, size["B"]), view):
+                want.add(f"hail/base/v/b/{name}.json")
+    if zoom >= z["C"][0]:
+        for name in cells["C"]:
+            if base_overlaps(base_cell_box(name, size["C"]), view):
+                want.add(f"hail/base/v/c/{name}.json")
+    if zoom >= z["D"][0] and grid:
+        step = grid["cell_deg"] * grid["tile_cells"]
+        top, left = grid["row0_lat"] + grid["cell_deg"] / 2, grid["col0_lon"] - grid["cell_deg"] / 2
+        r0, r1 = max(0, math.floor((top - view[3]) / step)), max(0, math.floor((top - view[1]) / step))
+        c0, c1 = max(0, math.floor((view[0] - left) / step)), max(0, math.floor((view[2] - left) / step))
+        built = set(cells["D"])
+        for r in range(r0, r1 + 1):
+            for c in range(c0, c1 + 1):
+                name = f"r{r:04d}_c{c:04d}"
+                if name in built:
+                    want.add(f"hail/base/w/{name}.json")
+    return want
+
+
+BASE_CANVAS_JS = """() => { const c = document.querySelector('canvas.base-canvas'); if (!c || !c.width) return null;
+    const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let painted = 0, sampled = 0;
+    for (let i = 0; i < d.length; i += 4 * 97) { sampled++; if (d[i + 3] > 0) painted++; }
+    return { painted: painted, sampled: sampled }; }"""
+
+BASE_LABEL_CLASH_JS = """() => { const r = (e) => e.getBoundingClientRect();
+    const towns = [...document.querySelectorAll('.town .bubble, .town .tname')].map(r).filter(b => b.width > 2 && b.height > 2);
+    let clashes = 0;
+    document.querySelectorAll('.base-label span').forEach((s) => {
+      if (s.parentNode.classList.contains('bm-hide') || !s.offsetParent) return;
+      const b = r(s);
+      if (!b.width) return;
+      towns.forEach((t) => { if (b.left < t.right && b.right > t.left && b.top < t.bottom && b.bottom > t.top) clashes++; });
+    });
+    return clashes; }"""
+
+
+def base_terrain_problem(path: str, runs: dict, missing: dict) -> str | None:
+    """None when a terrain tile request is a tile of the store's set and not one that failed (terrain.tile_runs, layers.missing)."""
+    m = re.fullmatch(r"hail/base/([hl])/(\d+)/(\d+)/(\d+)\.(?:jpg|png)", path)
+    if not m:
+        return f"an unexpected terrain path {path}"
+    kind, zz, x, y = m.group(1), m.group(2), int(m.group(3)), int(m.group(4))
+    if not any(run[0] == y and run[1] <= x <= run[2] for run in runs.get(zz, [])):
+        return f"a terrain tile outside the store's set {path}"
+    if f"{zz}/{x}/{y}" in missing[kind]:
+        return f"a terrain tile the store lists as missing {path}"
+    return None
+
+
+def check_base_map(browser, base: str, root: Path, data: dict, shots: Path | None) -> list[str]:
+    """The base map (layers.js) at 390 by 844 and 1280 by 800, light and dark, at zooms 6 (statewide), 9, 12 and 15 (Billings): the
+    canvas draws (sampled pixels), the requests are the band files and terrain tiles the view needs and no others, none leaves the
+    site, the terrain is not requested in dark mode, the credit lines are in the attribution once each, the base labels keep off
+    the town labels, the sheet's base map line says what is not drawn, a redraw after a pan is under BASE_DRAW_MS, and the
+    console is clean."""
+    problems: list[str] = []
+    doc = json.loads((root / "data" / "base.json").read_text(encoding="utf-8"))
+    block = doc["base"]
+    if block.get("state") == "unavailable":
+        return problems
+    grid = (data.get("hail") or {}).get("grid")
+    runs = block["terrain"]["tile_runs"]
+    missing = {k: set(block["terrain"]["layers"][k]["missing"]) for k in ("h", "l")}
+    totals = {"bands": set(), "terrain": 0}                             # over every context, for the note
+    doc_sheet = doc
+    for label, size, scheme in BASE_CONTEXTS:
+        ctx = browser.new_context(viewport={"width": size[0], "height": size[1]}, color_scheme=scheme)
+        page = ctx.new_page()
+        errors: list[str] = []
+        requests: list[str] = []
+        page.on("console", lambda m: errors.append(console_error(m)) if m.type == "error" else None)
+        page.on("pageerror", lambda e: errors.append(f"script error: {e}"))
+        page.on("requestfailed", lambda r: errors.append(f"failed request: {r.url}") if r.url.startswith(base) else None)
+        page.on("request", lambda r: requests.append(r.url))
+        page.goto(base + "map.html", wait_until="load")
+        try:
+            page.wait_for_function("() => !!(window.hailMapTest && window.hailMapLayersTest)", timeout=20000)
+        except Exception:                                              # noqa: BLE001 - reported below
+            problems.append(f"{label}: the base map did not start")
+            ctx.close()
+            continue
+        page.wait_for_timeout(1500)
+        mark, asked_all, terrain_all = 0, set(), 0
+        doc = doc_sheet                                                  # the sheet's words (data/base.json)
+        for zoom, centre in BASE_VIEWS:
+            page.evaluate("([la, lo, z]) => { window.hailMapTest.reset(); window.hailMapTest.view(la, lo, z); }",
+                          [centre[0], centre[1], zoom])
+            page.wait_for_timeout(2200)
+            st = page.evaluate("() => window.hailMapLayersTest.stats()")
+            asked = [u[len(base):] for u in requests[mark:] if u.startswith(base) and "/hail/base/" in u]
+            mark = len(requests)
+            here = f"{label} zoom {zoom}"
+            want = base_wanted(block, grid, st["zoom"], st["view"])
+            bands = {p for p in asked if not re.search(r"\.(?:jpg|png)$", p)}
+            terrain = [p for p in asked if re.search(r"\.(?:jpg|png)$", p)]
+            extra = sorted(bands - want)
+            if extra:
+                problems.append(f"{here}: requested {extra}, which the view does not need")
+            asked_all |= bands
+            totals["bands"] |= want
+            if sorted(want - asked_all):
+                problems.append(f"{here}: the view needs {sorted(want - asked_all)}, not requested")
+            if scheme == "dark" and terrain:
+                problems.append(f"{here}: {len(terrain)} terrain tiles were requested in dark mode")
+            for path in terrain:
+                bad = base_terrain_problem(path, runs, missing)
+                if bad:
+                    problems.append(f"{here}: {bad}")
+            terrain_all += len(terrain)
+            totals["terrain"] += len(terrain)
+            if scheme == "light" and st["zoom"] <= 12 and not terrain_all:
+                problems.append(f"{here}: no terrain tile was requested in light mode")
+            if scheme == "dark" and (st["relief"] or st["tint"]):
+                problems.append(f"{here}: the terrain layers are on in dark mode")
+            cv = page.evaluate(BASE_CANVAS_JS)
+            if not cv:
+                problems.append(f"{here}: no base map canvas")
+            else:
+                if cv["painted"] == 0:
+                    problems.append(f"{here}: the base map canvas is blank")
+                if cv["painted"] >= cv["sampled"]:
+                    problems.append(f"{here}: the base map canvas is painted all over (no paper)")
+            clash = page.evaluate(BASE_LABEL_CLASH_JS)
+            if clash:
+                problems.append(f"{here}: {clash} base labels overlap a town label")
+            snap(page, shots, f"base-{label.replace(' ', '-')}-z{zoom}.png")
+            if size == (1280, 800):
+                page.evaluate("() => window.hailMapLayersTest.reset()")
+                for dx, dy in ((300, 0), (-300, 0), (0, 300), (0, -300)):
+                    page.evaluate("([x, y]) => window.hailMapTest.pan(x, y)", [dx, dy])
+                    page.wait_for_timeout(700)
+                draws = page.evaluate("() => window.hailMapLayersTest.stats().draws")
+                if draws and max(draws) >= BASE_DRAW_MS:
+                    problems.append(f"{here}: a redraw after a pan took {max(draws):.1f} ms (budget {BASE_DRAW_MS})")
+                problems.append(f"note: {here}: redraws after a pan {[round(ms, 1) for ms in draws]} ms; requests "
+                                f"{len(asked)} ({sorted(bands)})")
+                mark = len(requests)                                    # the pans' own requests belong to no view
+            if zoom == 15 and size == (1280, 800) and scheme == "light":
+                # a listed band D tile in view that was not built is said in the sheet's base map line, and only then (D122(b))
+                page.click("#btn-layers")
+                page.wait_for_timeout(400)
+                line_text = page.evaluate("() => (document.getElementById('mo-base-line') || {}).textContent || ''")
+                water = doc["sheet"].get("water_line_unavailable", "")
+                if bool(st["unbuilt"]) != (water in line_text):
+                    problems.append(f"{here}: the water line is {'missing' if st['unbuilt'] else 'shown'} for the view, "
+                                    f"which has {'an unbuilt listed tile' if st['unbuilt'] else 'no unbuilt listed tile'}")
+                page.keyboard.press("Escape")
+                page.wait_for_timeout(300)
+            if zoom == 9:
+                texts = page.evaluate("() => [...document.querySelectorAll('.leaflet-control-attribution')].map(a => a.textContent).join(' ')")
+                for line in json.loads(json.dumps(block["credit"])):
+                    if texts.count(line) != 1:
+                        problems.append(f"{here}: the credit line appears {texts.count(line)} times: {line[:60]}")
+                page.click("#btn-layers")
+                page.wait_for_timeout(400)
+                line_text = page.evaluate("() => (document.getElementById('mo-base-line') || {}).textContent || ''")
+                if block["vector"]["state"] != "loaded" and block["vector"]["problem"] not in line_text:
+                    problems.append(f"{here}: the sheet's base map line does not give the vector problem sentence")
+                page.keyboard.press("Escape")
+                page.wait_for_timeout(300)
+            mark = len(requests)
+        if errors:
+            problems += [f"{label}: {e}" for e in errors]
+        ctx.close()
+    problems.append(f"note: base map: {len(totals['bands'])} band files and {totals['terrain']} terrain tiles checked over the "
+                    f"four views and the four contexts")
+    return problems
+
+
+def base_bytes(browser, base: str, root: Path, zoom: int, centre: tuple, size: tuple) -> dict:
+    """The gzip bytes of each B6 file a fresh page fetches for one view (the figures of the B6 brief, (b)), and the page total. The
+    first fit (the terrain of the page's default view, fetched before the view moved) is named apart: the page waits for its first
+    draw before the view moves, so the first fit is the same in every run (fixer S2, finding 12); the total counts it."""
+    seen: dict = {}
+    ctx, page = b3_open(browser, base, size[0], size[1], listen=lambda r: seen.setdefault(r.url, r))
+    wait_first_base_draw(page)
+    first = set(seen)
+    b3_view(page, centre[0], centre[1], zoom, settle_ms=2500)
+    out = {"b6": {}, "first_fit": {}, "total": 0}
+    for url, response in seen.items():
+        try:
+            body = response.body()
+        except Exception:                                              # noqa: BLE001 - a response that is gone is left out
+            continue
+        size_gz = len(gzip.compress(body, 6))
+        out["total"] += size_gz
+        if response_part(url) != "B6 files":
+            continue
+        name = urlsplit(url).path.split(base.rstrip("/"))[-1].lstrip("/")
+        (out["first_fit"] if url in first else out["b6"])[name] = size_gz
+    ctx.close()
+    return out
+
+
+def base_figures(browser, base: str, root: Path, data: dict) -> list[str]:
+    """The B6 figures (brief (b)): layers.js raw and gzip, and for the zoom 15 Billings view (390 px) and the zoom 8 statewide view
+    (1280 px) each B6 file by name with its gzip bytes and the whole page total, with and without the first fit. Notes only: the
+    phone gate is check_budget_and_pan's."""
+    raw = (root / "static" / "map" / "layers.js").read_bytes()
+    notes = [f"note: layers.js {len(raw)} bytes raw, {len(gzip.compress(raw, 9))} bytes gzip (level 9)"]
+    for name, zoom, centre, size in (("zoom 15 Billings, 390 px", 15, B3_BILLINGS, (390, 844)),
+                                     ("zoom 8 statewide, 1280 px", 8, BASE_STATEWIDE, (1280, 800))):
+        figs = base_bytes(browser, base, root, zoom, centre, size)
+        parts = ", ".join(f"{k} {v}" for k, v in sorted(figs["b6"].items()))
+        fit = sum(figs["first_fit"].values())
+        notes.append(f"note: B6 figures, {name}: B6 files {sum(figs['b6'].values())} bytes gzip [{parts}]; the first fit (the page's "
+                     f"default view, terrain) {fit} bytes gzip in {len(figs['first_fit'])} files, counted in the page total; page total "
+                     f"{figs['total']} bytes gzip (without the first fit {figs['total'] - fit})")
+    return notes
+
+
+BASE_EVICT_CAP = 2000000                # a cap the state's base files exceed (routed in the page, map.json on disk is not changed)
+
+
+def check_base_unavailable(browser, base: str, root: Path, data: dict) -> list[str]:
+    """Ruling (d) and rule 3 (fixer S2, finding 1): a part whose state is unavailable draws nothing, and the sheet's base map line
+    shows its problem sentence from data/base.json. The page's data/base.json is routed in Chromium for each case (nothing is
+    written): the vector part, the terrain part, and the whole base map, each at 390 by 844 over Billings at zoom 9."""
+    problems: list[str] = []
+    block = json.loads((root / "data" / "base.json").read_text(encoding="utf-8"))["base"]
+    sentence = block["vector"]["words"]["unavailable"]
+
+    def vector_case(b):
+        b["vector"].update({"state": "unavailable", "problem": sentence})
+
+    def terrain_case(b):
+        b["terrain"].update({"state": "unavailable", "problem": sentence})
+
+    def base_case(b):
+        b.update({"state": "unavailable", "problem": sentence})
+
+    for case, mutate in (("vector", vector_case), ("terrain", terrain_case), ("base", base_case)):
+        ctx = browser.new_context(viewport={"width": 390, "height": 844})
+        page = ctx.new_page()
+        errors: list[str] = []
+        requests: list[str] = []
+        page.on("console", lambda m: errors.append(console_error(m)) if m.type == "error" else None)
+        page.on("pageerror", lambda e: errors.append(f"script error: {e}"))
+        page.on("request", lambda r: requests.append(r.url))
+
+        def handle(route, request=None, mutate=mutate):     # Playwright passes (route, request): the case is bound by name
+            resp = route.fetch()
+            doc = json.loads(resp.text())
+            mutate(doc["base"])
+            route.fulfill(response=resp, body=json.dumps(doc))
+
+        page.route("**/data/base.json*", handle)
+        page.goto(base + "map.html", wait_until="load")
+        page.wait_for_function("() => !!(window.hailMapTest && window.hailMapLayersTest)", timeout=20000)
+        page.evaluate("([la, lo, z]) => window.hailMapTest.view(la, lo, z)", [B3_BILLINGS[0], B3_BILLINGS[1], 9])
+        page.wait_for_timeout(2500)
+        line = page.evaluate("() => (document.getElementById('mo-base-line') || {}).textContent || ''")
+        labels = page.evaluate("() => document.querySelectorAll('.base-label').length")
+        st = page.evaluate("() => window.hailMapLayersTest.stats()")
+        asked = [u[len(base):] for u in requests if u.startswith(base) and "/hail/base/" in u]
+        bands = [p for p in asked if not re.search(r"\.(?:jpg|png)$", p)]
+        terrain = [p for p in asked if re.search(r"\.(?:jpg|png)$", p)]
+        here = f"{case} unavailable"
+        if sentence not in line:
+            problems.append(f"{here}: the sheet's base map line does not give the problem sentence (line: {line[:80]!r})")
+        if case == "vector":
+            if st["vector"] != "unavailable":
+                problems.append(f"{here}: the test hook reports the vector as {st['vector']!r}")
+            if bands or labels:
+                problems.append(f"{here}: it drew {len(bands)} band files and {labels} base labels; a part not loaded draws nothing")
+            if not st["relief"]:
+                problems.append(f"{here}: the terrain stopped with the vector part, which is not its own state")
+        elif case == "terrain":
+            if terrain or st["relief"] or st["tint"]:
+                problems.append(f"{here}: the terrain was drawn ({len(terrain)} tile requests, relief {st['relief']})")
+            if not bands:
+                problems.append(f"{here}: the vector bands stopped with the terrain, which is not their own state")
+        else:
+            if bands or terrain or labels or st["relief"] or st["tint"]:
+                problems.append(f"{here}: the base map drew (bands {len(bands)}, terrain {len(terrain)}, labels {labels})")
+        if errors:
+            problems += [f"{here}: {e}" for e in errors]
+        ctx.close()
+    return problems
+
+
+def check_base_eviction(browser, base: str, data: dict) -> list[str]:
+    """The base map's cache is capped (map.json hail.draw.cache_bytes, layers.js evict; fixer S2, finding 14). With a cap of
+    BASE_EVICT_CAP bytes (routed in the page, nothing is written), a pan across the state at zoom 9 (40 steps west, 40 back) keeps the
+    cache over the cap only while the files in view are over it, and a file dropped while off view is asked for again when the
+    view comes back."""
+    problems: list[str] = []
+    ctx = browser.new_context(viewport={"width": 1280, "height": 800})
+    page = ctx.new_page()
+
+    def handle(route):
+        resp = route.fetch()
+        doc = json.loads(resp.text())
+        doc["hail"]["draw"]["cache_bytes"] = BASE_EVICT_CAP
+        route.fulfill(response=resp, body=json.dumps(doc))
+
+    page.route("**/data/map.json*", handle)
+    page.goto(base + "map.html", wait_until="load")
+    page.wait_for_function(READY, timeout=15000)
+    page.wait_for_function("() => !!window.hailMapLayersTest", timeout=20000)
+    page.evaluate("([la, lo, z]) => window.hailMapTest.view(la, lo, z)", [B3_BILLINGS[0], B3_BILLINGS[1], 9])
+    page.wait_for_timeout(1500)
+    peak, over, last = 0, [], None
+    for dx in [-300] * 40 + [300] * 40:
+        page.evaluate("([x, y]) => window.hailMapTest.pan(x, y)", [dx, 0])
+        page.wait_for_timeout(350)
+        st = page.evaluate("() => { const s = window.hailMapLayersTest.stats(); return {bytes: s.bytes, cap: s.cap, pinned: s.pinnedBytes, fetched: s.fetched}; }")
+        last = st
+        peak = max(peak, st["bytes"])
+        if st["bytes"] > max(st["cap"], st["pinned"]) + 1:
+            over.append(st["bytes"])
+    ctx.close()
+    if last is None or last["cap"] != BASE_EVICT_CAP:
+        problems.append(f"the routed cache cap did not reach the page (the page reports {last and last['cap']})")
+    if over:
+        problems.append(f"the base map cache was over its cap of {BASE_EVICT_CAP} bytes {len(over)} times while the files in view "
+                        f"fitted under it (first {over[0]} bytes)")
+    again = len(last["fetched"]) - len(set(last["fetched"])) if last else 0
+    if again == 0:
+        problems.append("no base map file was asked for again after the pan came back: eviction was not exercised")
+    problems.append(f"note: base map cache at a cap of {BASE_EVICT_CAP} bytes: peak {peak} bytes over an 80-step pan at zoom 9; "
+                    f"{again} files asked for again after they were dropped")
     return problems
 
 
@@ -2509,9 +2917,9 @@ def check_attribution(browser, base: str, data: dict) -> list[str]:
             box: li.getBoundingClientRect().toJSON(), shown: rendered(li), where: 'the key list'}));
         out.credits = [...document.querySelectorAll('#legend-note .legend-credit')].map(s => ({text: s.textContent,
             box: s.getBoundingClientRect().toJSON(), shown: rendered(s), where: 'the legend note'}));
-        const a = document.querySelector('.leaflet-control-attribution');
-        out.control = a ? {text: a.innerText, box: a.getBoundingClientRect().toJSON(), shown: rendered(a),
-            where: 'the Leaflet attribution control'} : null;
+        const all = [...document.querySelectorAll('.leaflet-control-attribution')];
+        out.control = all.length ? {text: all.map(a => a.innerText).join(' | '), box: all[0].getBoundingClientRect().toJSON(),
+            shown: rendered(all[0]), where: 'the Leaflet attribution control'} : null;
         out.view = {w: innerWidth, h: innerHeight}; return out; }""")
     for line in lines:
         found = [item for item in where["keys"] + where["credits"] if line[:40] in item["text"]]
@@ -3596,7 +4004,7 @@ def first_screen_problems(label: str, got: dict | None) -> list[str]:
 def fetch_problems(label: str, sizes: dict, limit: int) -> list[str]:
     """sizes: {path: gzip bytes}. Every file a tap fetches is under limit, the tile-file budget map.json carries (D30, D66, D75)."""
     return [f"{label}: {path} is {size} bytes gzip, at or over the {limit}-byte limit for a file a tap fetches"
-            for path, size in sorted(sizes.items()) if size >= limit]
+            for path, size in sorted(sizes.items()) if size >= limit and "/hail/base/" not in "/" + path.lstrip("/")]
 
 
 def tap_problems(label: str, responses: list, limit: int | None) -> list[str]:
@@ -3617,7 +4025,8 @@ def tap_problems(label: str, responses: list, limit: int | None) -> list[str]:
                        + ("" if statuses[path] == 200 else f" (answered {statuses[path]})")
                        for path, size in sorted(measured.items()))
     problems = [f"{NOTE}fetch list {label}: {listed or 'no hail file'}"]
-    unread = sorted(path for path, size in files.items() if size is None)
+    # a terrain tile the view left before it arrived has no body (its request was cancelled): not a file the sheet needs
+    unread = sorted(path for path, size in files.items() if size is None and not re.search(r"/hail/base/[hl]/", path))
     if unread:
         problems.append(f"{label}: {len(unread)} file(s) could not be read to measure them: {', '.join(unread[:3])}")
     answered = sorted(path for path, status in statuses.items() if status != 200)
@@ -4133,7 +4542,7 @@ def check_every_layer(browser, base: str, data: dict) -> list[str]:
     totals: dict[str, int] = {}
     for part, size in sizes.values():
         totals[part] = totals.get(part, 0) + size
-    scope = sum(size for part, size in totals.items() if part != "frames")
+    scope = sum(size for part, size in totals.items() if part not in ("frames", "B6 files"))
     if unread:
         problems.append(f"{unread} responses could not be read to measure them")
     phone = map_budget(data, "phone_gzip_bytes")                # map.json's phone budget (D66, D75)
@@ -4155,6 +4564,8 @@ def layer_part(url: str) -> str:
     path = "/" + urlsplit(url).path.lstrip("/")
     if "/map/frames/" in path:
         return "frames"
+    if response_part(url) == "B6 files":                       # the base map (layers.js, data/base.json, hail/base/): apart (B6 (b))
+        return "B6 files"
     if b3_kind(url) != "other":
         return "B3 files"
     if "/hail/live/" in path:

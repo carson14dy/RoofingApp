@@ -1286,7 +1286,7 @@ class ImageryBaseMap(unittest.TestCase):
                 self.assertNotIn(url, path.read_text(encoding="utf-8"), name)
 
     def test_map_js_holds_no_address_or_host_name(self):
-        js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8").lower()
+        js = "\n".join((site.HERE / "static" / "map" / name).read_text(encoding="utf-8") for name in ("map.js", "layers.js")).lower()
         for needle in ("http:", "https:", "nationalmap", "usgsimagery", ".gov"):
             self.assertNotIn(needle, js, needle)
         # the credit row's words come from build.py (imagery.credit_line and failed_line), not from the script
@@ -1696,7 +1696,8 @@ class HailHistory(unittest.TestCase):
         self.assertNotIn("Days not listed", page(self.off, "about.html"))
 
     def test_map_script_holds_no_threshold_unit_class_word_or_sentence(self):
-        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        # B6 stage S2: the base map's drawing (layers.js) holds no word, unit or threshold either (rule 1)
+        js = "\n".join((ROOT / "website" / "static" / "map" / name).read_text(encoding="utf-8") for name in ("map.js", "layers.js"))
         for literal in ("25.4", "254", "6.35"):
             self.assertNotIn(literal, js)
         for name in ("display_caps", "display_hundredths", "hailHundredths"):   # decision 10: the caps are gone
@@ -3723,8 +3724,8 @@ def visible(fragment: str) -> str:
 
 
 
-SHARED_STATIC = ("static/map/map.js", "static/map/map.css")   # left out of the identity check: they change with the feature
-VERSION_QUERY = re.compile(rb"(static/map/map\.(?:js|css))\?v=[0-9a-f]{12}")
+SHARED_STATIC = ("static/map/map.js", "static/map/map.css", "static/map/layers.js")   # left out of the identity check: they change with the feature
+VERSION_QUERY = re.compile(rb"(static/map/(?:map\.(?:js|css)|layers\.js))\?v=[0-9a-f]{12}")
 
 
 def default_digests(root: Path) -> dict:
@@ -3782,9 +3783,9 @@ def on_purpose_problems(name: str, data: bytes, changes, base_digest: str) -> li
     """The problems with one page of the default build: a named change that is missing or repeated, or a line that no
     named change accounts for (the page still differs from the base's digest once the named changes are written back).
     An empty list means the page differs from the base only as the rulings name (D93(a), D95(g))."""
+    if name.endswith(".html"):                    # the ?v= hashes first: a named line carries HASH, as the base's digest does
+        data = VERSION_QUERY.sub(rb"\1?v=HASH", data)
     restored, problems = restore_base(data, changes)
-    if name.endswith(".html"):
-        restored = VERSION_QUERY.sub(rb"\1?v=HASH", restored)
     if hashlib.sha256(restored).hexdigest() != base_digest:
         problems.append(f"{name} differs from the base build on a line that no named ruling accounts for")
     return problems
@@ -4325,6 +4326,8 @@ class HailSwathLayers(unittest.TestCase):
              "No reports of hail or wind in or near Montana for this day; that is not the same as no hail.", 2),
         ),
         "map.html": (
+            # D145(a) (B6 stage S2): the page loads layers.js (the base map's drawing) after map.js; its ?v= hash is HASH here
+            ("D145(a)", "", '<script src="static/map/layers.js?v=HASH"></script>\n', 1),
             # D110(d) (B6): the imagery object the page carries (data-imagery) gets the privacy words "while it is on", as the
             # credit row does; the page's Imagery description already had them. One occurrence, inside the attribute.
             ("D110(d)", 'go to USGS.", "failed_line"', 'go to USGS while it is on.", "failed_line"', 1),
@@ -5967,7 +5970,7 @@ class B6BaseMapData(unittest.TestCase):
         self.assertEqual(site.SHEET_WORDS["landmarks_sub_line"],
                          "Schools, parks, hospitals, airports, and fire and EMS stations, from the public lists named under About.")
         # B6 stage S1 (DESIGN 13.6): every word the options sheet shows, and nothing else (tests/test_site.py OptionsSheet)
-        self.assertEqual(sorted(site.SHEET_WORDS), sorted(["airport", "base_failed", "base_heading", "church", "close_label", "coming", "coming_fire", "coming_smoke", "fire_ems", "fire_smoke", "five_year_history", "flood_history", "hail_history", "hail_last_day", "hail_last_hour", "heat_history", "held", "held_church", "highlight_recent_hail", "history_heading", "hospital", "imagery_card", "landmark_line", "landmarks_heading", "landmarks_sub_line", "legend_hail_last_day", "legend_hail_last_hour", "legend_imagery", "legend_precipitation", "legend_recent", "legend_reports", "legend_temperature", "legend_wind", "list_and", "list_comma", "list_last", "live_heading", "map_card", "name_airport", "name_fire_ems", "name_hospital", "name_park", "name_school", "options_title", "park", "points_of_interest", "points_of_interest_name", "precipitation", "recent_description", "reset", "reset_line", "school", "storm_reports", "storm_reports_description", "temperature", "unavailable", "waiting", "warnings", "warnings_description", "water_line_unavailable", "wind_gusts", "wind_history", "partial_history"]))
+        self.assertEqual(sorted(site.SHEET_WORDS), sorted(["airport", "base_failed", "base_heading", "church", "close_label", "coming", "coming_fire", "coming_smoke", "fire_ems", "fire_smoke", "five_year_history", "flood_history", "hail_history", "hail_last_day", "hail_last_hour", "heat_history", "held", "held_church", "highlight_recent_hail", "history_heading", "hospital", "imagery_card", "landmark_line", "landmarks_heading", "landmarks_sub_line", "legend_hail_last_day", "legend_hail_last_hour", "legend_imagery", "legend_precipitation", "legend_recent", "legend_reports", "legend_temperature", "legend_wind", "list_and", "list_comma", "list_last", "live_heading", "map_card", "name_airport", "name_fire_ems", "name_hospital", "name_park", "name_school", "options_title", "park", "points_of_interest", "points_of_interest_name", "precipitation", "recent_description", "reset", "reset_line", "school", "storm_reports", "storm_reports_description", "summit_height", "temperature", "unavailable", "waiting", "warnings", "warnings_description", "water_line_unavailable", "wind_gusts", "wind_history", "partial_history"]))
         self.assertEqual(self.data(self.loaded)["sheet"], site.SHEET_WORDS)
         self.assertEqual(site.BUBBLE_LEGEND, hl.WORDS["label_legend"])              # D135(a): the printed legend is the module's text
 
@@ -7069,6 +7072,186 @@ class OptionsSheet(unittest.TestCase):
         js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
         self.assertIn('look === "plain" || look === "pending"', js)           # aria-disabled is for the other looks
         self.assertIn('item.classList.contains("is-pending")', js)           # a tap on a chip still loading returns
+
+
+class BaseMapDrawing(unittest.TestCase):
+    """The base map's drawing (B6 stage S2; DESIGN 13.2, 13.7; D145): layers.js is the second script the map page loads, it holds no
+    colour literal, no sentence and no unit, every base-map role is a token of map.css in both schemes with the contrast the rules
+    ask for, the labels are 13 px or more, the terrain tile runs cover the 881 tiles of each layer, and the fade and the summit
+    unit are build words."""
+
+    CSS = (ROOT / "website" / "static" / "map" / "map.css").read_text(encoding="utf-8")
+    LAYERS = (ROOT / "website" / "static" / "map" / "layers.js").read_text(encoding="utf-8")
+    MAP_JS = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+    ROLES = ("map-water", "map-water-line", "map-forest", "map-park", "map-reservation", "map-route", "map-route-shield",
+             "map-route-shield-ink", "map-place-text", "map-place-dot", "map-summit", "map-summit-dot", "map-label-halo")
+    LINES = ("map-water", "map-forest", "map-park", "map-reservation", "map-route", "map-place-dot", "map-summit-dot")
+    TEXT = ("map-place-text", "map-summit", "map-water-line", "map-route-shield-ink")
+
+    def light_and_dark(self):
+        light = self.CSS[self.CSS.index(":root {"):]
+        light = light[:light.index("\n}")]
+        dark = self.CSS[self.CSS.index("@media (prefers-color-scheme: dark) {"):]
+        dark = dark[dark.index(":root {"):]
+        dark = dark[:dark.index("\n  }")]
+        decl = lambda t: {k: v.strip() for k, v in re.findall(r"--([\w-]+):\s*([^;]+);", t)}
+        return decl(light), decl(dark)
+
+    @staticmethod
+    def luminance(hex_colour: str) -> float:
+        rgb = [int(hex_colour.lstrip("#")[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+        lin = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in rgb]
+        return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+    @classmethod
+    def contrast(cls, a: str, b: str) -> float:
+        la, lb_ = sorted((cls.luminance(a), cls.luminance(b)), reverse=True)
+        return (la + 0.05) / (lb_ + 0.05)
+
+    def test_map_html_loads_layers_js_after_map_js_with_its_version(self):
+        html = (ROOT / "website" / "templates" / "map.html").read_text(encoding="utf-8")
+        self.assertIn("static/map/layers.js?v={{ asset_v['map/layers.js'] }}", html)
+        self.assertLess(html.index("static/map/map.js?v="), html.index("static/map/layers.js?v="))
+        self.assertIn("map/layers.js", site.VERSIONED)                    # the page's ?v= hash is the file's content hash
+        self.assertIn("static/map/layers.js", SHARED_STATIC)                # the identity check leaves it out, as map.js
+
+    def test_layers_js_says_why_it_is_javascript_and_names_its_interface(self):
+        self.assertIn("Why this is JavaScript (AGENTS.md rule 4)", self.LAYERS)
+        self.assertIn("window.hailMapLayers = { start: start, update: scheduleDraw };", self.LAYERS)
+        self.assertIn("window.hailMapLayersTest", self.LAYERS)
+        self.assertIn("function start(ctx)", self.LAYERS)
+
+    def test_map_js_hands_the_base_map_to_layers_js_through_one_function_and_its_panes(self):
+        self.assertIn("function startBaseLayers()", self.MAP_JS)
+        self.assertIn("window.hailMapLayers.start({", self.MAP_JS)
+        self.assertIn("window.hailMapLayers.update();", self.MAP_JS)
+        self.assertIn('pane("terrain", 405, false);', self.MAP_JS)
+        self.assertIn('pane("vectors", 408, false);', self.MAP_JS)
+        self.assertIn('[legend, baseLineText].filter(Boolean).join(" ")', self.MAP_JS)      # the imagery legend and the base line
+        self.assertIn('.town .bubble, .town .tname', self.MAP_JS)                             # the towns keep their place (tidyLabels)
+
+    def test_layers_js_holds_no_colour_literal_no_unit_and_no_sentence_in_its_code(self):
+        self.assertNotRegex(self.LAYERS, r"#[0-9a-fA-F]{3,6}\b")              # no hex: a colour is a map.css role (rule 4, (c))
+        self.assertNotRegex(self.LAYERS, r"\brgba?\(")
+        self.assertNotRegex(self.LAYERS, r'"[^"]*\bft\b')                    # the unit comes from data/base.json (rule 1)
+        for sentence in ("Data unavailable", "all-clear", "not the same as"):
+            self.assertNotIn(sentence, self.LAYERS, sentence)
+        self.assertNotIn("\u2014", self.LAYERS)
+        self.assertNotIn("\u2013", self.LAYERS)
+
+    def test_the_base_map_roles_are_in_both_token_blocks_and_the_labels_are_13_px_or_more(self):
+        light, dark = self.light_and_dark()
+        for role in self.ROLES:
+            self.assertIn(role, light, f"light block lacks --{role}")
+            self.assertIn(role, dark, f"dark block lacks --{role}")
+        for size in ("map-label-size", "map-shield-size"):
+            self.assertGreaterEqual(float(light[size].rstrip("px")), 13.0, size)     # every label at 13 px or more (DESIGN 13.7)
+
+    def test_the_base_map_colours_meet_the_contrast_the_rules_ask_for_on_paper_and_on_the_dark_land(self):
+        light, dark = self.light_and_dark()
+        paper, land = "#fafafa", "#1b1e22"                                       # --m-paper and the dark --land
+        for scheme, decl, bg in (("light", light, paper), ("dark", dark, land)):
+            for role in self.LINES:
+                self.assertGreaterEqual(self.contrast(decl[role], bg), 3.0, f"{scheme} --{role}")
+            for role in self.TEXT:
+                if role == "map-route-shield-ink":
+                    shield = decl["map-route-shield"]
+                    self.assertGreaterEqual(self.contrast(decl[role], shield), 4.5, f"{scheme} --{role} on its shield")
+                else:
+                    self.assertGreaterEqual(self.contrast(decl[role], bg), 4.5, f"{scheme} --{role}")
+
+    def test_the_terrain_tile_runs_cover_the_881_tiles_of_each_layer(self):
+        runs = site.terrain_tile_runs()
+        tiles = tr.tile_set(tr.montana_rings())
+        self.assertEqual(sorted(runs), sorted(str(z) for z in tiles))
+        for z, rows in tiles.items():
+            held = {(run[0], x) for run in runs[str(z)] for x in range(run[1], run[2] + 1)}
+            self.assertEqual(held, {(y, x) for x, y in rows}, f"zoom {z}")
+        self.assertEqual(sum(len(v) for v in tiles.values()), 881)           # DESIGN 13.1: 881 tiles per layer
+
+    def test_the_fade_the_summit_unit_and_the_version_are_build_words(self):
+        self.assertEqual(site.TERRAIN_FADE, {"full_zoom": 10, "gone_zoom": 13})
+        self.assertEqual(site.SHEET_WORDS["summit_height"], "{feet} ft")
+        self.assertEqual(site.BASE_TILES["h"], "hail/base/h/{z}/{x}/{y}.jpg")
+
+    def test_the_map_js_holds_the_one_new_line_of_the_base_map_and_the_sheet_line_is_set_by_it(self):
+        self.assertIn("function setBaseLine(text)", self.MAP_JS)
+        self.assertIn("function setBaseLine(text) { baseLineText = text || \"\"; renderBaseCards(); }", self.MAP_JS)
+        self.assertIn("setLine: setBaseLine", self.MAP_JS)
+        self.assertIn("tidy: tidyLabels", self.MAP_JS)
+
+
+    def test_the_sheet_line_reads_the_vector_block_so_a_part_that_is_not_drawn_still_says_why(self):
+        # the fixer's finding 1 (S2): an unavailable vector part draws nothing (S.V is null), its problem sentence still reaches the line
+        self.assertIn("var vBlock = block.vector || null;", self.LAYERS)
+        self.assertIn("vBlock: vBlock", self.LAYERS)
+        self.assertIn("var vb = S.vBlock;", self.LAYERS)
+        self.assertIn('if (vb && vb.state !== "loaded" && vb.problem) parts.push(vb.problem);', self.LAYERS)
+        self.assertNotIn('if (V && V.state !== "loaded" && V.problem)', self.LAYERS)
+        self.assertIn("vector: S.vBlock ? S.vBlock.state : null", self.LAYERS)   # the test hook says unavailable, not absent
+
+    def test_a_summit_is_labelled_with_a_height_number_or_not_at_all(self):
+        # finding 2 (S2): Number(null) is 0, so a missing height is left out, and the height word's one placeholder is filled
+        self.assertIn('function hasHeight(p) { return typeof p.elev_ft === "number" && isFinite(p.elev_ft); }', self.LAYERS)
+        self.assertIn("hasHeight(p) && counts.summits < S.labelCap", self.LAYERS)
+        self.assertNotIn("Number(p.elev_ft)", self.LAYERS)
+        self.assertNotIn("{feet}", self.LAYERS)                                  # the placeholder is the data's word, not a literal here
+        self.assertIn(r"ph = /\{[a-z_]+\}/.exec(tpl)", self.LAYERS)
+
+    def test_a_route_shield_prints_the_text_the_data_gives(self):
+        # finding 7 (S2): the data's route name is the shield text ("US-191", "MT-20"); digits alone would drop the state
+        self.assertIn('if (mid) names.push({ kind: "shield", text: pc.n, p: mid });', self.LAYERS)
+        self.assertNotIn("exec(pc.n)", self.LAYERS)
+
+    def test_the_source_lines_share_one_attribution_control_and_phone_width_caps_the_block(self):
+        # finding 4 (S2): the base map's credit lines go in the map's one attribution control (D44), capped at 40vh on a phone
+        self.assertIn("attribution: sourceControl", self.MAP_JS)
+        self.assertIn("function sourceControl()", self.MAP_JS)
+        self.assertEqual(self.MAP_JS.count("L.control.attribution("), 1)
+        self.assertIn("S.attr = S.ctx.attribution();", self.LAYERS)
+        self.assertNotIn("L.control.attribution(", self.LAYERS)
+        self.assertIn("@media (max-width: 520px) { .leaflet-container .leaflet-control-attribution { max-height: 40vh; "
+                      "overflow-y: auto; pointer-events: auto; } }", self.CSS)
+
+    def test_the_area_outlines_come_after_every_fill_and_the_reservation_outline_is_last(self):
+        # finding 10 (S2): a forest or park outline no longer paints over a reservation's edge
+        self.assertIn("new Path2D()", self.LAYERS)
+        self.assertIn("outlines.push({ col: col, path: path });", self.LAYERS)
+        self.assertIn("for (var i = outlines.length - 1; i >= 0; i--) {", self.LAYERS)
+        self.assertEqual(self.LAYERS.count("g.stroke(outlines[i].path);"), 1)
+
+    def test_the_quoted_words_of_layers_js_are_identifiers_tokens_and_markup_never_a_sentence(self):
+        # finding 3 (S2): every quoted word in the code is on this list, a CSS token or a format key; a new word is added here on purpose
+        code = re.sub(r"(?m)//[^\n]*", "", re.sub(r"/\*.*?\*/", "", self.LAYERS, flags=re.S))
+        # the escape map of esc() (its character class and its key pairs) is code, not words: its two lines are left out
+        code = "\n".join(line for line in code.split("\n") if '[&<>"' not in line and '"&amp;"' not in line)
+        literals = set(re.findall(r'"((?:[^"\\\n]|\\.)*)"', code))
+        allowed = {"", " ", ", ", ": ", "|", "/", "&", "&amp;", "&gt;", "&lt;", "<", ">", "</span>", "<i></i><span>",
+                   "(prefers-color-scheme: dark)", ".town .bubble, .town .tname, .base-label span", "0", "2d", "600 ", "700 ",
+                   "A", "B", "C", "D", "_c", "{cell}", "{tile}", "h", "l", "p", "r", "s", "w", "aria-hidden", "base-canvas",
+                   "base-places", "base-water", "bm-label base-label base-place", "bm-label base-label base-summit", "canvas",
+                   "center", "change", "en-US", "evenodd", "forest", "format", "park", "lake", "reservation", "river", "route",
+                   "shield", "peaks", "places", "labels", "load", "loaded", "loading", "unavailable", "ready", "middle",
+                   "moveend", "zoomend", "resize", "number", "px", "px ", "round", "same-origin", "status ", "terrain",
+                   "terrain-relief", "terrain-tint", "true", "use strict", "vector", "vectors", "water", "h"}
+        unknown = sorted(x for x in literals if x not in allowed and not re.fullmatch(r"--[a-z0-9-]+|hail-base-[a-z]+-v1", x))
+        self.assertEqual(unknown, [], "a quoted word in layers.js is neither an identifier, a token nor markup: take it from the data")
+
+
+    def test_a_base_map_that_is_unavailable_draws_nothing_and_the_terrain_only_when_loaded_or_partial(self):
+        # the fixer's finding (S2): ruling (d) and the brief's terrain rule; the browser checks are in tools/smoke_map.py
+        self.assertIn('var block = ctx.block, live = block.state !== "unavailable";', self.LAYERS)
+        self.assertIn("var T = live ? (block.terrain || null) : null, V = live ? (block.vector || null) : null;", self.LAYERS)
+        self.assertIn('if (!T || (T.state !== "loaded" && T.state !== "partial") || !T.layers || !T.tile_runs) return;', self.LAYERS)
+        self.assertIn("pinnedBytes: pinnedSize()", self.LAYERS)                 # the smoke's cache-cap check reads it
+
+    def test_the_smoke_has_the_unavailable_parts_the_cache_cap_and_the_first_fit_checks(self):
+        smoke = (ROOT / "tools" / "smoke_map.py").read_text(encoding="utf-8")
+        self.assertIn("def check_base_unavailable(browser, base: str, root: Path, data: dict) -> list[str]:", smoke)
+        self.assertIn("def check_base_eviction(browser, base: str, data: dict) -> list[str]:", smoke)
+        self.assertIn('("check_base_unavailable", lambda: check_base_unavailable(browser, base, root, data)),', smoke)
+        self.assertIn('("check_base_eviction", lambda: check_base_eviction(browser, base, data)))', smoke)
+        self.assertIn("def wait_first_base_draw(page) -> None:", smoke)         # the first fit is counted the same way every run
 
 
 if __name__ == "__main__":

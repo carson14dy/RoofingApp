@@ -64,6 +64,10 @@
      the list joins). The page's first-paint words (the banners and the reports and picture lines, and the sheet's words
      before base.json answers) are the map-words script that build.py renders (MAP_WORDS, read once into PW). The address
      keeps the choices: layer, base, poi, hail_recent, history and landmarks (poi=0 and hail_recent=1 read as off and on).
+   - The base map's own drawing (B6, DESIGN 13.2 and 13.7; website/static/map/layers.js, loaded after this file): the terrain
+     tiles, the vector bands A to D, the places and the summits, the credit lines and the sheet's base map line. This file makes
+     the two panes it draws in ("terrain" and "vectors", under the weather pictures) and starts layers.js once data/base.json has
+     loaded (startBaseLayers); it hands layers.js its words and its state, and asks it to redraw when a sheet choice changes.
    - The viewer's location never leaves the browser: it draws the dot and finds the nearest town.
 */
 (function () {
@@ -346,6 +350,8 @@
     map.panBy = function (offset, opts) {
       return panBy.call(this, offset, reducedMotion() ? L.extend({}, opts, { animate: false }) : opts);
     };
+    pane("terrain", 405, false);                   // B6: the terrain tiles (layers.js), under the vectors
+    pane("vectors", 408, false);                   // B6: the base map canvas (layers.js), under the weather pictures
     pane("frames", 410, false);
     pane("mask", 415, false);
     pane("alerts", 430, true);
@@ -456,11 +462,17 @@
     [el.note, el.toast, el.near].forEach(function (x) { if (!x.hidden) boxes.push(x.getBoundingClientRect()); });
     boxes = boxes.filter(function (b) { return b.width > 2 && b.height > 2; });   // not the toast's empty live region
     var spans = el.canvas.querySelectorAll(".bm-label span");
+    // the towns keep their place: a base map label (layers.js: a place or a summit) clears their bubbles and names too (DESIGN 13.7)
+    var towns = [].slice.call(el.canvas.querySelectorAll(".town .bubble, .town .tname")).map(function (x) {
+      var t = x.getBoundingClientRect();
+      return { left: t.left, right: t.right, top: t.top, bottom: t.bottom, width: t.width, height: t.height };
+    }).filter(function (b) { return b.width > 2 && b.height > 2; });
     for (var i = 0; i < spans.length; i++) {
       var r = textBox(spans[i]), hide = false;                               // the glyphs, taller than the line
       var left = spans[i].previousElementSibling ? r.left - 10 : r.left;      // a place's dot, left of its name
-      for (var k = 0; r.width && !hide && k < boxes.length; k++) {
-        var b = boxes[k];
+      var others = spans[i].parentNode.classList.contains("base-label") ? boxes.concat(towns) : boxes;
+      for (var k = 0; r.width && !hide && k < others.length; k++) {
+        var b = others[k];
         hide = left < b.right + 2 && r.right > b.left - 2 && r.top < b.bottom + 2 && r.bottom > b.top - 2;
       }
       spans[i].parentNode.classList.toggle("bm-hide", hide);
@@ -492,8 +504,8 @@
       });
     var nb = noteBox(tlTop);
     if (nb) boxes.push(nb);
-    if (B3 && B3.credit) {                                      // the source lines above the band (b3Lift): towns under them count too
-      var cr = B3.credit.getContainer().getBoundingClientRect();
+    if (sourceCtl) {                                      // the source lines above the band (b3Lift): towns under them count too
+      var cr = sourceCtl.getContainer().getBoundingClientRect();
       if (cr.width && cr.height) boxes.push(cr);
     }
     var best = y0, bestScore = Infinity;
@@ -532,7 +544,7 @@
     if (!data || !state.ready) return LINE;
     var room = LINE;
     noteWarningSet().forEach(function (t) { room = Math.max(room, noteSize(t, true).height + 8); });
-    if (B3 && B3.credit) room += B3.credit.getContainer().offsetHeight + 8;     // the source lines sit above the note (b3Lift)
+    if (sourceCtl) room += sourceCtl.getContainer().offsetHeight + 8;     // the source lines sit above the note (b3Lift)
     return Math.ceil(room);
   }
 
@@ -1832,6 +1844,7 @@
   }
 
   var baseDoc = null;                // data/base.json once it has loaded; { _error } when it could not be fetched
+  var baseLineText = "";            // the base map's line (layers.js: the problems in view), shown under the imagery legend
   var optionNote = {};               // a group's reason, opened by a tap on a chip that is not available (the next change clears it)
 
   /** The chip or card of one group and key, from the markup (data-group, data-key). */
@@ -1894,7 +1907,8 @@
       card.setAttribute("aria-pressed", card.getAttribute("data-key") === state.base ? "true" : "false");
     });
     var imagery = optionItem("base", "imagery");
-    setGroupLine(byId("mo-base-line"), state.base === "imagery" && imagery ? imagery.getAttribute("data-legend") : "");
+    var legend = state.base === "imagery" && imagery ? imagery.getAttribute("data-legend") : "";
+    setGroupLine(byId("mo-base-line"), [legend, baseLineText].filter(Boolean).join(" "));
   }
 
   /** The landmark line (DESIGN 13.6): the kinds that are on, named by their chips (data-name), in the sentence that
@@ -1988,6 +2002,7 @@
     el.hailRecent.checked = pending ? state.hailRecent : state.hailRecent && !recOff;
     setGroupLine(byId("mo-recent-line"), pending ? "" : recOff ? recReason :
       (state.hailRecent ? el.hailRecent.getAttribute("data-legend") : ""));
+    if (window.hailMapLayers) window.hailMapLayers.update();     // the base map follows the sheet's choices (layers.js)
   }
 
   /** Live weather (DESIGN 13.6): one choice, and the chosen one turns off with a tap on it (no live layer: setLayer(null)). */
@@ -2073,8 +2088,23 @@
     var file = data && data.base && data.base.file;
     if (!file) { baseDoc = { _error: true }; renderOptions(); return; }
     fetchJSON(file).then(function (d) { baseDoc = d; }, function () { baseDoc = { _error: true }; })
-      .then(renderOptions);
+      .then(function () { renderOptions(); startBaseLayers(); });
   }
+
+  /** The base map's drawing (layers.js, B6): started once data/base.json has answered. ctx is documented at layers.js start(). */
+  function startBaseLayers() {
+    if (!window.hailMapLayers || !data || !data.base || !baseDoc || baseDoc._error) return;
+    var hail = data.hail || {};
+    window.hailMapLayers.start({
+      map: map, app: app, root: (app.getAttribute("data-map") || "").replace(/data\/map\.json.*$/, ""),
+      block: baseDoc.base || {}, grid: hail.grid || null, tileSplit: hail.tile_split || null,
+      cap: (hail.draw || {}).cache_bytes || 0, sheet: sheetWords, setLine: setBaseLine, tidy: tidyLabels,
+      imagery: function () { return state.base === "imagery"; }, attribution: sourceControl
+    });
+  }
+
+  /** The base map's line (layers.js): its words, or "" when everything in view is drawn. Shown with the imagery legend. */
+  function setBaseLine(text) { baseLineText = text || ""; renderBaseCards(); }
 
   /** A tap in the sheet: a base card, or a chip. A chip that is not available opens its reason and changes nothing else. */
   function onOptionsClick(e) {
@@ -5969,6 +5999,7 @@
       times kept for window.hailMapTest.
       window.hailMapTest is a test-only hook: tools/smoke_map.py reads the shard counts, the dots, the labels, the fetch log,
       the failures and the draw times from it. Nothing else reads it. */
+  var sourceCtl = null;                      // the map's one attribution control (sourceControl): the B3 source lines and the base map's credit lines
   var B3 = null;                              // the layers' state, made by b3Start when data.hail holds one of their blocks
   var B3_FORMAT = { roads: "hail-roads-v1", buildings: "hail-buildings-v1", addresses: "hail-addresses-v1",
     letter: "hail-address-idx-v1", cities: "hail-address-cities-v1", counts: "hail-building-counts-v1" };
@@ -6078,23 +6109,32 @@
     B3.countFont = get("--hail-count-weight") + " " + B3.sz.countSize + "px " + get("--font");
   }
 
-  /** The source lines of the layers built (data/map.json "hail".attribution, D29) go in the map's attribution line, bottom
-      right, so they are on the first screen at phone width too. Leaflet's prefix is left out; a line is escaped like the rest.
-      The line is lifted above the bottom band (b3Lift). The band changes height with its contents (a source line, a layer,
-      a turn, the toast) and the screen, so it is measured again when it changes, and so is the line's own height. */
-  function b3Credits() {
-    if (!B3 || !map || B3.credits || !(B3.h.attribution || []).length) return;
-    B3.credits = true;
-    var ctl = L.control.attribution({ prefix: false, position: "bottomright" }).addTo(map);
-    B3.h.attribution.forEach(function (line) { ctl.addAttribution(esc(line)); });
-    B3.credit = ctl;
+  /** The map's one attribution control, bottom right. The source lines of the B3 layers (data/map.json "hail".attribution, D29) and
+      the base map's credit lines (layers.js) go in it, so the page has one block of source lines, on the first screen at phone
+      width too (D44; map.css caps the block at 40vh there). Made once, when the first lines come. Leaflet's prefix is left out.
+      The line is lifted above the bottom band (b3Lift). The band changes height with its contents (a source line, a layer, a turn,
+      the toast) and the screen, so it is measured again when it changes, and so is the line's own height. */
+  function sourceControl() {
+    if (!map) return null;
+    if (sourceCtl) return sourceCtl;
+    sourceCtl = L.control.attribution({ prefix: false, position: "bottomright" }).addTo(map);
     if (window.ResizeObserver) {
       var band = new ResizeObserver(b3Lift);
       band.observe(el.bottom);
       band.observe(el.canvas);
-      new ResizeObserver(refitForBanner).observe(ctl.getContainer());   // more text, more lines: the room the fit keeps (noteRoom)
+      new ResizeObserver(refitForBanner).observe(sourceCtl.getContainer());   // more text, more lines: the room the fit keeps (noteRoom)
     } else window.addEventListener("resize", b3Lift);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(b3Lift);   // the band is measured in its own fonts
+    b3Lift();
+    return sourceCtl;
+  }
+
+  /** The B3 source lines go in the map's one attribution control (sourceControl), once, when data/map.json names them. */
+  function b3Credits() {
+    if (!B3 || !map || B3.credits || !(B3.h.attribution || []).length) return;
+    B3.credits = true;
+    var ctl = sourceControl();
+    B3.h.attribution.forEach(function (line) { ctl.addAttribution(esc(line)); });
     b3Lift();
   }
 
@@ -6107,9 +6147,9 @@
 
   /** The source lines sit just above the bottom band, with the band's own 8 px gap (b3LiftPx, measured). */
   function b3Lift() {
-    if (!B3 || !B3.credit) return;
+    if (!sourceCtl) return;
     var h = b3LiftPx();
-    B3.credit.getContainer().style.setProperty("--credit-lift", (h ? Math.ceil(h + 8) : 0) + "px");
+    sourceCtl.getContainer().style.setProperty("--credit-lift", (h ? Math.ceil(h + 8) : 0) + "px");
   }
 
   /** Ask for a redraw on the next frame (several events in one frame make one draw). */

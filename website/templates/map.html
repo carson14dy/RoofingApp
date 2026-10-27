@@ -396,6 +396,7 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
 </main>
 <script src="{{ root }}static/leaflet/leaflet.js"></script>
 <script src="{{ root }}static/map/map.js?v={{ asset_v['map/map.js'] }}"></script>
+<script src="{{ root }}static/map/layers.js?v={{ asset_v['map/layers.js'] }}"></script>
 {% if storm_layers %}<script src="{{ root }}static/map/storm.js?v={{ asset_v['map/storm.js'] }}"></script>
 {% endif %}</body>
 </html>

@@ -551,7 +551,7 @@ def env() -> Environment:
 # browsers and GitHub Pages reuse the unchanged ones across the 10-minute rebuilds (map.js, map.css,
 # the 377 KB basemap and style.css change only with the code). data/map.json and the map card's
 # address change every build, so they keep the build minute.
-VERSIONED = ("style.css", "map/map.js", "map/map.css", "map/basemap.json")
+VERSIONED = ("style.css", "map/map.js", "map/layers.js", "map/map.css", "map/basemap.json")
 
 
 STORM_JS = "map/storm.js"   # places the storm text in the Map's List and town sheets; --storm-layers only
@@ -1383,6 +1383,9 @@ def about_hail_context() -> dict:
 BASE_DATA = "data/base.json"                                   # the second data file; map.json names it (D125(d))
 BASE_ZOOMS = (tr.ZOOMS[0], tr.ZOOMS[-1])                       # the terrain tiles: zooms 5 to 10 (terrain.ZOOMS)
 BASE_TILES = {"h": "hail/base/h/{z}/{x}/{y}.jpg", "l": "hail/base/l/{z}/{x}/{y}.png"}   # the terrain tile files (terrain.py)
+# S2 (DESIGN 13.7, D145(a)): the terrain layers are full at the first zoom and gone at the second; they fade between them,
+# so at zoom 12 they show a third of their strength and at 13 they are not drawn (layers.js reads this block)
+TERRAIN_FADE = {"full_zoom": 10, "gone_zoom": 13}
 LABEL_SHARD_GZIP = 100_000                                     # D66: a building shard, with its bubble flags, stays under this
 # The sentences no module holds (rule 5: "Data unavailable" leads, the D20 sentence follows).
 BASE_UNAVAILABLE = ("Data unavailable. The base map could not be loaded in this update; that is not the same as no base map. "
@@ -1399,6 +1402,8 @@ SHEET_WORDS = {
     "highlight_recent_hail": "Highlight recent radar hail",
     # F3 (D122(b), D131(c)): the water line for an area whose tile has no band D shard, the vector module's own words
     "water_line_unavailable": b2.WORDS["water_line_unavailable"],
+    # S2: a summit's height on the map, the unit word after the number (layers.js fills {feet} with the data's whole feet)
+    "summit_height": "{feet} ft",
     # F3 (DESIGN section 13.6, item 5): the sub-line the sheet shows under the Landmarks heading
     "landmarks_sub_line": ("Schools, parks, hospitals, airports, and fire and EMS stations, from the public lists named under "
                            "About."),
@@ -1644,14 +1649,42 @@ def _landmark_words(base_index: dict | None, vector_block: dict | None) -> dict:
             "credits": {"faa_nasr": lines.get("faa_nasr"), "padus": padus}}
 
 
+def terrain_tile_runs() -> dict:
+    """S2: the terrain tiles of each zoom (terrain.tile_set: the tiles whose open square overlaps the Montana outline), as runs
+    of columns per row: {"z": [[y, first_x, last_x], ...]}. The browser asks for a tile only from these runs (a tile outside
+    them would be a request for a file that does not exist), and it skips the tiles listed as missing in the terrain block."""
+    runs: dict = {}
+    for z, tiles in tr.tile_set(tr.montana_rings()).items():
+        rows: dict = {}
+        for x, y in tiles:
+            rows.setdefault(y, []).append(x)
+        out = []
+        for y in sorted(rows):
+            xs = sorted(rows[y])
+            first = prev = xs[0]
+            for x in xs[1:]:
+                if x != prev + 1:
+                    out.append([y, first, prev])
+                    first = x
+                prev = x
+            out.append([y, first, prev])
+        runs[str(z)] = out
+    return runs
+
+
 def _base_block(out: Path, base_index: dict | None, why: str | None) -> dict:
     """The base map: its three parts, each through its module's own map function (terrain.map_data, basemap2.map_data_vector,
     landmarks.map_data_landmarks), which give the module's unavailable block and words for a part the index lacks."""
     terrain_block = (base_index or {}).get("terrain")          # the part's key in hail/base/index.json (terrain.py)
     terrain = _part(lambda: tr.map_data({tr.INDEX_KEY: {"terrain": terrain_block}} if isinstance(terrain_block, dict) else None),
                     lambda: tr.map_data(None), "terrain files")
+    if terrain.get("state") != "unavailable":          # S2: the tile runs and the fade the browser draws the relief and tint with
+        terrain["tile_runs"] = terrain_tile_runs()
+        terrain["fade"] = dict(TERRAIN_FADE)
     vector = _part(lambda: b2.map_data_vector((base_index or {}).get(b2.PRODUCT)), lambda: b2.map_data_vector(None),
                    "vector files")
+    if vector.get("state") != "unavailable":            # S2: the size of a band B and a band C cell, in whole degrees (basemap2)
+        vector["cells_deg"] = dict(b2.CELL_DEG)
     landmark_block = (base_index or {}).get(lm.INDEX_KEY)
     vector_block = (base_index or {}).get(b2.PRODUCT)
     landmarks = _part(lambda: lm.map_data_landmarks(base_index or {}), lambda: lm.map_data_landmarks({}), "landmark files")

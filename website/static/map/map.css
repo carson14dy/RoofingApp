@@ -100,6 +100,15 @@
   --hail-count-size: 12px;
   --hail-count-weight: 700;
   --hail-count-pad: 5px;
+  /* the base map (layers.js; DESIGN 13.2, 13.7): one role per kind, named for it, each at 3:1 or more against the paper for lines
+     and fills and 4.5:1 or more for text; the widths, alphas and sizes are the drawing's own tokens (layers.js tokens()) */
+  --map-water: #2a6aa8; --map-water-line: #2a64a0; --map-forest: #2f7a43; --map-park: #2a7460; --map-reservation: #8a5a2b;
+  --map-route: #4b5563; --map-route-shield: #ffffff; --map-route-shield-ink: #1c1c1e; --map-place-text: #1c1c1e;
+  --map-place-dot: #3a3a3c; --map-summit: #5a4330; --map-summit-dot: #5a4330; --map-label-halo: #ffffff;
+  --map-river-w-a: 1.4px; --map-river-w-b: 1.1px; --map-river-w-c: 1px; --map-river-w-d: 1px;
+  --map-route-w-a: 1.8px; --map-route-w-b: 1.4px; --map-fill-line-w: 1px; --map-label-halo-w: 3px;
+  --map-fill-alpha: 0.22; --map-tint-opacity: 0.6; --map-label-size: 13px; --map-label-gap: 4px;
+  --map-shield-size: 13px; --map-shield-radius: 3px;
 
   /* type, space, shape */
   --font: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -196,6 +205,10 @@
     --hail-dot-ring: #121417;
     --hail-name: #f2f2f7;
     --hail-name-halo: #121417;
+    /* the base map on the dark land (layers.js; the terrain tiles are not drawn in dark mode, D115(g)) */
+    --map-water: #6aaee8; --map-water-line: #7cb9ee; --map-forest: #6cb47c; --map-park: #5fb49c; --map-reservation: #d29b63;
+    --map-route: #aab4c0; --map-route-shield: #e3e8ee; --map-route-shield-ink: #111c28; --map-place-text: #e8eaed;
+    --map-place-dot: #c9ccd1; --map-summit: #e2c79c; --map-summit-dot: #e2c79c; --map-label-halo: #1b1e22;
   }
 }
 
@@ -830,10 +843,28 @@ a { color: inherit; }
 /* ---------------------------------------------------------------- roads, building outlines and addresses (B3) */
 /* the canvas map.js draws in the hail pane (Leaflet positions it; the pane passes no pointer events) */
 .hail-canvas { position: absolute; left: 0; top: 0; pointer-events: none; }
+/* the base map (layers.js, DESIGN 13.7): the canvas, the terrain tiles (the relief lies over the tint at multiply), the place and
+   summit labels at 13 px or more in the site's type, and the first-paint water and place names that give way to the base map's */
+.base-canvas { position: absolute; left: 0; top: 0; pointer-events: none; }
+#app.is-imagery .base-canvas { display: none; }
+.terrain-relief img { mix-blend-mode: multiply; }
+.base-label { pointer-events: none !important; }
+.base-label span { font-size: var(--map-label-size); font-weight: 600; line-height: 1; color: var(--map-place-text);
+  text-shadow: 0 0 2px var(--map-label-halo), 0 0 2px var(--map-label-halo), 0 0 3px var(--map-label-halo); }
+.base-label i { position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--map-place-dot); box-shadow: 0 0 0 1.5px var(--map-label-halo); }
+.base-place span { transform: translate(7px, -50%); }
+.base-summit span { transform: translate(7px, -50%); color: var(--map-summit); }
+.base-summit i { background: var(--map-summit-dot); }
+#app.base-places .bm-label.place { display: none; }
+#app.base-water path.bm-lake, #app.base-water path.bm-river, #app.base-water .bm-label.lbl-water { display: none; }
 /* the source lines of the layers (map.js b3Credits): Leaflet's attribution line, bottom right, wrapped to the screen width and to
    560 px, so it stays right of the "Map data" link and the legend column (at 1280 px it starts at x 720). map.js b3Lift sets
    --credit-lift: the line sits just above the bottom band (the note, toast, chip and timeline), not on top of it */
-.leaflet-container .leaflet-control-attribution { white-space: normal; max-width: min(560px, calc(100% - 16px)); font-size: 11px; line-height: 1.35; margin-bottom: var(--credit-lift, 0px); }
+.leaflet-container .leaflet-control-attribution { white-space: normal; max-width: min(560px, calc(100% - 16px)); font-size: 11px; line-height: 1.35; margin-bottom: var(--credit-lift, 0px); pointer-events: none; }   /* the credit text takes no taps: a tap on the map under it opens what it would (the base map's credits are long) */
+/* at phone width the one attribution block (map.js sourceControl: the B3 source lines and the base map's credit lines) scrolls inside
+   40% of the screen, so it never leaves the screen; it stays on the first screen (D44) and its lines are reached by a scroll */
+@media (max-width: 520px) { .leaflet-container .leaflet-control-attribution { max-height: 40vh; overflow-y: auto; pointer-events: auto; } }
 
 /* find an address (map.html #find, map.js b3Search): a glass panel with one field and a button, 44 px to tap */
 .find { display: grid; gap: 6px; padding: 10px 12px; border-radius: 16px; pointer-events: auto; font-size: 14px; }
