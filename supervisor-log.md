@@ -470,3 +470,19 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   as 3d62235 at 01:03 UTC.
 - Left as history on purpose: the research/globe citations in the dated research/hail-history files (8 files), DECISIONS
   D1 to D142, the agent names in AGENTS.md, CLAUDE.md and README.md (the files address those agents).
+
+## 2026-10-27, 01:37 UTC: main's second monthly store run (run 21) and the base map defects
+- Run 21 (dispatched 00:25 on aaf4455, published 01:18): the daily job 28 minutes; the monthly job 25 minutes. Terrain:
+  loaded (11 s, the cached tiles; the re-fetch check passed). Landmarks loaded (every list asked again). Base map vectors:
+  the build ran 1,078.9 s to its deadline and ended partial: bands A to C hold the forests, parks, reservations, routes
+  and places (A 80,840 bytes gzip; B 21 cells, largest 32,478; C 78 cells, largest 3,977), every water band failed (two
+  HTTP 504 answers from the water service, then the deadline), the peaks hit the deadline, band D built 0 of 4,597
+  tiles, 13 requests and 2,395,851 bytes downloaded, and the cache save was skipped ("a request failed in this build").
+  Then basemap2 verify crashed: FileNotFoundError 'store/store/hail/base/v/b/n44w106.json' (read_band, line 2224: the
+  index's file paths carry the store folder's own name, so the verify doubles it when --store is a relative path), so
+  the mark step set the vectors unavailable. The live base.json (built 01:08) says vector unavailable, terrain,
+  landmarks, labels and recent loaded, history partial.
+- Main after the cleanup merge: Tests run 2 and Website 138 passed on 3d62235.
+- Decision: a fix branch (claude/basemap2-fixes) for (a) the verify path, (b) the cache kept on a partial build so the
+  runs accumulate, (c) the water requests (the 504s and the deadline), with live checks of the service; the ROADMAP's
+  open item 12 (the cap) is superseded by these defects. No third monthly run until the fix is on main.
