@@ -122,10 +122,20 @@ no route, no park, no named river or lake, no summit height) is a failure too, s
 loaded. Without pyshp (the shapefile reader) the kinds that read shapefiles (reservations, routes and places) fail with
 the reason "the shapefile reader is not installed", and the state is partial.
 
+The small-scale water (bands A to C) is read page by page, 2,000 features to a page (the page size is set in NHD). Each
+page gets SMALL_TRIES (2) tries, and a try waits at most SMALL_READ_S (120) seconds for its answer, so one page that fails
+costs at most about 280 seconds (two tries of a 20-second connect wait and a 120-second read wait, and the wait between them). A page that fails after its tries is skipped and the next page is asked for, so the pages
+that answer still load: up to SMALL_SKIP_PAGES (2) failed pages in a row are skipped, and a third ends the query. The
+query therefore spends at most about three failed pages (about 840 seconds) on failures, plus the pages that answer; on a slow
+day that may not all fit inside the monthly budget, and the cache carries the pages read into the next run. The missed part is named as a partial source, and the pages that loaded are cached, so the next run asks only for
+the pages it does not have.
+
 Deadline (--deadline-at): no request starts after the deadline. A source whose next request would start then records the
 reason "deadline", and a band D cell that needs such a request is listed as unbuilt with that reason (coverage
 band_d_cell_reasons). A cell whose pages are all in the cache is still built. The monthly job's step cap is 20 minutes
-(integration.md section 7); the cache carries the rest into the next run.
+(integration.md section 7); the cache carries the rest into the next run. A request still waiting for its response GRACE_S
+(90) seconds after the deadline is cut (its connect wait, at most 20 seconds, counts too), so the build's own writing ends
+inside the job's margin: the monthly step passes a deadline 120 seconds before its cap.
 
 Band D coverage: a tile with no band D shard is "not built, the browser draws band C's water there". Concretely, where a
 tile has no band D shard the browser keeps drawing band C's lakes and rivers at zoom 13 and up (they loaded statewide),
@@ -279,10 +289,16 @@ PLACE_RULES = ((50000, 5), (10000, 7), (2000, 8), (500, 9))  # population -> min
 
 # The NHD layers the requests use. The fields differ by layer (the service answers 400 for an unknown field).
 NHD = {
+    # the small-scale layers allow pages of 2,000 features (maxRecordCount in their layer descriptions, read on 2026-10-27).
+    # A page is one request, so the page size sets how many requests the state query takes: 24 at 2,000 instead of 47 at
+    # 1,000. In the 2026-10-27 measurements a 2,000-feature page took 1.2 to 1.5 s in a fast window and up to about 60 s in a
+    # slow one, and some slow-window pages answered HTTP 504 after 180 s. No 1,000 and 2,000 pair was timed in one slow
+    # window, so the page size is not claimed to change a request's time. The cache names a page by its offset, and the
+    # paging advances by the features a page returns, so pages cached at 1,000 stay valid.
     "small_lines": {"layer": 4, "where": f"GNIS_NAME IS NOT NULL AND TotDASqKM >= {RIVER_FLOOR_KM2:g}",
-                    "fields": "OBJECTID,GNIS_NAME,TotDASqKM,LENGTHKM,FTYPE,FCODE", "simplify": 0.0001, "page": 1000},
+                    "fields": "OBJECTID,GNIS_NAME,TotDASqKM,LENGTHKM,FTYPE,FCODE", "simplify": 0.0001, "page": 2000},
     "small_areas": {"layer": 10, "where": f"GNIS_NAME IS NOT NULL AND AREASQKM >= {LAKE_FLOOR_KM2:g}",
-                    "fields": "OBJECTID,GNIS_NAME,AREASQKM,FTYPE,FCODE", "simplify": 0.0001, "page": 1000},
+                    "fields": "OBJECTID,GNIS_NAME,AREASQKM,FTYPE,FCODE", "simplify": 0.0001, "page": 2000},
     # the large-scale pages are 250 features: a page of 1,000 dense features in one cell timed out at the service (HTTP 504)
     # after about 300 seconds. The cache names a page by its offset, not its size, and the paging advances by the number of
     # features a page returns, so the pages cached at 1,000 stay valid.
@@ -304,6 +320,10 @@ PL2020_URL = ("https://www2.census.gov/programs-surveys/decennial/2020/data/01-R
 GNIS_URL = ("https://prd-tnm.s3.amazonaws.com/StagedProducts/GeographicNames/DomesticNames/DomesticNames_MT_Text.zip")
 USER_AGENT = "montana-hail-watch-basemap2/1 (+https://github.com/carson14dy/RoofingApp)"
 READ_TIMEOUT = (20, 300)                                     # seconds to connect, and to wait for each response
+GRACE_S = 90.0                                               # a request still waiting this long after --deadline-at is cut
+SMALL_SKIP_PAGES = 2                                         # state pages that fail in a row are skipped; the next one ends the query
+SMALL_TRIES = 2                                              # tries for one small-scale state page (one failed page costs at most about 245 s)
+SMALL_READ_S = 120.0                                         # seconds one try of a small-scale state page may wait for its answer
 PACE_S = {"hydro.nationalmap.gov": 0.5, "default": 0.2}
 ATTEMPTS = 3
 REASON_NO_ANSWER = S.REASON_NO_ANSWER
@@ -413,12 +433,22 @@ class _Ctx:
         """True once --deadline-at has passed: no request starts after it (its source records REASON_DEADLINE)."""
         return self.deadline_at is not None and time.monotonic() >= self.deadline_at
 
+    def request_timeout(self, read_cap: float | None = None) -> tuple[float, float]:
+        """The (connect, read) timeout of the next request: READ_TIMEOUT, its read part at most read_cap when one is given.
+        With a deadline, the time left to deadline + GRACE_S caps both parts, so a request started just before the deadline
+        ends at most GRACE_S plus its connect wait after it. The read part applies to each wait for bytes, so a response
+        that keeps sending bytes is not cut here."""
+        read = READ_TIMEOUT[1] if read_cap is None else min(READ_TIMEOUT[1], read_cap)
+        if self.deadline_at is None:
+            return (READ_TIMEOUT[0], read)
+        left = max(1.0, self.deadline_at + GRACE_S - time.monotonic())
+        return (min(READ_TIMEOUT[0], left), min(read, left))
+
     def pace(self, host: str) -> None:
         gap = PACE_S.get(host, PACE_S["default"]) - (time.monotonic() - self.last.get(host, 0.0))
         if gap > 0:
             time.sleep(gap)
         self.last[host] = time.monotonic()
-        self.requests += 1
 
 
 def _host(url: str) -> str:
@@ -426,13 +456,15 @@ def _host(url: str) -> str:
 
 
 def fetch(ctx: _Ctx, source: str, url: str, name: str, check, *, params: dict | None = None,
-          method: str = "GET", attempts: int = ATTEMPTS) -> tuple[bytes | None, str, str | None]:
+          method: str = "GET", attempts: int = ATTEMPTS,
+          read_cap: float | None = None) -> tuple[bytes | None, str, str | None]:
     """(bytes or None, state, reason). The cache file is name under the cache root. A cached file that passes check is
     read unless refresh is set. Offline, no request is made. Otherwise the request is tried attempts times (ATTEMPTS
     unless a caller asks for fewer); a copy that passes check is kept. When the request fails and a cached copy exists,
     the cached copy is used and the reason is kept (D16). A cache file that cannot be read is a failed copy, never a
     crash. A response that fails check is never written. Past the deadline no request is made (the reason is "deadline");
-    a cached copy is still read."""
+    a cached copy is still read. A request still waiting for its response is cut GRACE_S seconds after the deadline
+    (request_timeout); read_cap, when given, caps the wait for each response part."""
     import requests
     path = ctx.cache / name
     cached, corrupt = None, None
@@ -460,15 +492,18 @@ def fetch(ctx: _Ctx, source: str, url: str, name: str, check, *, params: dict | 
         return None, "failed", reason
     last = REASON_NO_ANSWER
     for attempt in range(1, attempts + 1):
-        if ctx.past_deadline():
+        ctx.pace(_host(url))
+        if ctx.past_deadline():                 # checked after the pacing wait: no request starts after the deadline
             last = REASON_DEADLINE
             break
-        ctx.pace(_host(url))
+        ctx.requests += 1
         try:
             if method == "POST":
-                resp = requests.post(url, data=params or {}, headers={"User-Agent": USER_AGENT}, timeout=READ_TIMEOUT)
+                resp = requests.post(url, data=params or {}, headers={"User-Agent": USER_AGENT},
+                                     timeout=ctx.request_timeout(read_cap))
             else:
-                resp = requests.get(url, params=params or {}, headers={"User-Agent": USER_AGENT}, timeout=READ_TIMEOUT)
+                resp = requests.get(url, params=params or {}, headers={"User-Agent": USER_AGENT},
+                                    timeout=ctx.request_timeout(read_cap))
             status, data = resp.status_code, resp.content
         except requests.RequestException as exc:
             last = type(exc).__name__
@@ -814,19 +849,28 @@ def page_name(source: str, key: str, params: dict, offset: int) -> str:
 
 
 def fetch_pages(ctx: _Ctx, source: str, url: str, key: str, params: dict, page: int,
-                attempts: int = ATTEMPTS) -> tuple[list[dict], list[str]]:
-    """Every feature of one query, paged by OBJECTID. Each page is a cache file. A page that fails ends the query: the
-    features read so far are kept and the failure is named (D16); the pages already cached are read next time. Each page
-    is tried attempts times."""
+                attempts: int = ATTEMPTS, skip_pages: int = 0,
+                read_cap: float | None = None) -> tuple[list[dict], list[str]]:
+    """Every feature of one query, paged by OBJECTID. Each page is a cache file. A page that fails after its tries ends the
+    query: the features read so far are kept and the failure is named (D16); the pages already cached are read next time.
+    With skip_pages (the small-scale state query), a failed page is skipped instead: the next page is asked for at offset
+    plus page, so the pages that answer still load and the missed one is named. Up to skip_pages failed pages in a row are
+    skipped; the next failure ends the query, and so does the deadline. Each page is tried attempts times."""
     feats, problems = [], []
     offset = 0
+    misses = 0                                  # failed pages in a row
     while True:
         q = dict(params, orderByFields="OBJECTID", resultOffset=offset, resultRecordCount=page, f="json")
         data, state, reason = fetch(ctx, source, url, page_name(source, key, params, offset), _check_features,
-                                    params=q, attempts=attempts)
+                                    params=q, attempts=attempts, read_cap=read_cap)
         if data is None:
             problems.append(reason or REASON_NO_ANSWER)
-            break
+            misses += 1
+            if reason == REASON_DEADLINE or misses > skip_pages:
+                break
+            offset += page                      # the page is missed; the service answers pages of page features
+            continue
+        misses = 0
         doc = json.loads(data.decode("utf-8"))
         batch = doc.get("features", [])
         feats.extend(batch)
@@ -850,10 +894,11 @@ def nhd_params(source: str, env: tuple[float, float, float, float]) -> dict:
 
 
 def nhd_features(ctx: _Ctx, source: str, env: tuple[float, float, float, float], key: str,
-                 attempts: int = ATTEMPTS) -> tuple[list[dict], list[str]]:
+                 attempts: int = ATTEMPTS, skip_pages: int = 0,
+                 read_cap: float | None = None) -> tuple[list[dict], list[str]]:
     spec = NHD[source]
     return fetch_pages(ctx, f"nhd_{source}", NHD_URL.format(layer=spec["layer"]), key, nhd_params(source, env),
-                       spec["page"], attempts=attempts)
+                       spec["page"], attempts=attempts, skip_pages=skip_pages, read_cap=read_cap)
 
 
 SPLIT_DEPTH = 2   # a failed envelope is split into quarters, and a quarter that fails again into quarters once more
@@ -1905,8 +1950,9 @@ def build(store, cache, *, offline: bool = False, refresh: bool = False, box: tu
             failed["park"].append("the park query gave no parks with a known designation")
     elif not failed["park"]:
         failed["park"].append("the park query returned no features")
-    # water, small scale: NHD lines and areas over Montana (bands A to C)
-    lines, line_probs = nhd_features(ctx, "small_lines", MT_BOX, "mt")
+    # water, small scale: NHD lines and areas over Montana (bands A to C), page by page; a page that fails is skipped
+    lines, line_probs = nhd_features(ctx, "small_lines", MT_BOX, "mt", attempts=SMALL_TRIES, read_cap=SMALL_READ_S,
+                                     skip_pages=SMALL_SKIP_PAGES)
     rivers_small = []
     for f in lines:
         at, parts = _attrs(f), service_parts(f.get("geometry"))
@@ -1919,7 +1965,8 @@ def build(store, cache, *, offline: bool = False, refresh: bool = False, box: tu
             continue
         rivers_small.append({"name": name, "total": total, "oid": _text(at.get("OBJECTID")),
                              "length": _num(at.get("LENGTHKM")) or length_km(parts), "parts": parts})
-    areas, area_probs = nhd_features(ctx, "small_areas", MT_BOX, "mt")
+    areas, area_probs = nhd_features(ctx, "small_areas", MT_BOX, "mt", attempts=SMALL_TRIES, read_cap=SMALL_READ_S,
+                                     skip_pages=SMALL_SKIP_PAGES)
     lakes_small = []
     for f in areas:
         at, parts = _attrs(f), service_parts(f.get("geometry"))
@@ -2240,7 +2287,8 @@ def verify(store, cache: Path | None = None) -> dict:
               f"{len(a_lines) - len(set(a_lines))} repeated names")
     for band, prefix, size in (("B", B_PREFIX, CELL_DEG["B"]), ("C", C_PREFIX, CELL_DEG["C"])):
         expected = {f"{prefix}{cell_name(lat0, lon0)}.json" for lat0, lon0 in cells_for_box(size)}
-        have = ({(store / p).relative_to(store).as_posix() for p in (store / prefix).glob("*.json")}
+        # the glob already yields paths under store (store/hail/...), so they are made relative to it, not joined to it again
+        have = ({p.relative_to(store).as_posix() for p in (store / prefix).glob("*.json")}
                 if (store / prefix).is_dir() else set())
         check(f"every band {band} cell has a file", expected <= have, f"{len(expected - have)} cells missing")
         for rel in sorted(have):
