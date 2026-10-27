@@ -545,3 +545,14 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   a folder (add an existence check); website/climate.py line 8 cites research/temperature-rain-grid.json, which is not on
   main; docs/DESIGN.md 13.8 still says the Python side is on the B6 branch (S5 updates it).
 - PR 21 (the README) merged into main as bcba866 at 03:24 UTC after its Tests run passed; README-only, so no Website build.
+
+## 2026-10-27, 04:00 UTC: the base map fix parked as a pull request (not merged, at Carson's word)
+- Workflow wf_8652423b-bee finished: builder, two skeptics (9 findings), fixer (all applied or declined with reasons),
+  verifier (4 of 6 gates pass; the two "fails" were the sources.py row, which rule 7 requires, and docstring figures the
+  supervisor corrected: one failed state page costs about 280 s, three about 840 s). Commit 099d6e2 (signed) on
+  claude/basemap2-fixes, pushed; the pull request is open and not merged. Figures: tests.test_basemap2 132 OK; the suite
+  2,510 OK and 12 skipped; the job's commands with a relative store on a cold cache pass verify (state partial); live
+  measurements of hydro.nationalmap.gov on 2026-10-27 (slow 01:49 to 02:13 UTC: 40 to 180 s a request and one 504; fast
+  afterwards: 1 to 5 s); a local cold run with a 1,020 s deadline loaded bands A to C (24 state pages in 66 s) and ended
+  partial on band D (0 of 54 cells finished). Next session: the branch's store run, a monthly dispatch on the branch,
+  the merge, the D146 entry, then the monthly run on main.
