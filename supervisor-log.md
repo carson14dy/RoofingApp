@@ -512,3 +512,12 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   claude/readme-update) at Carson's request, and the base map fix (wt-bm2).
 - /test_site_run2.log (188 bytes at the filesystem root, written by an S1 agent's chained command) could not be removed:
   the safety check refuses a root-level removal. Harmless; left.
+
+## 2026-10-27, 02:41 UTC: the climate backfill on main
+- Store run 22 (climate_backfill=true, 01:43 to 02:15): the backfill step read the scaled months in 3 minutes 14 seconds
+  (01:56:09 to 01:59:23), the climate build and verify passed, and the archive climate-aggregates-40434241586.tar.gz
+  (15,915,502 bytes) was published to the new hail-climate release at 01:59:43; the store asset was replaced at 02:15:29.
+  The live site still showed the 01:08 build at 02:41 (no scheduled Website run since 23:48, D33's delays), so the
+  Website workflow was dispatched on main by hand to publish the climate rows.
+- The S1 branch Website run 139 (06b57f4) failed in the map smoke step on the runner (the build and the parity step
+  passed); the failure lines are being read.
