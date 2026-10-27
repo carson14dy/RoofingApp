@@ -143,3 +143,20 @@ give them.
 JSON: `{files: [...], words_added: {key: sentence}, tests: {added: [...], updated: [...], command: ..., result: ...},
 checks: [{what, how, result, evidence}], shots: [...], open: [...]}`. A claim without its command or its screenshot
 is not accepted.
+
+## Rulings after S1 (D144, the supervisor, 2026-10-27)
+- (a) The five-year Wind and Flood chips draw the forecast-zone counts with the module's words (above).
+- (b) Nothing on this branch is published before S5: no interim words for a layer that is not drawn yet.
+- (c) map.html does not load style.css, so map.css carries the seven sheet roles in its own :root and dark token blocks
+  with the same values; S5 adds a test that pins map.css's role values to style.css's so they cannot drift.
+- (d) Reset goes back to the Map base and clears base=imagery, as the visible Reset line says; DESIGN 13.6 drops "and
+  keeps base=imagery" in S5.
+- (e) The satellite and live hail chips appear only in --storm-layers builds, as the layer menu's radios did; DESIGN 13.6
+  records that in S5. The public page has none.
+- (f) The Held label stays (DESIGN 13.6, D118(b)); its reason sentence is the module's.
+- (g) The remaining quoted sentences in map.js from B1 to B5 (134 hits) are out of this programme's scope; rule 1 binds
+  the new code. A later pass may move them.
+- (h) The phone budget: after S1 the B3 files and the shell take 696,761 of 700,000 bytes gzip in the zoom 15 Billings
+  view. S2 to S4 add code, so S2 starts with a measurement of the shell's parts (map.js, map.css, the data files) and
+  the supervisor's ruling on how the budget is met (see the S2 brief).
+- (i) "90 F" in the heat legend reads "90 °F": a history_layers.py wording fix for S5 with its test pins.
