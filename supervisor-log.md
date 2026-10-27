@@ -460,3 +460,13 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   caches saved: base map 25,290,082 bytes, terrain 41,526,438 bytes. The store manifest checked and the asset was
   replaced at 00:14:10. The second monthly run was dispatched at 00:27 to resume band D and the vectors from the cache;
   check-in at 01:36 UTC. Open item 12 stands: a fresh deployment shows the base map only after two monthly runs.
+
+## 2026-10-27, 00:45 to 01:03 UTC: the cleanup (D143(b))
+- The cleanup workflow (scripts/cleanup-pr.js: builder, two skeptics, fixer, verifier; 1.9 M tokens) finished; the supervisor
+  reverted its edit of the dated record research/hail-history/validation-evidence/b1-verification.json (dated records keep
+  their citations), trimmed the D143 venv clause and the two redundant "pip install pyyaml" lines, and adjusted the D143
+  sentence about the research records. Commit 13c8d05 (signed), main merged in (7945e2a), the suite 2,492 OK and 12 skipped
+  locally; PR 20 opened; the Tests run (the first run of tests.yml) and the branch Website run 137 passed; merged into main
+  as 3d62235 at 01:03 UTC.
+- Left as history on purpose: the research/globe citations in the dated research/hail-history files (8 files), DECISIONS
+  D1 to D142, the agent names in AGENTS.md, CLAUDE.md and README.md (the files address those agents).
