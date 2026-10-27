@@ -1086,6 +1086,22 @@ What it settles:
 - *What stays open (ROADMAP, B6 follow-ups).* The next growth of the first-paint files is a budget decision again: `map.js` is 119,576 bytes gzip and `static/map/basemap.json` 107,837 on the shell, the two largest files of the view, and the B6 stages S2 to S4 add drawing code. The lever after this one is to load the sheet and B3 code on demand (a second script file fetched on the first tap or the first zoom past 13), which the smoke's budget would not count; it needs the owner's word on rule 4's "no build step" line.
 
 *Why:* the budget is the phone's load on a weak signal (D30, D82(b)), and the names of 13,000 tiles were the largest thing in `map.json` that no viewer reads. The split map says the same thing in 2,600 bytes, and the browser already knew how to read one.
+**D145 · Veor: the design branch's shell, name and update rule (2026-10-25).** On the new `design` branch
+("where I explore different designs") Carson sent a desktop mockup of an app called Veor and asked for the home
+page to look like it with the site's own map in the middle. After the first build and two review rounds he decided:
+(1) the name is Veor, on every page; (2) the warnings stay one click away (the panel opens on the sample lead as in
+the mockup; the top bar names the most urgent alert and the Forecast button opens the list), which sets aside
+DESIGN.md's threshold T2 for this branch; (3) lead pins with real addresses come from another session, so the map
+stays the site's own until then; (4) every page besides the map takes the look (the shell in
+`website/templates/_veor.html` and `base.html`, tokens in `website/static/veor.css`); (5) the page must update
+itself without fail, so it reloads every 10 minutes whatever the viewer is doing, waiting only for a press to end
+or typing to stop, and carries the viewer's place across the reload (scroll, focus, open sections, the search box,
+the panel and the map's view through the address) rather than reloading only in the background. He also set the
+working mode for the branch: Fable plans, builds the shared parts and rechecks everything; haiku workers restyle
+the pages; nothing is pushed until a verifier on Fable's model and Fable's own browser pass accept it. Trade-offs
+recorded in DESIGN.md section 14: a reload is still a reload for a screen reader; the map's view carry rounds to
+four decimals; the sidebar gains Storm reports and About, which the mockup did not show. The branch was merged onto the B6 browser branch on 2026-10-27 (with the
+section and decision renumbered from 10 and D35, which `main` had already used); merging into `main` is a separate decision.
 
 ## Gotchas found the hard way
 - An absolutely positioned element escapes a scroll box that isn't its containing block: the

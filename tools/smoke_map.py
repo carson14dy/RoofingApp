@@ -7,11 +7,11 @@ sizes, and checks: the page loads without script errors; the map data, basemap a
 load (a picture from map/frames/, not the blank placeholder the overlays start with, and no "didn't
 load" note); play moves the timeline; the options sheet switches the legend title and the pictures; a
 bubble is drawn for every town (basemap names are markers too, so only .town counts); the card
-used on the Now page loads. Also: every row of the options sheet can be tapped on a phone held
+used on the Storm reports page loads. Also: every row of the options sheet can be tapped on a phone held
 sideways (nothing paints over it); alerts without an outline are named in the legend with a way to
 the List; a picture still loading when the viewer switches to a layer with no pictures never appears
-under the new layer's legend; the Now page's caption names the picture the card shows (radar or
-model); a portrait phone gets the short two-column legend, which keeps one height through the whole
+under the new layer's legend; the home page's words for its map name the picture the map opens on (radar or
+model); the home page drives the map in its frame (check_home); a portrait phone gets the short two-column legend, which keeps one height through the whole
 timeline, and the Precipitation layer rings no town. On a --storm-layers build the Satellite layer is checked
 too (check_satellite), including a switch to it made while the timeline plays.
 
@@ -254,6 +254,7 @@ def check(root: Path, shots: Path | None = None, addresses: bool = False, store:
                       ("check_phone_legend", lambda: check_phone_legend(browser, base, data)),
                       ("check_empty_layer_switch", lambda: check_empty_layer_switch(browser, base, data)),
                       ("check_card_words", lambda: check_card_words(browser, base, root)),
+                      ("check_home", lambda: check_home(browser, base)),
                       ("check_satellite", lambda: check_satellite(browser, base, data)),
                       ("check_imagery_switch", lambda: check_imagery_switch(browser, base, data, shots)),
                       ("check_imagery_direct", lambda: check_imagery_direct(browser, base, data)),
@@ -472,8 +473,9 @@ CARD_WORDS = {"NOAA radar estimate": "The latest NOAA radar estimate",
 
 
 def check_card_words(browser, base, root) -> list[str]:
-    """The Now page's caption (build.py map_card) names the picture the card shows (map.js), so a
-    model forecast is never called the radar estimate (AGENTS.md rule 5)."""
+    """The home page's words for its map (build.py map_card: the frame's description) name the picture the map
+    opens on, which is the one the card shows (map.js), so a model forecast is never called the radar estimate
+    (AGENTS.md rule 5)."""
     import html as _html
     import re
     ctx = browser.new_context(viewport={"width": 600, "height": 400}, reduced_motion="reduce")
@@ -483,15 +485,79 @@ def check_card_words(browser, base, root) -> list[str]:
     page.wait_for_timeout(500)
     chip = " ".join(page.locator("#card-chip .card-main").inner_text().replace(" ", " ").split())
     ctx.close()
-    found = re.search(r'<p class="caption">(.*?)</p>', (root / "index.html").read_text(encoding="utf-8"), re.S)
+    found = re.search(r'<p class="visually-hidden" id="map-words">(.*?)</p>',
+                      (root / "index.html").read_text(encoding="utf-8"), re.S)
     caption = " ".join(re.sub(r"<[^>]+>", " ", _html.unescape(found.group(1))).split()) if found else ""
     kind, _, at = chip.partition(" · ")
     want = CARD_WORDS.get(kind, "").format(at=at)
     if not want and chip.startswith("No "):
         want = "Missing from this update: the radar and model pictures"
     if not want or want not in caption:
-        return [f"Now page: the caption doesn't name the card's picture (card: {chip!r}; caption: {caption[:100]!r})"]
+        return [f"Home page: the map's words don't name its picture (card: {chip!r}; words: {caption[:100]!r})"]
     return []
+
+
+def check_home(browser, base) -> list[str]:
+    """The home page (index.html, the Veor concept on the design branch) holds the map in a frame
+    (map.html?embed=1). Its Layers button opens the map's options sheet and shows its state; the area menu moves the map
+    and stays in the page address; the map's links to the warnings list open the Forecast panel in place, with no
+    new load of the page, also after the panel was closed at #forecast; a reload keeps the area, the open forecast
+    and the map's layer, which the map copies into the page address."""
+    problems: list[str] = []
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900}, reduced_motion="reduce")
+    page = ctx.new_page()
+    watch = Watch(page)
+    loads: list[str] = []
+    page.on("request", lambda r: loads.append(r.url) if r.resource_type == "document" and "/index.html" in r.url else None)
+
+    def frame():
+        return next((f for f in page.frames if "/map.html" in f.url), None)
+
+    def frame_ready() -> bool:
+        f = frame()
+        return bool(f) and f.evaluate("document.documentElement.classList.contains('map-ready')")
+
+    try:
+        page.goto(base + "index.html#forecast", wait_until="load")
+        page.wait_for_function("() => !document.getElementById('view-forecast').hidden", timeout=5000)
+        for _ in range(60):
+            if frame_ready():
+                break
+            page.wait_for_timeout(250)
+        else:
+            return ["home: the map in the frame never got ready"]
+        page.click("#btn-layers-top")
+        page.wait_for_timeout(300)
+        if page.get_attribute("#btn-layers-top", "aria-expanded") != "true" or frame().evaluate(
+                "document.getElementById('map-options').hidden"):
+            problems.append("home: the Layers button didn't open the map's options sheet (or doesn't say it is open)")
+        frame().click(".mo-chip[data-group=live][data-key=temp]")     # the Temperature chip (DESIGN 13.6)
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(300)
+        if "layer=temp" not in page.url:
+            problems.append(f"home: the map's layer isn't in the page address ({page.url})")
+        page.select_option("#area", "billings")
+        page.wait_for_timeout(1500)
+        if "area=billings" not in page.url or "area=billings" not in (frame().url if frame() else ""):
+            problems.append(f"home: the area menu didn't move the map or keep the area (page {page.url})")
+        page.click("#view-forecast [data-close]")
+        before = len(loads)
+        frame().evaluate("""() => { const a = document.createElement('a'); a.href = 'index.html#forecast';
+            a.textContent = 'All warnings'; a.id = 'smoke-fc'; document.body.appendChild(a); a.click(); }""")
+        page.wait_for_timeout(500)
+        if page.evaluate("document.getElementById('view-forecast').hidden") or len(loads) != before:
+            problems.append("home: the map's link to the warnings list didn't open the Forecast panel in place")
+        page.reload(wait_until="load")
+        page.wait_for_timeout(1500)
+        kept = page.evaluate("""() => ({ area: document.getElementById('area').value,
+            forecast: !document.getElementById('view-forecast').hidden })""")
+        f = frame()
+        if kept["area"] != "billings" or not kept["forecast"] or not f or "layer=temp" not in f.url:
+            problems.append(f"home: a reload lost the area, the open forecast or the map's layer ({kept}, {f.url if f else ''})")
+        problems += [f"home: {e}" for e in watch.errors]
+    finally:
+        ctx.close()
+    return problems
 
 
 def pick_layer(page, name: str) -> None:

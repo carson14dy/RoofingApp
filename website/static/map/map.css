@@ -878,6 +878,9 @@ a { color: inherit; }
 
 /* ---------------------------------------------------------------- card mode (?card=1) */
 .card-ui { display: none; }
+/* Embedded in the Veor home page concept (?embed=1): its sidebar replaces the close button and its top
+   bar holds the Layers button (map.js focusLayersButton returns focus there). Everything else stays. */
+.is-embed .corner-left > .close, .is-embed #btn-layers { display: none; }
 .is-card .card-ui { display: block; }
 .is-card .corners, .is-card .timeline, .is-card #map-options, .is-card #near-chip, .is-card .toast { display: none !important; }
 .is-card { --edge: 8px; }

@@ -521,10 +521,10 @@ class SampleBuild(unittest.TestCase):
             self.assertIn(needed, html)
         self.assertNotRegex(html, r'<(script|link|img)[^>]+(src|href)="(https?:)?//')
         self.assertIn("Sample data", html)
-        self.assertIn('src="map.html?card=1&amp;layer=precip', page(self.out, "index.html"))
+        self.assertIn('src="map.html?embed=1&amp;v=', page(self.out, "index.html"))      # the home page's map
         self.assertIn("overlay=reports", page(self.out, "reports.html"))
-        self.assertIn('href="map.html"', page(self.out, "about.html"))           # main navigation
-        self.assertIn("map.html?town=livingston", page(self.out, "town/livingston.html"))
+        self.assertIn('<a href="index.html"', page(self.out, "about.html"))       # the sidebar's Map (the home page holds the map)
+        self.assertIn("index.html?town=livingston", page(self.out, "town/livingston.html"))
         for name in ("index.html", "about.html", "map.html"):
             self.assertNotIn("googleapis", page(self.out, name))
 
@@ -538,10 +538,11 @@ class SampleBuild(unittest.TestCase):
         for name in ("map/map.js", "map/map.css", "map/basemap.json"):
             self.assertIn(f"static/{name}?v={digest(name)}", html)
         self.assertIn(f"static/style.css?v={digest('style.css')}", page(self.out, "index.html"))
+        self.assertIn(f"static/veor.css?v={digest('veor.css')}", page(self.out, "index.html"))
         self.assertEqual(site.asset_versions(site.HERE / "static"), site.asset_versions(self.out / "static"))
         minute = NOW.strftime("%Y%m%d%H%M")
         self.assertIn(f"data/map.json?v={minute}", html)
-        self.assertIn(f"map.html?card=1&amp;layer=precip&amp;v={minute}", page(self.out, "index.html"))
+        self.assertIn(f"map.html?embed=1&amp;v={minute}", page(self.out, "index.html"))
 
     def test_map_page_landmark_and_text_version(self):
         html = page(self.out, "map.html")
@@ -590,6 +591,13 @@ class SampleBuild(unittest.TestCase):
         self.assertIn("(over limit)", html)
         self.assertIn("Next 7 days", html)
 
+    def test_town_page_says_over_limit_station_values_in_words_and_keeps_the_veor_hooks(self):
+        html = page(self.out, "town/livingston.html")
+        # the gust over the limit: colour plus a spoken "(over limit)", as the hourly table does
+        self.assertIn('<dd class="over">41<small> mph</small><span class="visually-hidden"> (over limit)</span></dd>', html)
+        self.assertIn('<div class="town-page">', html)          # the Veor place layout (veor.css, .town-page)
+        self.assertIn('<span class="hi">', html)                # a day's high, styled apart from its low
+
     def test_about_page_lists_every_source(self):
         html = page(self.out, "about.html")
         b3 = site.B3_ROWS + tuple(site.ROAD_ROWS.values())                         # flag-gated: HailAddresses
@@ -598,6 +606,24 @@ class SampleBuild(unittest.TestCase):
                 self.assertIn(c["name"], html)
         for key in site.STORM_CONTRACTS + site.HAIL_CONTRACTS + b3:
             self.assertNotIn(src.CONTRACTS[key]["name"], html)
+
+    def test_about_page_names_the_app_and_frames_the_sources_table(self):
+        html = page(self.out, "about.html")
+        self.assertIn("Veor is a plain weather page for roofing work in Montana. It gathers public data",
+                      " ".join(html.split()))
+        self.assertIn('<div class="about-page">', html)              # the page's scope in veor.css (.about-page)
+        self.assertIn('<div class="table-box contracts">', html)     # the framed table; it scrolls inside its own box
+
+    def test_about_page_table_card_has_its_own_surface_and_the_office_links_are_targets_on_phones(self):
+        """The data sources card keeps the card surface behind its table (the gradient shorthand alone would reset
+        it). On phones the office links are a row of 44 px targets; links inside sentences keep their lines (padding
+        on an inline link would overlap the next line's link)."""
+        css = (self.out / "static" / "veor.css").read_text()
+        self.assertIn(".about-page .contracts {", css)
+        self.assertIn("background-color: var(--v-surface); }", css)
+        self.assertIn(".about-page .offices a { display: inline-flex; align-items: center; min-height: 44px; }", css)
+        self.assertNotIn(".about-page .prose a {", css)
+        self.assertIn('<p class="offices">', page(self.out, "about.html"))
 
     def test_reports_page_shows_sizes_in_inches_and_unknown_wind(self):
         html = page(self.out, "reports.html")
@@ -614,6 +640,23 @@ class SampleBuild(unittest.TestCase):
         visible = re.sub(r"<(script|style)\b.*?</\1>", " ", page(self.out, "reports.html"), flags=re.S)
         words_rules.assert_clean(self, " ".join(html_text(visible).split()), "reports.html")
 
+    def test_reports_page_frames_the_map_and_its_key_and_colours_the_kind_words(self):
+        """The Veor reports page (docs/DESIGN.md section 14): the map card and its key share one framed block,
+        each reporting day is a card whose heading keeps its count, and the hail and wind words keep the
+        .kind-hail and .kind-wind colours with a dot of the same colour beside them (the dot is aria-hidden)."""
+        html = page(self.out, "reports.html")
+        self.assertIn('<div class="map-block">', html)
+        self.assertIn('<iframe class="map map-card" src="map.html?card=1&amp;layer=precip&amp;overlay=reports&amp;v=', html)
+        self.assertIn('title="Map of storm reports in and near Montana" loading="lazy"></iframe>', html)
+        self.assertIn('<span class="kind kind-hail"><span class="swatch swatch-hail" aria-hidden="true"></span>Hail</span>', html)
+        self.assertIn('<span class="kind kind-wind"><span class="swatch swatch-wind" aria-hidden="true"></span>Wind</span>', html)
+        self.assertIn('<span class="day-count">(0 reports)</span>', html)
+        # the key's link is a 44 px touch target on tablets and phones (45.6 px: the 21.6 px line plus 12 px each side),
+        # and a table wider than its card shows a scroll shade on its edge (veor.css, .reports-page)
+        css = (self.out / "static" / "veor.css").read_text()
+        self.assertIn(".reports-page .legend a { display: inline-block; padding-block: 12px; margin-block: -12px; }", css)
+        self.assertIn("--edge-w: 0.75rem;", css)
+
     def test_reports_map_key_names_the_forecast_numbers_and_outlines(self):
         """The Storm reports card draws town bubbles and warning outlines beside the reports and hides
         its own legend, so the page's key says what they are (rule 5: forecast is not a report). The
@@ -623,7 +666,8 @@ class SampleBuild(unittest.TestCase):
         self.assertIn("<li>Town number: NWS forecast temperature, °F</li>", html)
         self.assertNotIn("orange ring", html)
         self.assertIn("Outline: NWS alert area (red warning, orange watch, gold advisory, grey statement)", html)
-        self.assertIn('Alerts without an outline (issued by county or zone) are listed on the <a href="index.html">Now page</a>', html)
+        self.assertIn('Alerts without an outline (issued by county or zone) are listed in the '
+                      '<a href="index.html#forecast">home page\'s Forecast</a>', html)
 
     def test_reporting_days_start_at_noon_utc_in_montana_time(self):
         self.assertIn("Reporting day starting Wed Oct 14 at 6 am MDT", page(self.out, "reports.html"))
@@ -636,11 +680,13 @@ class SampleBuild(unittest.TestCase):
         self.assertNotIn("MDT", html)
 
     def test_now_page_card_words_match_the_sample_picture(self):
+        """The home page's map frame is named and described in build.map_card's words for the picture it
+        opens on, so a screen reader hears what the map shows (and, below, what is missing)."""
         html = " ".join(page(self.out, "index.html").split())
-        self.assertIn('title="Montana map: sample radar, warning outlines and town temperatures"', html)
-        self.assertIn("The latest sample radar picture (invented, not NOAA radar), NWS warning outlines and the NWS "
-                      'forecast temperature for each town. <a href="map.html">Open the map</a> to play the past hour '
-                      "of sample radar and the sample model forecast, or switch to temperature and wind gusts.", html)
+        self.assertIn('title="Montana map: sample radar, warning outlines and town temperatures" '
+                      'aria-describedby="map-words"', html)
+        self.assertIn('<p class="visually-hidden" id="map-words">The latest sample radar picture (invented, not NOAA '
+                      "radar), NWS warning outlines and the NWS forecast temperature for each town. </p>", html)
 
 
     def test_observed_now_on_the_town_pages_and_cards(self):
@@ -858,11 +904,11 @@ class MapFailures(unittest.TestCase):
         self.assertFalse(m["status"]["radar"]["ok"])
         self.assertEqual(m["now"], "2026-10-14T15:00:00Z")    # no radar frame: "now" is the build time
         self.assertEqual(len(m["towns"]), len(site.TOWNS))    # the towns and alerts still draw
-        html = " ".join(page(out, "index.html").split())    # the Now page's card names what is missing
+        html = " ".join(page(out, "index.html").split())    # the home page's map frame names what is missing
         self.assertIn('title="Montana map: warning outlines and town temperatures"', html)
         self.assertIn("NWS warning outlines and the NWS forecast temperature for each town. Missing from this "
-                      "update: the radar and model pictures. This is not an all-clear. "
-                      '<a href="map.html">Open the map</a> for the List of alerts and towns.', html)
+                      "update: the radar and model pictures. This is not an all-clear.</p>", html)
+        self.assertIn('<p class="bad"><a href="#forecast" data-view="forecast">2 source problems: see Forecast</a>', html)
         self.assertNotIn("radar estimate", html)
 
 
@@ -898,7 +944,7 @@ def map_layers(radar=True, model=True, now=NOW, radar_age=4, sample=False):
 
 
 class MapCard(unittest.TestCase):
-    """The words with the Now page's map card (build.map_card) follow what the card shows: the frame
+    """The words for the home page's map (build.map_card) follow what it shows when it opens: the frame
     map.js opens it on (precipitation, 12h, now_index), the outlines and the town numbers."""
 
     OK = {"radar": {"ok": True}, "forecast": {"ok": True}}
@@ -915,8 +961,6 @@ class MapCard(unittest.TestCase):
         self.assertEqual(c["shown"], "The latest NOAA radar estimate, NWS warning outlines and the NWS forecast "
                                      "temperature for each town.")
         self.assertEqual(c["missing"], "")
-        self.assertEqual(c["then"], "to play the past hour of radar and the HRRR model forecast, or switch to "
-                                    "temperature and wind gusts")
 
     def test_radar_failed_the_model_forecast_is_never_called_radar(self):
         layers = map_layers(radar=False)
@@ -928,7 +972,6 @@ class MapCard(unittest.TestCase):
         self.assertEqual(c["shown"], "The HRRR model forecast for 10 am, NWS warning outlines and the NWS forecast "
                                      "temperature for each town.")
         self.assertEqual(c["missing"], "Missing from this update: NOAA radar. This is not an all-clear.")
-        self.assertEqual(c["then"], "to play the HRRR model forecast, or switch to temperature and wind gusts")
         self.assertNotIn("radar estimate", " ".join(c.values()))
 
     def test_stale_radar_is_still_radar_and_says_how_old(self):
@@ -943,7 +986,6 @@ class MapCard(unittest.TestCase):
         self.assertEqual(c["shown"], "")
         self.assertEqual(c["missing"], "Missing from this update: the radar and model pictures, NWS warning outlines "
                                        "and town temperatures. This is not an all-clear.")
-        self.assertEqual(c["then"], "for the List of alerts and towns")
 
     def test_last_verified_alerts_and_some_town_forecasts(self):
         c = self.card(map_layers(model=False), alerts={"ok": False, "items": [{"id": "w1"}]},
@@ -951,7 +993,6 @@ class MapCard(unittest.TestCase):
         self.assertEqual(c["shown"], "The latest NOAA radar estimate, the outlines of the NWS alerts listed on this "
                                      "page and the NWS forecast temperature for each town whose forecast loaded.")
         self.assertEqual(c["missing"], "")
-        self.assertEqual(c["then"], "to play the past hour of radar")
 
     def test_sample_pictures_say_they_are_invented(self):
         self.assertTrue(self.card(map_layers(sample=True))["shown"].startswith(
@@ -968,7 +1009,7 @@ class MapCard(unittest.TestCase):
 
     def test_forecast_only_build(self):
         """The forecast-only state of a real build: the radar bucket fails, the HRRR answers, NWS and
-        SPC fail. The Now page's caption and frame title name the model forecast, never radar."""
+        SPC fail. The home page's map frame title and description name the model forecast, never radar."""
         def forecast_only(out_dir, get, now, sample=False):
             return map_layers(radar=False, now=now), {
                 "radar": {"label": g.LABELS["radar"], "ok": False,
@@ -978,15 +1019,140 @@ class MapCard(unittest.TestCase):
             out, _ = build_with(FailingFetcher())
         html = " ".join(page(out, "index.html").split())
         self.assertIn('title="Montana map: HRRR model forecast for 10 am"', html)
-        self.assertIn('<p class="caption"> The HRRR model forecast for 10 am. Missing from this update: NOAA radar, '
-                      "NWS warning outlines and town temperatures. This is not an all-clear. "
-                      '<a href="map.html">Open the map</a> to play the HRRR model forecast, or switch to temperature '
-                      "and wind gusts. </p>", html)
+        self.assertIn('<p class="visually-hidden" id="map-words">The HRRR model forecast for 10 am. Missing from '
+                      "this update: NOAA radar, NWS warning outlines and town temperatures. This is not an all-clear.</p>",
+                      html)
         self.assertNotIn("radar estimate", html)
         m = json.loads(page(out, "data/map.json"))
         precip = m["layers"]["precip"]
         self.assertEqual(precip["frames"][precip["modes"]["12h"][precip["now_index"]["12h"]]]["time"],
                          "2026-10-14T16:00:00Z")                     # 10 am MDT: the frame the card opens on
+
+
+class HomeConcept(unittest.TestCase):
+    """The Veor home page concept (design branch; docs/DESIGN.md section 14): an app shell around the site's
+    own map. The map is map.html in its embedded mode, the lead is sample data labelled as such in every build,
+    and the old Now page's freshness line, warnings and town cards are in the Forecast panel, which the other
+    pages' links to the warnings list open (index.html#forecast)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-home-"))
+        site.build(cls.out, None, NOW, sample=True)
+        cls.html = " ".join(page(cls.out, "index.html").split())
+
+    def test_the_map_is_the_sites_own_map_embedded(self):
+        self.assertIn('<iframe class="stage-map" id="map-frame" src="map.html?embed=1&amp;v=', self.html)
+        m = page(self.out, "map.html")
+        self.assertIn('document.documentElement.classList.add("is-embed")', m)
+        self.assertIn('{ target: "_top" }', m)                  # links in the map open in the whole window
+        css = (site.HERE / "static" / "map" / "map.css").read_text(encoding="utf-8")
+        self.assertIn(".is-embed .corner-left > .close, .is-embed #btn-layers { display: none; }", css)
+        js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn('var EMBED = !CARD && params.get("embed") === "1";', js)
+        self.assertIn('window.parent.document.getElementById("btn-layers-top")', js)   # focus and state on the top bar
+        self.assertIn("if (EMBED) copyToHome(q);", js)                     # the map's choices in the home page's address
+        self.assertIn('id="btn-layers-top"', self.html)
+
+    def test_the_sample_lead_is_labelled_in_a_live_build_too(self):
+        out, _ = build_with(FailingFetcher())                   # not a sample build: the weather is not invented
+        html = " ".join(page(out, "index.html").split())
+        self.assertIn('Lead details <span class="tag">Sample</span>', html)
+        self.assertIn("Desktop concept · Sample data", html)
+        self.assertNotIn("Everything on this page is invented", html)
+        self.assertIn("Everything on this page is invented", self.html)      # the sample build says so as well
+
+    def test_the_forecast_panel_has_the_freshness_line_the_warnings_and_every_town(self):
+        self.assertIn('<section class="view view-forecast" id="view-forecast" aria-labelledby="fc-h" hidden>', self.html)
+        self.assertIn("rebuilt on a schedule set to every 10 minutes", self.html)
+        self.assertIn("Loaded: NWS alerts, NWS forecasts", self.html)
+        self.assertIn('Warnings and advisories<span class="count">2</span>', self.html)
+        self.assertIn("High Wind Warning", self.html)
+        self.assertEqual(self.html.count('<li data-slug="'), len(site.TOWNS))
+        self.assertIn("Weather information only. It does not confirm roof damage", self.html)
+        self.assertIn("<style>.shell #view-forecast { display: block; }</style></noscript>", self.html)   # scripting off
+
+    def test_the_forecast_button_counts_the_alerts_and_names_the_kind_or_says_they_did_not_load(self):
+        self.assertIn('<span class="badge badge-warning"><span aria-hidden="true">2</span><span class="visually-hidden">, '
+                      "2 NWS alerts, the most urgent a warning</span></span>", self.html)
+        out, _ = build_with(FailingFetcher())
+        html = " ".join(page(out, "index.html").split())
+        self.assertIn('<span class="badge badge-unknown"><span aria-hidden="true">?</span>'
+                      "<span class=\"visually-hidden\">, NWS alerts didn't load</span></span>", html)
+        self.assertIn("Couldn't load NWS alerts at", html)
+        self.assertNotIn("No active NWS warnings", html)
+        self.assertNotIn('class="alert-now"', html)          # no alert is named from a failed check
+        self.assertNotIn("Every source loaded", html)
+        self.assertIn("Every source loaded", self.html)
+
+    def test_the_status_names_the_most_urgent_alert_and_any_missing_town_data(self):
+        """Alerts issued by county or zone have no outline on the map, so the top bar names the most urgent alert
+        (with a count of the rest) on the first screen. 'Every source loaded' needs every town's values too."""
+        self.assertIn('<p class="alert-now"><a href="#forecast" data-view="forecast">High Wind Warning and 1 more</a></p>',
+                      self.html)
+        def pictures_loaded(out_dir, get, now, sample=False):         # SampleWith's radar and model downloads fail
+            return map_layers(now=now), {"radar": {"label": g.LABELS["radar"], "ok": True, "detail": "7 frames"},
+                                         "forecast": {"label": g.LABELS["forecast"], "ok": True, "detail": "12 hours"}}
+        with mock.patch.object(g, "build_gridded", pictures_loaded):
+            gaps, _ = build_with(SampleWith(NOW, fail=("alerts-point",)))
+            state, _ = build_with(SampleWith(NOW, fail=("alerts-state",)))
+        html = " ".join(page(gaps, "index.html").split())
+        self.assertIn(f'<p class="bad"><a href="#forecast" data-view="forecast">{len(site.TOWNS)} towns with missing data: '
+                      "see Forecast</a></p>", html)
+        self.assertNotIn("Every source loaded", html)
+        self.assertIn("Alerts not checked", html)
+        html = " ".join(page(state, "index.html").split())
+        self.assertIn('<p class="bad"><a href="#forecast" data-view="forecast">NWS alerts problem: see Forecast</a> '
+                      '<span class="bad">NWS alerts problem: ', html)      # the detail and its words follow the link
+        self.assertIn('<span class="badge badge-unknown">', html)        # the count of a failed check is never shown
+        self.assertIn('<p class="alert-now"><a href="#forecast" data-view="forecast">High Wind Warning and 1 more, may be out of date'
+                      "</a></p>", html)                                 # what the town checks found is still named
+
+    def test_the_page_reloads_every_ten_minutes_carrying_the_place_and_without_script_as_before(self):
+        for name in ("index.html", "about.html", "town/billings.html"):
+            raw = page(self.out, name)
+            self.assertEqual(raw.count('http-equiv="refresh"'), 1, name)
+            self.assertIn('<noscript><meta http-equiv="refresh" content="600">', raw, name)
+            self.assertIn("if (Date.now() - loadedAt < 600000 || pressed || typing()) return;", raw, name)   # waits for a press or typing only
+            self.assertIn("function typing() { return Date.now() - lastKey < 30000; }", raw, name)         # typing: a key in the last 30 s
+            self.assertIn('sessionStorage.setItem("veor-restore"', raw, name)              # the viewer's place goes across
+            self.assertIn("showAge();", raw, name)                                          # the age counts on
+        home = page(self.out, "index.html")
+        self.assertIn("s.panel = panel.scrollTop;", home)                                  # the home page's own part
+        js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn('p.set("view", c.lat.toFixed(4)', js)                                # and the map's view
+
+    def test_the_forecast_alerts_sit_under_their_heading_and_the_tab_panels_take_focus(self):
+        self.assertIn("<h4>High Wind Warning</h4>", self.html)
+        self.assertIn("<h3>High Wind Warning</h3>", " ".join(page(self.out, "town/livingston.html").split()))
+        self.assertIn('<h1 class="visually-hidden">Veor: Montana weather map and forecast</h1>', self.html)
+        self.assertEqual(self.html.count('role="tabpanel"'), 3)
+        self.assertEqual(self.html.count('role="tabpanel" id="tp-'), 3)
+        self.assertEqual(len(re.findall(r'role="tabpanel" id="tp-\w+" aria-labelledby="tab-\w+" tabindex="0"', self.html)), 3)
+
+    def test_every_town_is_in_the_area_menu_and_the_search_list(self):
+        for t in site.TOWNS:
+            self.assertIn(f'<option value="{t["slug"]}">{t["name"]} area</option>', self.html)
+            self.assertIn(f'<option value="{t["name"]}"></option>', self.html)
+        self.assertIn('<option value="">All of Montana</option>', self.html)     # the map opens on all of Montana
+
+    def test_the_home_page_loads_only_site_files_and_serves_its_font(self):
+        self.assertNotRegex(self.html, r'<(script|link|img|iframe)[^>]+(src|href)="(https?:)?//')
+        self.assertTrue((self.out / "static" / "fonts" / "newsreader-latin-opsz-normal.woff2").is_file())
+        self.assertIn("url(newsreader-latin-opsz-normal.woff2)", page(self.out, "static/fonts/fonts.css"))
+        self.assertIn("The Newsreader Project Authors", page(self.out, "static/fonts/LICENSE-fonts.txt"))
+
+    def test_the_links_to_the_warnings_list_open_the_forecast_panel(self):
+        self.assertIn('if (location.hash !== "#forecast") return;', self.html)
+        self.assertIn('show("forecast", !!e || nav.type !== "reload");', self.html)     # focus on a link, not a reload
+        self.assertIn("""closest('a[href$="#forecast"]')""", self.html)      # the map's links open it in place
+        self.assertIn('<a href="../index.html#forecast">All towns</a>', page(self.out, "town/livingston.html"))
+        self.assertIn('id="btn-forecast" href="index.html#forecast"', page(self.out, "about.html"))   # the top bar's Forecast
+        self.assertIn('id="btn-forecast" href="../index.html#forecast"', page(self.out, "town/livingston.html"))
+        self.assertIn('href="index.html#forecast"', page(self.out, "map.html"))           # the noscript list
+        js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn('href="index.html#forecast">All warnings and town forecasts</a>', js)
+        self.assertNotIn("Now page", js)
 
 
 class StormLayers(unittest.TestCase):
@@ -1581,10 +1747,11 @@ class HailHistory(unittest.TestCase):
         self.assertIn("Radar days by size class in these five seasons: 4 days pea to mothball", visible(town))
         as_of = hs.fmt_date(date.fromisoformat(fixture["as_of"]))
         self.assertIn(f"1,826 storm-report days (each from 12:00 to 12:00 UTC) ending {as_of}", visible(town))   # the as-of date
+        self.assertIn('<section id="history" class="history hail-history" aria-labelledby="hist-h">', town)   # the Veor hail styles (veor.css)
         about = " ".join(page(self.on, "about.html").split())      # the template wraps the sentences across lines
         self.assertIn("<h2>Hail history</h2>", page(self.on, "about.html"))
         self.assertIn("An estimate is not a measurement at the ground and not an inspection.", about)
-        self.assertIn("(6.35 mm)", about)
+        self.assertIn("(6.35&nbsp;mm)", about)              # one unbreakable unit: no break between 6.35 and mm
         self.assertIn("12:43 UTC", about)
         self.assertIn(src.CONTRACTS["hail_history"]["name"], about)
         for sentence in (self.DAY_SENTENCE, self.CELL_SENTENCE, self.NEXT_DAY_SENTENCE, self.DISPLAY_SENTENCE):
@@ -3884,29 +4051,6 @@ def on_purpose_problems(name: str, data: bytes, changes, base_digest: str) -> li
     return problems
 
 
-# B6 (D125(d)): the files and keys the base-map build adds to the default build, and the one named change of an existing
-# line (D110(d): the imagery credit row carries the privacy words "while it is on"). Nothing else in the default build changes.
-B6_FILES = ("data/base.json",)
-B6_MAP_KEYS = ("base", "history_layers", "recent", "labels")      # data/map.json's pointer and first-paint states, last keys
-B6_IMAGERY = ("D110(d)", "go to USGS.", "go to USGS while it is on.", 1)
-
-
-def b6_map_problems(data: bytes, base_digest: str) -> list:
-    """The problems with the default build's data/map.json: it has exactly the B6 keys as its last keys, and without them and
-    with the named imagery change written back it has the base build's digest (byte for byte)."""
-    doc = json.loads(data)
-    problems = []
-    if list(doc)[-len(B6_MAP_KEYS):] != list(B6_MAP_KEYS):
-        problems.append(f"data/map.json does not end with the B6 keys {list(B6_MAP_KEYS)} (its keys end with {list(doc)[-4:]})")
-    for key in B6_MAP_KEYS:
-        doc.pop(key, None)
-    restored, changes_problems = restore_base(json.dumps(doc, separators=(",", ":")).encode("utf-8"), (B6_IMAGERY,))
-    problems += changes_problems
-    if hashlib.sha256(restored).hexdigest() != base_digest:
-        problems.append("data/map.json differs from the base build on a line that no named ruling accounts for")
-    return problems
-
-
 class HailSwathLayers(unittest.TestCase):
     """The live hail swath layers (B4; website/swath.py) behind --storm-layers, sample builds only (the live feed is
     checked by the Website workflow and tools/smoke_map.py): the two Map layers and their status line, the List and the
@@ -4392,44 +4536,13 @@ class HailSwathLayers(unittest.TestCase):
     # D93(a): map.js and map.css are not digested (SHARED_STATIC; the browser code is one file for every build), and the
     # ?v= hashes that map.html carries for them are normalised, so map.html differs from the base only in those hashes.
     MANIFEST = ROOT / "tests" / "fixtures" / "default-build-manifest.json"
-    # The default build's other differences from the base, each named with its ruling. A change is (ruling, the base's
-    # text, the text the build has now, how many times the build has it). The test writes each text back to the base's and
-    # the page must then have the base's digest, so a line this table does not name fails the test. D74's rows (the hail
-    # swath row and the address rows) and D85's hail history and NOHRSC rows are flag-gated: the default build has none.
-    ON_PURPOSE = {
-        "about.html": (
-            # D53: the radar paragraph's satellite and radar sentence
-            ("D53", "a blank area is not proof of dry weather", "a blank area is not a statement about the weather", 1),
-            ("D85", "never clears one.", "never removes one.", 1),
-            ("D85, D86(c), D88(d)", "that work is safe.", "that work can go ahead.", 1),
-            ("D85, D86(c)", "When something fails</h2>", "When something goes wrong</h2>", 1),
-            # the source table's rows: the alerts row, the forecast and station rows and the radar row
-            ("D85", "Test messages and replaced updates are left out.",
-             "Test messages and updates that a later message has changed are left out.", 1),
-            ("D85", "the last good lookup is reused if it fails.", "if a lookup does not work, the last good lookup is reused.", 1),
-            ("D80(b), D82(d)", "distance from the town is worked out here", "distance from this spot is worked out here", 1),
-            ("D85", "the last good list is reused if it fails.", "if a list does not load, the last good list is reused.", 1),
-            ("D85", "A file that fails is listed as a problem", "A file that does not pass its check is listed as a problem", 1),
-            ("D85, D86(c)", "never drawn as dry.", "never drawn as a zero reading.", 1),
-        ),
-        "reports.html": (
-            # D91(c): the SPC reports page's lead and its two empty-day lines (the words gate's own sentences)
-            ("D91(c)", "No report is not evidence that no hail fell.", "No report is not the same as no hail.", 1),
-            ("D91(c)", "No hail or wind reports in or near Montana for this day.",
-             "No reports of hail or wind in or near Montana for this day; that is not the same as no hail.", 2),
-        ),
-        "map.html": (
-            # D110(d) (B6): the imagery object the page carries (data-imagery) gets the privacy words "while it is on", as the
-            # credit row does; the page's Imagery description already had them. One occurrence, inside the attribute.
-            ("D110(d)", 'go to USGS.", "failed_line"', 'go to USGS while it is on.", "failed_line"', 1),
-        ),
-    }
-    # D108 (B6 stage S1): the options sheet replaces the layer popover in the default build's map page. Its three named text
-    # changes (the button's aria-controls, the popover's removal and the sheet's insertion) are cut from the base build and the
-    # build now, and the restore check in test_the_default_build_matches_the_manifest_of_its_base_commit proves them exact.
-    ON_PURPOSE["map.html"] = ON_PURPOSE["map.html"] + tuple(
-        tuple(entry) for entry in json.loads((ROOT / "tests" / "fixtures" / "default-build-s1-rulings.json").read_text(
-            encoding="utf-8")))
+    # The base is the commit the manifest names ("base"): the Veor shell on every page (D145) and the compact tile sets
+    # (D144) changed the default build on purpose, so the manifest was written from that commit's own build and no ruling
+    # is open. The rulings of the earlier base f96f5c7 (D53, D85, D91(c), D110(d) and D108, with the fixture
+    # default-build-s1-rulings.json they read) are in git history at 1f9068e. A later change to the default build names
+    # its ruling here, as (ruling, the base's text, the text the build has now, how many times the build has it), or
+    # regenerates the manifest with write_default_manifest and says so in its pull request.
+    ON_PURPOSE: dict = {}
 
     def test_the_default_build_matches_the_manifest_of_its_base_commit(self):
         expected = json.loads(self.MANIFEST.read_text(encoding="utf-8"))
@@ -4440,14 +4553,8 @@ class HailSwathLayers(unittest.TestCase):
                                "--now", "2026-10-19T12:00:00Z"], cwd=ROOT, capture_output=True, text=True, timeout=900)
         self.assertEqual(done.returncode, 0, done.stderr[-800:])
         now = default_digests(out)
-        # B6 (D125(d)): the default build adds data/base.json, and data/map.json gains the B6 keys and one named imagery change.
-        # Both are checked on their own below; every other file must match the base build.
-        self.assertEqual(sorted(set(now) - set(expected["files"])), list(B6_FILES), f"base {expected['base']}: files added")
+        self.assertEqual(sorted(set(now) - set(expected["files"])), [], f"base {expected['base']}: files added")
         self.assertEqual(sorted(set(expected["files"]) - set(now)), [], f"base {expected['base']}: files removed")
-        self.assertEqual(b6_map_problems((out / "data" / "map.json").read_bytes(), expected["files"]["data/map.json"]), [],
-                         f"base {expected['base']}: data/map.json differs from the base build apart from the B6 keys")
-        for name in B6_FILES + ("data/map.json",):
-            now.pop(name)
         # every file the table does not name has the base's digest
         changed = sorted(name for name in now if now[name] != expected["files"][name] and name not in self.ON_PURPOSE)
         self.assertEqual(changed, [], f"base {expected['base']}: these files differ from the base build")
@@ -4457,18 +4564,22 @@ class HailSwathLayers(unittest.TestCase):
             self.assertEqual(problems, [], f"base {expected['base']}: {'; '.join(problems)}")
 
     def test_a_line_the_table_does_not_name_fails_the_identity(self):
-        """The check is exact: one more word in a named page, not in the table, makes the page differ from the base."""
+        """The check is exact: one more word in a page, not in the table, makes the page differ from the base, and a
+        ruling names a change the page must carry exactly as often as it says."""
         expected = json.loads(self.MANIFEST.read_text(encoding="utf-8"))
         real = (self.off / "about.html").read_bytes()
-        self.assertEqual(on_purpose_problems("about.html", real, self.ON_PURPOSE["about.html"],
-                                             expected["files"]["about.html"]), [])
-        mutated = real.replace(b"that work can go ahead.", b"that work can go ahead now.", 1)
+        digest = expected["files"]["about.html"]
+        self.assertEqual(on_purpose_problems("about.html", real, (), digest), [])
+        mutated = real.replace(b"This is not an all-clear.", b"This is not an all-clear now.", 1)
         self.assertNotEqual(mutated, real)
-        self.assertTrue(on_purpose_problems("about.html", mutated, self.ON_PURPOSE["about.html"],
-                                            expected["files"]["about.html"]))
-        missing = real.replace(b"a blank area is not a statement about the weather", b"a blank area says nothing about the weather", 1)
-        self.assertTrue(on_purpose_problems("about.html", missing, self.ON_PURPOSE["about.html"],
-                                            expected["files"]["about.html"]))
+        self.assertTrue(on_purpose_problems("about.html", mutated, (), digest))
+        ruling = (("a test ruling", "<h1>About this site</h1>", "<h1>About this page</h1>", 1),)
+        renamed = real.replace(b"<h1>About this site</h1>", b"<h1>About this page</h1>", 1)
+        self.assertNotEqual(renamed, real)
+        self.assertEqual(on_purpose_problems("about.html", renamed, ruling, digest), [])   # the named change, once
+        self.assertTrue(on_purpose_problems("about.html", real, ruling, digest))            # the page lacks the change
+
+
 class FiveSeasonHistory(unittest.TestCase):
     """The town page's five-season table and sections, the About words and the copies (B5, --hail-history), on the
     synthetic store that tests/test_summary.py writes (a spot at Billings with every part present). Nothing here is real."""

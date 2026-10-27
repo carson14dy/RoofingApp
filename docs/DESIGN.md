@@ -1073,3 +1073,72 @@ On a phone the sheet is a bottom sheet; from 640 px wide it is a 380 px panel. I
 **13.8 Status.** The Python side of B6 is built on the B6 branch (P1 to P4) and tested offline. The browser (B6-3) draws the tiles, the bands, the chips, the pictures, the bubbles and the sheet, and is not yet in the worktree. The phone view with the B6 layers on is measured by the local smoke with the default layers (D125(e)).
 
 *Why:* the owner's reference shows what a roofer needs in one view: where the place is, what the land and the water look like, and the weather figure on the house. The map keeps that behaviour and draws its cartography from public-domain sources, so every line on the map has a source the site can name, and a missing value says so.
+
+## 14. Veor: the app shell, the home page and the other pages (2026-10-25, from the `design` branch)
+
+**Frame.** Carson sent a desktop mockup on 2026-10-25, "I want the home page to look like this. I want you to
+replace the map with what is on github though", on a new `design` branch "where I explore different designs".
+The mockup is an app called Veor for a contractor: a sidebar (Map, Leads, Projects, Organizer; Setup, Account,
+Settings), a top bar (search, an area menu, Forecast, Layers), an illustrated map of Billings with lead pins, and
+a "Lead details" panel for a sample lead, Oak Street. Later the same day Carson decided (D145): the name is Veor;
+the warnings stay one click away; lead pins with real addresses come from another session; every page besides the
+map takes this look; and the page updates itself without fail. It was merged onto the B6 browser branch on 2026-10-27 (renumbered from section 10 and D35, which `main` had used meanwhile); nothing of it is on `main` until that branch merges.
+
+**What is real and what is the concept.**
+| Part | Real or concept | What it does |
+|---|---|---|
+| Map | Real: the site's map, whole (`map.html?embed=1` in a frame) | Everything section 8 says. The sidebar replaces its close button and the top bar holds its Layers button, so `map.css` hides both in the frame (`.is-embed`). Its links open in the whole window (a `<base target="_top">` the page sets), except its links to the warnings list, which open the Forecast panel in place. Its choices (layer, timeline, overlay, base map, hail spot) and, once the viewer has moved it, its view are copied into the home page's address, so a reload or a bookmark keeps them |
+| Top bar status | Real, on every page | "Updated" with the page's age, counted again every minute; the most urgent alert by name ("High Wind Warning and 1 more"), because an alert issued by county or zone has no outline on the map (after a failed alert check, the alerts still listed, with "may be out of date"); then "Every source loaded", or a failed source by name ("NWS alerts problem: see Forecast"), or "{n} towns with missing data". Past 25 minutes the age becomes the old page's warning. The bar grows to fit it |
+| Forecast button and panel | Real | The old Now page in one column: the freshness line, the warnings (all of them, with the failure notices) and the 17 town cards, built from the same data and template code. A badge on the button counts the alerts in the most urgent one's colour (its words name the kind), or shows "?" when the alert check failed. `index.html#forecast` opens it; the address keeps `#forecast` while it shows. On the other pages the button is a link to it |
+| Area menu | Real | "All of Montana" or a town's area: the map centres the town (`?area=slug`, zoom 8, no sheet), the forecast shows that town's card (every warning stays), and the address keeps it (`index.html?area=billings`). A town page's "See Billings on the map" opens the town's sheet (`index.html?town=billings`, which the address then drops) |
+| Search | Real for towns | On the home page a town ("Billings", "Billings area", "Billings, MT", or the first letters) opens its sheet on the map (its NWS forecast) and becomes the area; "Montana" or "MT" is all of Montana; "Oak Street" opens the sample lead; anything else says no town has that name. On the other pages a town opens its page |
+| The other pages | Real, in the shell (`base.html`) | Town pages, Storm reports and About sit in the same sidebar and top bar, with the page scrolling inside the shell on desktops. Their map links open the home page, which holds the map (the Storm reports card's "Open map" too) |
+| Sidebar | Real places and concept | Map (the home page), Storm reports, Leads (the sample lead: the home page's panel, or the home page), Projects, Organizer; Setup, Account, Settings, About. Projects, Organizer, Setup, Account, Settings and the role menu say they aren't built yet (a short note at the bottom of the screen). On phones it is a tab bar with the five main places ("Reports" for short); Storm reports and About are also in every page's footer |
+| Lead panel | Concept | Oak Street, labelled "Sample" in its heading and "Desktop concept · Sample data" at its foot, in every build. Its tabs switch; its buttons say what isn't built. Lead pins with real addresses are being built in another session (D145) |
+
+**Decisions in the build that differ from the mockup.**
+- The map opens on all of Montana, not "Billings area": the statewide warning outlines stay on the first screen
+  (principle 1). Billings is one choice away and the address keeps it.
+- The panel opens on the sample lead, as in the mockup, so the warnings list itself is one click away (Forecast),
+  which Carson confirmed (D145). Threshold T2 (section 3) asked for warnings with no click: here the first screen has
+  the outlines, the most urgent alert by name and a count of the rest, not the list.
+- No lead pins on the map yet: the map is the site's own, as asked, until the other session's pins arrive.
+- Muted text is darker than the mockup's grey (5.28:1 instead of about 3.6:1) and the primary button's rust is a
+  shade deeper (white text 4.94:1), so every pair meets 4.5:1. Dark mode follows the phone, as on the other pages.
+- The links that used to open the Now page's warning list (the town pages, Storm reports, the map's alert sheet)
+  open `index.html#forecast`. Without JavaScript the forecast shows under the lead.
+- The old page refreshed itself every 10 minutes. This one reloads every 10 minutes too, whatever the viewer is
+  doing (D145: it must update without fail), waiting only for a press or a drag to end and for typing to stop (a
+  key in the last 30 seconds). So that a reload never loses a viewer's place, it carries it across: the scroll (the
+  window's and the page area's), what had focus, the open "Official NWS text" sections, the search box, the
+  panel's scroll and the lead's tab, the sidebar's fold (kept for the tab), and the map's view, layer, timeline,
+  overlay, base map and hail spot through the address. A reload is still a reload: a screen reader hears a new
+  page. With scripting off the old refresh stands.
+
+**Layout.** At 1024 px and wider the page is the screen: sidebar 228 px, top bar at least 90 px (it grows with the
+status), the map and the panel 432 px (372 px under 1280), which scrolls inside and starts at the top of each
+view; on the other pages the content (72 rem, centred) scrolls inside the shell instead. The « button folds the
+sidebar to its icons (84 px); from 1024 to 1279 px it starts folded and opens as a drawer over the page, so the top
+bar keeps its room. Under 1536 px Forecast and Layers show their icons only, so the search box and the area menu
+keep room for their words; from 1180 px the area menu is as wide as its longest place ("West Yellowstone area" is
+cut from 1024 to 1179 px). Closing the panel gives its room to the map. Under 1024 px the page scrolls: the top bar
+(mark and status; search; area, Forecast and Layers), the map filling the screen above a tab bar with the five main
+places, then the panel; opening the forecast or the lead scrolls to it, and a map control that takes keyboard focus
+is scrolled clear of the tab bar. Under 540 px Forecast and Layers show their icons only; under 360 px they sit
+beside the search box and the area menu has a row of its own.
+
+**Look.** Tokens in `website/static/veor.css` (`--v-` raw scale, roles, components; a section per part of the shell
+and one per page); the shell also overrides `style.css`'s page roles so the alert and town cards, tables and
+lists take the warm look. The face is Newsreader (SIL Open Font License 1.1, Fontsource 5.3.0, variable weight
+and optical size, served by the site), the closest of six serifs compared against the mockup. Colours follow the
+mockup: paper #fdfbf7, ink #1f1c19, sage pill #dfe6da, pine pin #3f6b51, rust #b9502f for the primary button and
+#a3401f for accent text (each a shade from the mockup's, for contrast), and rust edges on the outline buttons.
+
+**Checked.** In Chromium, light and dark, at 288 to 1586 px wide, every page type: no sideways scroll with the
+forecast open or shut (`tools/smoke_pages.py` opens `index.html#forecast` too), the stale status inside the top
+bar, focus never under the tab bar, the controls by keyboard, the map frame's Layers menu, area, links and reload
+(`tools/smoke_map.py` check_home), and the reload's carried place (home page and a page of content). On the
+shortest phones (568 to 640 px tall) the map keeps a 320 px minimum and runs under the tab bar until the page is
+scrolled.
+
+**Open.** Lead pins with real addresses (the other session) and how they meet the map's bubbles and sheets; a
