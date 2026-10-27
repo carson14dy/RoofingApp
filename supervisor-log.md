@@ -556,3 +556,13 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   afterwards: 1 to 5 s); a local cold run with a 1,020 s deadline loaded bands A to C (24 state pages in 66 s) and ended
   partial on band D (0 of 54 cells finished). Next session: the branch's store run, a monthly dispatch on the branch,
   the merge, the D146 entry, then the monthly run on main.
+
+## 2026-10-27, 05:10 UTC: S2 parked, the session closes
+- The S2 workflow finished (builder, three skeptics with 17 findings, fixer, verifier) with its verifier at FAIL: two
+  BaseMapDrawing tests out of step with the fixer's last edits, and the full smoke failing at 390 px because the attribution
+  control with the seven credit lines covers the phone checks' tap point (plus an off-grid pan and five zoom 7 terrain tile
+  requests the smoke reports). The drawing itself works (screenshots at zooms 6 to 15, light and dark). Parked as de35255
+  on session/map-b6-s2-wip (unsigned WIP); claude/map-b6-browser stays at S1 (06b57f4). The details and the open
+  skeptic findings are in HANDOFF-2026-10-27.md.
+- No agent server is left listening; no scheduled check-in is armed. Carson, 03:25 UTC: nothing else is fixed or merged
+  on this session.
