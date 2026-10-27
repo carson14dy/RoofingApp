@@ -486,3 +486,12 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
 - Decision: a fix branch (claude/basemap2-fixes) for (a) the verify path, (b) the cache kept on a partial build so the
   runs accumulate, (c) the water requests (the 504s and the deadline), with live checks of the service; the ROADMAP's
   open item 12 (the cap) is superseded by these defects. No third monthly run until the fix is on main.
+- Correction to the entry above: the base map cache was saved by the workflow after run 20; what the module skipped was the
+  cache pruning (D112(m)), which is by design. The daily job's offline build reads the cache and gets the same partial
+  state; its verify crashes on the same doubled path, so every daily run marks the vectors unavailable too.
+- The climate on main: the hail-climate release does not exist (404), so every daily run on main says "no climate archive
+  to restore" and the public site's climate block is unavailable (the five-season table's temperature and rain rows, and
+  the heat picture, say Data unavailable). The once-only backfill was dispatched on main at 01:44 UTC
+  (climate_backfill=true); check-in at 02:40.
+- The base map fix workflow (scripts/basemap2-fixes.js, briefs/basemap2-fixes-brief.md) runs on /home/user/wt/wt-bm2,
+  branch claude/basemap2-fixes from 3d62235.
