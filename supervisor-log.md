@@ -529,3 +529,8 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   and S2 to S4 add the layers' files. The supervisor puts the budget to Carson with a recommendation of 900,000 bytes
   gzip for the B3 files, the shell and the B6 files together at zoom 15 (the frames still listed apart), to be
   re-measured at S5; the branch's Website runs stay red on this one check until the owner's number is set in S5.
+
+## 2026-10-27, 03:10 UTC: the climate is live
+- Website run 140 (dispatched on main, 02:42 to 02:48) passed; the public site built at 02:48 reads climate loaded,
+  the five-season summary loaded, the heat picture loaded, the history layers loaded, the terrain loaded; the base map
+  vectors stay unavailable until the fix branch lands. Task 47 closed.
