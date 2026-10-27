@@ -1208,8 +1208,8 @@ class StormLayers(unittest.TestCase):
 
     def test_flag_on_map_page_has_the_satellite_radio_and_the_same_words_in_the_panel_and_the_list(self):
         html = page(self.on, "map.html")
-        self.assertEqual(html.count('<input type="radio" name="layer" value="satellite">'), 1)
-        self.assertIn('<span class="choice-text">Satellite</span>', html)
+        self.assertEqual(html.count('data-group="live" data-key="satellite"'), 1)
+        self.assertIn('<span class="mo-label">Satellite</span>', html)
         description = (self.on_result.get("content") or {}).get("satellite")
         self.assertTrue(description, "the build result has no satellite paragraph")
         words = self.env.from_string("{{ t }}").render(t=description)
@@ -1297,18 +1297,17 @@ class ImageryBaseMap(unittest.TestCase):
         # The card's own page (map.html?card=1) is checked at run time by tools/smoke_map.py
         # (check_card_ignores_imagery); here the pages that embed the card carry no imagery.
         html = page(self.out, "map.html")
-        self.assertIn('<legend>Base map</legend>', html)
-        self.assertIn('<input type="radio" name="base" value="map" checked>', html)
-        self.assertNotIn('value="imagery" checked', html)
+        self.assertIn('<h3 class="mo-h" id="mo-base-h">Base map</h3>', html)
+        self.assertIn('data-group="base" data-key="map" aria-pressed="true"', html)
+        self.assertNotIn('data-key="imagery" aria-pressed="true"', html)
         for name in ("index.html", "reports.html"):
             self.assertNotIn("data-imagery", page(self.out, name), name)
-            self.assertNotIn('name="base"', page(self.out, name), name)
+            self.assertNotIn('data-group="base"', page(self.out, name), name)
 
     def test_the_switch_has_its_privacy_line_and_the_about_page_says_it_is_off_by_default(self):
         html = " ".join(page(self.out, "map.html").split())
-        self.assertIn('<input type="radio" name="base" value="imagery"><span class="choice-text">Imagery<small>'
-                      "Aerial imagery with roads and names from USGS. Your IP address and the map area you view go to "
-                      "USGS while it is on.</small>", html)
+        self.assertIn('data-group="base" data-key="imagery" aria-pressed="false" data-legend="Imagery: USDA, USGS, The National '
+                      'Map. Your IP address and the map area you view go to USGS while it is on."', html)
         about = " ".join(page(self.out, "about.html").split())
         self.assertIn("Base map imagery", about)
         self.assertIn("in the public domain", about)
@@ -1332,7 +1331,7 @@ class ImageryBaseMap(unittest.TestCase):
         out = Path(tempfile.mkdtemp(prefix="hailwatch-imagery-on-"))
         self.addCleanup(shutil.rmtree, out, True)
         site.build(out, None, NOW, sample=True, storm_layers=True)
-        self.assertIn('<input type="radio" name="base" value="imagery">', page(out, "map.html"))
+        self.assertIn('data-group="base" data-key="imagery"', page(out, "map.html"))
         self.assertEqual(json.loads(page(out, "data/map.json"))["imagery"], site.IMAGERY)
 
 
@@ -1354,14 +1353,13 @@ class ImageryPages(unittest.TestCase):
         off = [t for t in tags if re.search(r"""\b(?:src|href|srcset)\s*=\s*["']?\s*(?:https?:)?//""", t, re.IGNORECASE)]
         self.assertEqual(off, [])
 
-    def test_the_base_map_choice_is_in_the_layers_menu_after_the_weather_layers(self):
+    def test_the_base_map_cards_come_first_in_the_options_sheet_and_the_live_chips_after_them(self):
         html = page(self.out, "map.html")
-        menu = html[html.index('id="layers"'):]
-        menu = menu[:menu.index("</section>")]
-        weather_end = menu.index("</fieldset>")           # the weather layers' fieldset closes first
-        self.assertLess(menu.index('name="layer"'), weather_end)
-        self.assertGreater(menu.index('name="base"'), weather_end)
-        self.assertLess(menu.index("<legend>Base map</legend>"), menu.index('name="base"'))
+        sheet = html[html.index('id="map-options"'):]
+        sheet = sheet[:sheet.index("\n  <noscript>")]
+        self.assertLess(sheet.index("Base map"), sheet.index('data-group="base"'))
+        self.assertLess(sheet.index('data-group="base"'), sheet.index('data-group="live"'))
+        self.assertLess(sheet.index('data-group="live"'), sheet.index('data-group="history"'))
 
     def test_the_tile_address_is_on_the_element_that_holds_the_map(self):
         tag = re.search(r'<main id="app"[^>]*>', page(self.out, "map.html"))
@@ -3344,7 +3342,7 @@ class HailAddresses(unittest.TestCase):
         self.assertNotIn('data-layer="shapes"', card)
         self.assertNotIn('data-layer="dots"', card)
         self.assertIn("Tap or click the map for the five-year hail history", card)
-        menu = html[html.index('id="b3-keys"'):html.index('id="btn-list"')]
+        menu = html[html.index('id="b3-keys"'):html.index('id="mo-reset"')]          # the keys sit in the sheet, before Reset
         self.assertIn('data-layer="shapes"', menu)
         self.assertIn('data-layer="dots"', menu)                  # the sample has no outlines, so the dots line stays
         self.assertIn('data-layer="streets"', menu)
@@ -3933,17 +3931,16 @@ class HailSwathLayers(unittest.TestCase):
                 self.assertIn(f"<p>{self.phrase(row)}</p>", template, row)
         self.assertIn("SAMPLE: invented radar estimate, not NOAA data.", " ".join(lines["Hail, last hour"]))
 
-    def test_the_map_page_has_the_two_radios_after_the_weather_layers_and_only_with_the_flag(self):
+    def test_the_map_page_has_the_two_hail_chips_after_the_weather_layers_and_only_with_the_flag(self):
         from website import swath as sw
         on, off = page(self.on, "map.html"), page(self.off, "map.html")
         self.assertEqual([p.title for p in sw.PRODUCTS], list(self.HAIL_TITLES))
         for value, title in (("hail_60", self.HAIL_TITLES[0]), ("hail_1440", self.HAIL_TITLES[1])):
-            self.assertEqual(on.count(f'<input type="radio" name="layer" value="{value}">'), 1)
-            self.assertIn(f'<span class="choice-text">{title}</span>', on)
-            self.assertIn(f"sw-{value}", on)                       # the swatch is painted from the layer's legend
+            self.assertEqual(on.count(f'data-group="live" data-key="{value}"'), 1)
+            self.assertIn(f'<span class="mo-label">{title}</span>', on)
             self.assertNotIn(value, off)
-        self.assertLess(on.index('value="satellite"'), on.index('value="hail_60"'))
-        self.assertLess(on.index('value="hail_1440"'), on.index("<legend>Base map</legend>"))
+        self.assertLess(on.index('data-key="satellite"'), on.index('data-key="hail_60"'))
+        self.assertLess(on.index('data-key="hail_1440"'), on.index('id="mo-hist-h"'))
 
     def test_the_about_page_has_the_bullet_with_the_contract_words_and_only_with_the_flag(self):
         about = page(self.on, "about.html")
@@ -3967,7 +3964,7 @@ class HailSwathLayers(unittest.TestCase):
         on_map = page(self.on, "map.html")
         self.assertNotIn('id="hail-sheet"', on_map)           # the live line is part of the history sheet (--hail-history)
         self.assertNotIn("data-live", on_map)                 # made by the script, and only when a hail layer is on
-        self.assertIn('value="hail_60"', on_map)
+        self.assertIn('data-key="hail_60"', on_map)
 
     def test_a_layer_that_cannot_be_read_still_builds_with_its_words_and_says_so(self):
         out = Path(tempfile.mkdtemp(prefix="hailwatch-swath-down-"))
@@ -4056,7 +4053,8 @@ class HailSwathLayers(unittest.TestCase):
         def plain(html: str) -> str:
             return " ".join(re.sub(r"<[^>]+>", " ", html).split())
         map_html, about_html = page(out, "map.html"), page(out, "about.html")
-        labels = [plain(m) for m in re.findall(r"<label[^>]*>.*?</label>", map_html, re.S) if "Hail, last" in m]
+        labels = [plain(m) for m in re.findall(r'<button type="button" class="mo-chip"[^>]*>.*?</button>', map_html, re.S)
+                  if "Hail, last" in m]
         self.assertEqual(len(labels), 2)
         block = re.search(r'<section class="storm-sec" data-storm="hail".*?</section>', map_html, re.S)
         bullet = re.search(r"<li><strong>Hail swath \(radar estimate\)</strong>.*?</li>", about_html, re.S)
@@ -4332,6 +4330,12 @@ class HailSwathLayers(unittest.TestCase):
             ("D110(d)", 'go to USGS.", "failed_line"', 'go to USGS while it is on.", "failed_line"', 1),
         ),
     }
+    # D108 (B6 stage S1): the options sheet replaces the layer popover in the default build's map page. Its three named text
+    # changes (the button's aria-controls, the popover's removal and the sheet's insertion) are cut from the base build and the
+    # build now, and the restore check in test_the_default_build_matches_the_manifest_of_its_base_commit proves them exact.
+    ON_PURPOSE["map.html"] = ON_PURPOSE["map.html"] + tuple(
+        tuple(entry) for entry in json.loads((ROOT / "tests" / "fixtures" / "default-build-s1-rulings.json").read_text(
+            encoding="utf-8")))
 
     def test_the_default_build_matches_the_manifest_of_its_base_commit(self):
         expected = json.loads(self.MANIFEST.read_text(encoding="utf-8"))
@@ -5954,15 +5958,16 @@ class B6BaseMapData(unittest.TestCase):
         self.assertEqual(budget["landmark_shard"], {"limit_gzip": 20000, "largest_gzip": 90})
 
     def test_the_sheet_words_are_the_d110_sub_lines_the_switch_name_and_the_b6_lines(self):
-        self.assertEqual(site.SHEET_WORDS, {
-            "points_of_interest": "Landmark dots and names, for the kinds chosen above",
-            "five_year_history": "Past records from the last five years. Not a forecast.",
-            "highlight_recent_hail": "Highlight recent radar hail",
-            # F3: the water line for an area with no band D shard, imported from the vector module (not retyped here)
-            "water_line_unavailable": b2.WORDS["water_line_unavailable"],
-            # F3: the Landmarks sub-line the sheet shows under its heading (DESIGN section 13.6, item 5)
-            "landmarks_sub_line": ("Schools, parks, hospitals, airports, and fire and EMS stations, from the public lists named "
-                                   "under About.")})
+        self.assertEqual(site.SHEET_WORDS["points_of_interest"], "Landmark dots and names, for the kinds chosen above")     # D110(a)
+        self.assertEqual(site.SHEET_WORDS["five_year_history"], "Past records from the last five years. Not a forecast.")   # D110(b)
+        self.assertEqual(site.SHEET_WORDS["highlight_recent_hail"], "Highlight recent radar hail")                          # D110(g)
+        # F3: the water line for an area with no band D shard, imported from the vector module (not retyped here)
+        self.assertIs(site.SHEET_WORDS["water_line_unavailable"], b2.WORDS["water_line_unavailable"])
+        # F3 (DESIGN section 13.6, item 5): the Landmarks sub-line the sheet shows under its heading
+        self.assertEqual(site.SHEET_WORDS["landmarks_sub_line"],
+                         "Schools, parks, hospitals, airports, and fire and EMS stations, from the public lists named under About.")
+        # B6 stage S1 (DESIGN 13.6): every word the options sheet shows, and nothing else (tests/test_site.py OptionsSheet)
+        self.assertEqual(sorted(site.SHEET_WORDS), sorted(["airport", "base_failed", "base_heading", "church", "close_label", "coming", "coming_fire", "coming_smoke", "fire_ems", "fire_smoke", "five_year_history", "flood_history", "hail_history", "hail_last_day", "hail_last_hour", "heat_history", "held", "held_church", "highlight_recent_hail", "history_heading", "hospital", "imagery_card", "landmark_line", "landmarks_heading", "landmarks_sub_line", "legend_hail_last_day", "legend_hail_last_hour", "legend_imagery", "legend_precipitation", "legend_recent", "legend_reports", "legend_temperature", "legend_wind", "list_and", "list_comma", "list_last", "live_heading", "map_card", "name_airport", "name_fire_ems", "name_hospital", "name_park", "name_school", "options_title", "park", "points_of_interest", "points_of_interest_name", "precipitation", "recent_description", "reset", "reset_line", "school", "storm_reports", "storm_reports_description", "temperature", "unavailable", "waiting", "warnings", "warnings_description", "water_line_unavailable", "wind_gusts", "wind_history", "partial_history"]))
         self.assertEqual(self.data(self.loaded)["sheet"], site.SHEET_WORDS)
         self.assertEqual(site.BUBBLE_LEGEND, hl.WORDS["label_legend"])              # D135(a): the printed legend is the module's text
 
@@ -6742,6 +6747,328 @@ class B6LandmarkCredits(unittest.TestCase):
                                                      "shown": {"state": "loaded", "as_of": "2026-09-28"},
                                                      "fetched_only": {"state": "loaded", "as_of": site.NO_DATE}})
         self.assertEqual(site._source_dates(None), {})
+
+
+
+def attr(text):
+    """A sentence as the template writes it inside an attribute (Jinja escapes the quote and the ampersand)."""
+    from markupsafe import escape
+    return str(escape(text))
+
+
+class OptionsSheet(unittest.TestCase):
+    """The map options sheet (DESIGN 13.6, D108, D110; B6 stage S1): the markup the browser drives (templates/map.html), the words
+    it prints (build.SHEET_WORDS, rendered by Python and carried in data/base.json), the roles its colours come from (map.css
+    and style.css), and the map script that holds none of its sentences (AGENTS.md rule 4). Browser behaviour is checked by
+    tools/smoke_map.py (check_options_sheet)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.full = Path(tempfile.mkdtemp(prefix="hailwatch-sheet-full-"))
+        cls.addClassCleanup(shutil.rmtree, cls.full, True)
+        cls.result = site.build(cls.full, None, NOW, sample=True, storm_layers=True, hail_history=True, hail_addresses=True)
+        cls.plain = Path(tempfile.mkdtemp(prefix="hailwatch-sheet-plain-"))
+        cls.addClassCleanup(shutil.rmtree, cls.plain, True)
+        site.build(cls.plain, None, NOW, sample=True)
+        cls.html = page(cls.full, "map.html")
+        cls.sheet = cls.html[cls.html.index('<section class="sheet map-options" id="map-options"'):]
+        cls.sheet = cls.sheet[:cls.sheet.index("\n  <noscript>")]
+
+    def test_the_sheet_is_a_hidden_dialog_section_and_the_button_names_it(self):
+        self.assertIn('<section class="sheet map-options" id="map-options" role="dialog" aria-modal="true" '
+                      'aria-labelledby="mo-title" hidden>', self.html)
+        self.assertIn('aria-controls="map-options"', self.html)
+        self.assertEqual(self.html.count('id="map-options"'), 1)
+        for gone in ('id="layers"', 'name="layer"', 'name="base"', "popover", "<legend>Base map</legend>", "fieldset"):
+            self.assertNotIn(gone, self.html, gone)
+
+    def test_the_header_title_and_the_close_button_are_python_words_of_44_px_or_more(self):
+        self.assertIn('<h2 class="mo-title" id="mo-title" tabindex="-1">Map options</h2>', self.sheet)
+        self.assertIn('<button type="button" class="mo-close" id="mo-close" aria-label="Close map options">', self.sheet)
+
+    def test_the_groups_come_in_the_design_order(self):
+        order = ["Base map", "Live weather", "Five-year history", "Landmarks", 'id="tg-poi"', 'id="tg-hail-recent"',
+                 'id="tg-warnings"', 'id="tg-reports"', 'id="mo-reset"']
+        at = [self.sheet.index(part) for part in order]
+        self.assertEqual(at, sorted(at))
+        self.assertLess(self.sheet.index("Addresses, streets and building outlines"), self.sheet.index('id="mo-reset"'))
+        self.assertLess(self.sheet.index('id="tg-reports"'), self.sheet.index('id="b3-keys"'))
+
+    def test_the_base_map_cards_are_buttons_with_the_map_and_imagery_values(self):
+        self.assertEqual(self.sheet.count('data-group="base"'), 2)
+        self.assertIn('data-group="base" data-key="map" aria-pressed="true"', self.sheet)
+        self.assertIn('data-group="base" data-key="imagery" aria-pressed="false" data-legend="'
+                      "Imagery: USDA, USGS, The National Map. Your IP address and the map area you view go to USGS while it "
+                      'is on."', self.sheet)
+        self.assertEqual(self.sheet.count('data-legend="' + site.IMAGERY["credit_line"] + '"'), 1)
+
+    def test_the_live_chips_are_the_layers_with_their_legend_words(self):
+        for key in ("precip", "temp", "wind", "satellite", "hail_60", "hail_1440"):
+            self.assertEqual(self.sheet.count(f'data-group="live" data-key="{key}"'), 1, key)
+        self.assertIn('data-legend="' + attr(site.SHEET_WORDS["legend_precipitation"]) + '"', self.sheet)
+        self.assertIn('data-legend="' + attr(site.SHEET_WORDS["legend_temperature"]) + '"', self.sheet)
+        self.assertIn('data-legend="' + attr(site.SHEET_WORDS["legend_wind"]) + '"', self.sheet)
+        self.assertIn('data-legend="' + attr(site.SHEET_WORDS["legend_hail_last_hour"]) + '"', self.sheet)
+        plain = self.plain_sheet()
+        self.assertNotIn('data-key="hail_60"', plain)                    # the swath layers exist only in --storm-layers builds
+        self.assertNotIn('data-key="satellite"', plain)
+        self.assertIn('data-group="live" data-key="precip" aria-pressed="true"', plain)
+
+    def plain_sheet(self):
+        html = page(self.plain, "map.html")
+        start = html.index('<section class="sheet map-options" id="map-options"')
+        return html[start:html.index("\n  <noscript>", start)]
+
+    def test_the_five_year_chips_and_the_fire_and_smoke_coming_words(self):
+        for key in ("hail", "heat", "wind", "flood", "fire_smoke"):
+            self.assertEqual(self.sheet.count(f'data-group="history" data-key="{key}"'), 1, key)
+        self.assertIn("Past records from the last five years. Not a forecast.", self.sheet)
+        fire = self.sheet[self.sheet.index('data-key="fire_smoke"'):]
+        fire = fire[:fire.index("</button>")]
+        self.assertIn('data-reason="Coming later: fire is not in the map yet. Coming later: smoke is not in the map yet."', fire)
+        self.assertIn('<span class="mo-note">Coming</span>', fire)
+
+    def test_the_landmark_chips_carry_the_codes_of_the_landmark_module_and_the_held_church_reason(self):
+        self.assertEqual(lm.KIND_CODE, {"school": "s", "hospital": "h", "airport": "a", "fire": "f", "park": "p", "church": "c"})
+        for code in ("s", "p", "h", "a", "f", "c"):
+            self.assertEqual(self.sheet.count(f'data-group="landmark" data-key="{code}"'), 1, code)
+        church = self.sheet[self.sheet.index('data-key="c"'):]
+        church = church[:church.index("</button>")]
+        self.assertIn('data-reason="' + attr(lm.CHURCH_HELD) + '"', church)
+        self.assertIn('<span class="mo-note">Held</span>', church)
+        self.assertIn('data-name="schools"', self.sheet)
+        self.assertIn('data-name="fire and EMS stations"', self.sheet)
+
+    def test_the_landmark_line_reads_its_template_and_the_sub_line_is_the_sheet_words(self):
+        self.assertIn('id="mo-land-line" data-template="' + attr(site.SHEET_WORDS["landmark_line"]) + '"', self.sheet)
+        self.assertIn('<p class="mo-sub">' + attr(site.SHEET_WORDS["landmarks_sub_line"]) + "</p>", self.sheet)
+        self.assertEqual(site.SHEET_WORDS["landmark_line"],
+                         "{kinds} from the public lists named under About, shown as dots with their names.")
+        self.assertIn('data-waiting="Turn on Points of interest to show these."', self.sheet)
+
+    def test_the_switches_are_role_switch_checkboxes_with_their_descriptions(self):
+        for id_ in ("tg-poi", "tg-hail-recent", "tg-warnings", "tg-reports"):
+            self.assertEqual(self.sheet.count(f'id="{id_}"'), 1, id_)
+            self.assertRegex(self.sheet, rf'<input type="checkbox" role="switch" id="{id_}"', id_)
+        self.assertIn('<input type="checkbox" role="switch" id="tg-poi" checked>', self.sheet)
+        self.assertIn('<input type="checkbox" role="switch" id="tg-warnings" checked>', self.sheet)
+        self.assertIn('<input type="checkbox" role="switch" id="tg-reports"', self.sheet)
+        self.assertNotIn('id="tg-reports" checked', self.sheet)
+        for words in ("Landmark dots and names, for the kinds chosen above", "Radar estimate of 1 in or more, last 30 days",
+                      "NWS outlines", "Storm Prediction Center (SPC), last 3 days", "Points of interest",
+                      "Highlight recent radar hail", "Warnings", "Storm reports"):
+            self.assertIn(words, self.sheet, words)
+
+    def test_reset_has_its_button_and_its_line(self):
+        self.assertIn('<button type="button" class="mo-reset-btn" id="mo-reset">Reset</button>', self.sheet)
+        self.assertIn("Back to Map and Precipitation, with Points of interest and Warnings on. Everything else off.", self.sheet)
+
+    def test_the_address_legend_sits_inside_the_sheet_under_its_heading_only_with_the_flag(self):
+        self.assertIn('<div class="b3-keys" id="b3-keys">', self.sheet)
+        self.assertIn('<p class="legend-tap b3-head">Addresses, streets and building outlines</p>', self.sheet)
+        self.assertIn('data-layer="shapes"', self.sheet)
+        self.assertNotIn('id="b3-keys"', self.plain_sheet())
+
+    def test_the_hail_legends_are_the_swath_module_sentences_written_once(self):
+        from website import swath as sw
+        note = sw.WORDS_SWATH["legend_note"].format(window="hour")
+        self.assertIn(note, site.SHEET_WORDS["legend_hail_last_hour"])
+        self.assertIn(sw.WORDS_SWATH["uncoloured"].format(window="24 hours"), site.SHEET_WORDS["legend_hail_last_day"])
+        self.assertIn('data-legend="' + attr(site.SHEET_WORDS["legend_hail_last_hour"]) + '"', self.html)
+
+    def test_the_sheet_words_hold_the_13_6_lines_verbatim_and_reuse_the_module_sentences(self):
+        words = site.SHEET_WORDS
+        self.assertEqual(words["legend_precipitation"], "Rate as liquid water. Radar estimate up to now, High-Resolution Rapid "
+                                                        "Refresh (HRRR) model forecast after.")
+        self.assertEqual(words["legend_temperature"], "HRRR model temperature, in °F. Town numbers are the National Weather "
+                                                      "Service (NWS) forecast.")
+        self.assertEqual(words["legend_wind"], "HRRR model. Roofing limit 25 mph.")
+        self.assertEqual(words["legend_recent"], "Buildings in cells where radar estimated 1 in or more in the last 30 days are "
+                                                 "highlighted. Buildings in other cells are not; that is not the same as no hail. "
+                                                 "Radar estimate, not a measurement at the ground.")
+        self.assertEqual(words["legend_reports"], "No report is not “no hail”.")
+        self.assertEqual(words["waiting"], "Turn on Points of interest to show these.")
+        self.assertIs(words["held_church"], lm.CHURCH_HELD)
+        self.assertIs(words["legend_imagery"], site.IMAGERY["credit_line"])
+        self.assertEqual(words["coming_fire"], "Coming later: fire is not in the map yet.")
+        self.assertEqual(words["coming_smoke"], "Coming later: smoke is not in the map yet.")
+        self.assertIs(words["unavailable"], lb.UNAVAILABLE_TEXT)
+        self.assertTrue(words["base_failed"].startswith("Data unavailable. "))
+        self.assertTrue(words["base_failed"].endswith(" This is not an all-clear."))
+
+    def test_the_sheet_words_are_all_in_base_json_and_none_is_an_em_or_en_dash(self):
+        base_sheet = json.loads(page(self.full, "data/base.json"))["sheet"]
+        self.assertEqual(base_sheet, site.SHEET_WORDS)
+        for key, text in site.SHEET_WORDS.items():
+            self.assertNotIn("\u2014", text, key)
+            self.assertNotIn("\u2013", text, key)
+
+    def test_the_map_script_holds_none_of_the_sheet_sentences(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        js = re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)), js)   # the script's own escapes, read as text
+        for key, text in site.SHEET_WORDS.items():
+            if len(text) < 25:
+                continue
+            for part in re.split(r"\{\w+\}", text):
+                if len(part) >= 25:
+                    self.assertNotIn(part.strip(), js, key)
+        from website import swath as sw
+        for words in (sw.WORDS_SWATH["legend_note"], sw.WORDS_SWATH["uncoloured"]):     # the two the sheet reuses (the all-clear
+            for part in re.split(r"\{\w+\}", words):                                # sentence is shared by every module)
+                if len(part) >= 25:
+                    self.assertNotIn(part.strip(), js)
+
+    def test_the_map_script_names_no_word_of_the_sheet_by_hand(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        for needle in ("toggleLayers", "fitLayersMenu", "paintSwatches", "LAYER_WORD", 'input[name=', "#layers"):
+            self.assertNotIn(needle, js, needle)
+        for needle in ('"Map options', '"Live weather', '"Five-year history', '"Points of interest', '"Coming later',
+                       '"Turn on Points', '"Reset', '"Base map'):
+            self.assertNotIn(needle, js, needle)
+        for name in ("toggleOptions", "renderOptions", "setLive", "setHistory", "setLandmark", "setPoi", "landmarkLine",
+                     "setHailRecent", "resetOptions", "readOptionParams", "optionParams", "loadBase", "trapOptionsFocus"):
+            self.assertRegex(js, rf"function {name}\(", name)
+        self.assertIn('getAttribute("data-legend")', js)
+        self.assertIn('getAttribute("data-template")', js)
+
+    def test_the_address_keeps_the_sheet_choices_under_their_own_names(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        for name in ('"poi"', '"hail_recent"', '"history"', '"landmarks"', '"layer"', '"none"'):
+            self.assertIn(name, js, name)
+
+    def test_the_sheet_css_uses_the_roles_and_no_glass_blur_or_shadow(self):
+        css = (ROOT / "website" / "static" / "map" / "map.css").read_text(encoding="utf-8")
+        start = css.index("/* ---------------------------------------------------------------- the options sheet")
+        block = css[start:css.index("/* ---------------------------------------------------------------- bottom:", start)]
+        self.assertEqual(re.findall(r"#[0-9a-fA-F]{3,8}\b", block), [], "a hex value in a sheet rule")
+        for word in ("--glass", "backdrop-filter: blur", "drop-shadow"):
+            self.assertNotIn(word, block, word)
+        self.assertIn("box-shadow: none", block)
+        self.assertIn("border-radius: var(--radius)", block)
+        self.assertIn("min-height: 44px", block)
+        self.assertIn("outline: 3px solid var(--color-focus)", block)
+
+    def test_the_map_css_roles_are_the_style_css_roles_in_both_schemes(self):
+        style = (ROOT / "website" / "static" / "style.css").read_text(encoding="utf-8")
+        mapcss = (ROOT / "website" / "static" / "map" / "map.css").read_text(encoding="utf-8")
+        roles = ("color-surface", "color-surface-muted", "color-line", "color-text", "color-text-muted", "color-focus",
+                 "color-on-chip")
+
+        def blocks(text):
+            light = text[text.index(":root {"):]
+            light = light[:light.index("\n}")]
+            dark_at = text.index("@media (prefers-color-scheme: dark) {")
+            dark = text[dark_at:]
+            dark = dark[dark.index(":root {"):]
+            dark = dark[:dark.index("\n  }")]
+            decl = lambda s: {k: v.strip() for k, v in re.findall(r"--([\w-]+):\s*([^;]+);", s)}
+            return decl(light), decl(dark)
+
+        def resolve(name, *scopes, depth=0):
+            for scope in scopes:
+                if name in scope:
+                    value = scope[name]
+                    m = re.fullmatch(r"var\(--([\w-]+)\)", value)
+                    return resolve(m.group(1), *scopes, depth=depth + 1) if m else value
+            raise AssertionError(name)
+
+        style_light, style_dark = blocks(style)
+        map_light, map_dark = blocks(mapcss)
+        for role in roles:
+            want_light = resolve(role, style_light)
+            want_dark = resolve(role, style_dark, style_light)
+            self.assertEqual(resolve(role, map_light).lower(), want_light.lower(), f"light {role}")
+            self.assertEqual(resolve(role, map_dark, map_light).lower(), want_dark.lower(), f"dark {role}")
+
+    def test_the_sheet_markup_takes_its_words_from_python(self):
+        template = (ROOT / "website" / "templates" / "map.html").read_text(encoding="utf-8")
+        start = template.index('<section class="sheet map-options"')
+        sheet_src = template[start:template.index("\n  <noscript>", start)]
+        for words in ("Map options", "Live weather", "Five-year history", "Landmarks", "Base map", "Reset", "Coming later"):
+            self.assertNotIn(words, sheet_src, words)
+        self.assertGreaterEqual(sheet_src.count("{{ chip("), 15)
+        self.assertGreaterEqual(sheet_src.count("{{ card("), 2)
+
+    def test_the_default_build_has_the_sheet_without_the_storm_chips_or_the_address_block(self):
+        html = page(self.plain, "map.html")
+        self.assertIn('id="map-options"', html)
+        self.assertNotIn("data-key=\"hail_1440\"", html)
+        self.assertNotIn('id="b3-keys"', html)
+
+
+    def test_the_first_paint_words_travel_as_json_in_the_map_page(self):
+        start = self.html.index('<script type="application/json" id="map-words">')
+        block = self.html[start:self.html.index("</script>", start)]
+        words = json.loads(block[block.index(">") + 1:])
+        self.assertEqual(words, site.MAP_WORDS)
+        for key in ("reports_failed", "reports_none", "no_reports", "nothing_to_show", "no_layer_pictures", "no_layer_picture",
+                    "radar_reason", "satellite_reason", "forecast_reason", "base_failed", "unavailable", "held", "waiting",
+                    "partial_history", "list_and", "list_comma", "list_last"):
+            self.assertIn(key, words, key)
+        self.assertLess(start, self.html.index('id="map-options"'))
+
+    def test_the_page_words_are_pinned_by_value_and_no_interim_sentence_is_invented(self):
+        pinned = site.PAGE_WORDS
+        self.assertEqual(pinned["reports_failed"], "<strong>Storm reports didn't all load</strong> ({detail}). ")
+        self.assertEqual(pinned["reports_none"], "No SPC storm reports in or near Montana in the last 3 days. ")
+        self.assertEqual(pinned["no_reports"], "No reports. ")
+        self.assertEqual(pinned["nothing_to_show"], "Nothing to show for {layer}")
+        self.assertEqual(pinned["no_layer_pictures"], "No {layer} pictures in this update{why}. This is not an all-clear.")
+        self.assertEqual(pinned["no_layer_picture"], "No {layer} picture in this update. This is not an all-clear.")
+        self.assertEqual(pinned["radar_reason"], "radar: {detail}")
+        self.assertEqual(site.SHEET_WORDS["fire_smoke"], "Fire and smoke")
+        # supervisor ruling (S1 legends): nothing is published before S5, so no interim words are invented for the layers
+        # that are not drawn yet; their chips and lines keep their 13.6 words
+        self.assertNotIn("not_drawn", site.SHEET_WORDS)
+        self.assertNotIn("Not drawn on the map", self.html)
+        self.assertTrue(site.SHEET_WORDS["partial_history"].startswith("Data unavailable. "))
+        self.assertTrue(site.SHEET_WORDS["partial_history"].endswith(" This is not an all-clear."))
+        self.assertIn("a zero may mean a count is missing", site.SHEET_WORDS["partial_history"])
+
+    def test_the_map_script_reads_the_page_words_and_holds_none_of_the_moved_sentences(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        for literal in ("didn't all load</strong> (", "No SPC storm reports in or near Montana", '"Nothing to show for ',
+                        '" picture in this update. This is not an all-clear."', '"<p>No reports. "', '"radar: "', '"satellite: "',
+                        '"model forecast: "', '" pictures in this update" + (why'):
+            self.assertNotIn(literal, js, literal)
+        for key in ("reports_failed", "nothing_to_show", "no_layer_pictures", "no_layer_picture", "radar_reason",
+                    "satellite_reason", "forecast_reason"):
+            self.assertIn(f'wordFill("{key}"', js, key)
+        self.assertIn("PW.reports_none", js)
+        self.assertIn("PW.no_reports", js)
+        self.assertIn('getElementById("map-words")', js)
+
+    def test_the_legends_of_the_layers_not_drawn_yet_keep_their_spec_words(self):
+        # the chips and lines of the five-year, landmark and recent layers keep the words of DESIGN 13.6 until their layers
+        # are drawn (S2 to S4); no sentence on the page says a layer is not drawn yet
+        self.assertNotIn("data-not-drawn", self.sheet)
+        recent = self.sheet[self.sheet.index('id="tg-hail-recent"'):]
+        tag = recent[:recent.index(">")]
+        self.assertIn('data-legend="' + attr(site.SHEET_WORDS["legend_recent"]) + '"', tag)   # the 13.6 legend
+
+    def test_the_history_reason_line_sits_under_the_history_line(self):
+        self.assertLess(self.sheet.index('id="mo-hist-line"'), self.sheet.index('id="mo-hist-reason"'))
+        self.assertLess(self.sheet.index('id="mo-hist-reason"'), self.sheet.index('id="mo-land-h"'))
+
+    def test_the_landmark_chips_carry_the_unavailable_words_on_their_faces(self):
+        for code in ("s", "p", "h", "a", "f"):
+            chip = self.sheet[self.sheet.index(f'data-group="landmark" data-key="{code}"'):]
+            chip = chip[:chip.index("</button>")]
+            self.assertIn('<span class="mo-note">Data unavailable</span>', chip, code)
+
+    def test_the_pending_chips_are_solid_and_the_switch_input_is_a_44_px_target(self):
+        css = (ROOT / "website" / "static" / "map" / "map.css").read_text(encoding="utf-8")
+        pending = css[css.index("#map-options .mo-chip.is-pending {"):]
+        self.assertNotIn("dashed", pending[:pending.index("}")])
+        switch = css[css.index('#map-options .mo-switch input[type="checkbox"] {'):]
+        self.assertIn("height: 44px", switch[:switch.index("}")])
+        track = css[css.index('#map-options .mo-switch input[type="checkbox"]::before {'):]
+        self.assertIn("height: 28px", track[:track.index("}")])
+
+    def test_a_chip_still_loading_is_not_disabled_and_a_tap_on_it_changes_nothing(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn('look === "plain" || look === "pending"', js)           # aria-disabled is for the other looks
+        self.assertIn('item.classList.contains("is-pending")', js)           # a tap on a chip still loading returns
 
 
 if __name__ == "__main__":

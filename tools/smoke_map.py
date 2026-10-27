@@ -5,9 +5,9 @@
 Serves the built site on a local port, opens map.html in Chromium (Playwright) at desktop and phone
 sizes, and checks: the page loads without script errors; the map data, basemap and first frame
 load (a picture from map/frames/, not the blank placeholder the overlays start with, and no "didn't
-load" note); play moves the timeline; the layer menu switches the legend title and the pictures; a
+load" note); play moves the timeline; the options sheet switches the legend title and the pictures; a
 bubble is drawn for every town (basemap names are markers too, so only .town counts); the card
-used on the Now page loads. Also: every row of the layer menu can be tapped on a phone held
+used on the Now page loads. Also: every row of the options sheet can be tapped on a phone held
 sideways (nothing paints over it); alerts without an outline are named in the legend with a way to
 the List; a picture still loading when the viewer switches to a layer with no pictures never appears
 under the new layer's legend; the Now page's caption names the picture the card shows (radar or
@@ -16,7 +16,7 @@ timeline, and the Precipitation layer rings no town. On a --storm-layers build t
 too (check_satellite), including a switch to it made while the timeline plays.
 
 The Imagery base map (D32) is checked too (check_imagery_switch, check_imagery_direct, check_imagery_phone,
-check_card_ignores_imagery and check_imagery_refused). On the desktop the Layers menu picks Imagery, and one tile
+check_card_ignores_imagery and check_imagery_refused). On the desktop the options sheet picks Imagery, and one tile
 from basemap.nationalmap.gov must load (HTTP 200, image/jpeg). The vector land, lakes, rivers, roads, county
 lines and names are hidden, and the borders stay. The credit row (with its privacy words) and the address
 (base=imagery) show, the bubbles and the weather picture stay, and zooming reaches the imagery's maximum.
@@ -67,7 +67,7 @@ live files under hail/live/ the store reader skips, D75). If that store cannot b
 the failure is named; the table's position and the sizes of the files a tap fetches are still checked. Every row shows
 its kind word and its unit. Each file a tap fetches must be under the tile-file budget in map.json
 (hail.budget.tile_events_gzip_bytes, D66), and the fetch list of every tap is printed as a note. check_every_layer
-measures the phone view at zoom 15 over Billings with every layer of the menu on: the files it fetches, apart from the
+measures the phone view at zoom 15 over Billings with every layer of the options sheet on: the files it fetches, apart from the
 picture frames (listed apart, as B3's note lists them), must be under the phone budget in map.json
 (hail.budget.phone_gzip_bytes, 700,000 bytes gzip after D82(b)). --history makes a missing or unavailable summary a
 failure (the branch preview passes it); without the flag that is a note. A --history run on a build without the address
@@ -227,13 +227,11 @@ def check(root: Path, shots: Path | None = None, addresses: bool = False, store:
                 layers = page.get_by_role("button", name="Layers")
                 if layers.count():
                     layers.first.click()
-                    wind = page.get_by_role("radio", name="Wind gusts")
-                    if not wind.count():
-                        wind = page.get_by_role("button", name="Wind gusts")
+                    wind = page.get_by_role("button", name="Wind gusts")
                     if wind.count():
                         wind.first.click()
                         page.wait_for_timeout(500)
-                        page.keyboard.press("Escape")        # close the menu: its own "Wind gusts" doesn't count
+                        page.keyboard.press("Escape")        # close the sheet: its own "Wind gusts" doesn't count
                         want = data["layers"].get("wind", {}).get("title") or "Wind gusts"
                         title = page.locator("#legend-title").inner_text().strip()
                         if title != want:
@@ -241,7 +239,7 @@ def check(root: Path, shots: Path | None = None, addresses: bool = False, store:
                         elif data["layers"].get("wind", {}).get("frames") and not frame_drawn(page, "wind"):
                             problems.append(f"{label}: switching to wind gusts drew no wind picture")
                     else:
-                        problems.append(f"{label}: no Wind gusts choice in the layer menu")
+                        problems.append(f"{label}: no Wind gusts choice in the options sheet")
                         page.keyboard.press("Escape")
                 else:
                     problems.append(f"{label}: no Layers button")
@@ -249,7 +247,9 @@ def check(root: Path, shots: Path | None = None, addresses: bool = False, store:
                 problems += [f"{label}: {e}" for e in errors]
                 ctx.close()
 
-            extras = (("check_menu_rows", lambda: check_menu_rows(browser, base)),
+            extras = (("check_options_sheet", lambda: check_options_sheet(browser, base, data)),
+                      ("check_options_states", lambda: check_options_states(browser, base, data)),
+                      ("check_menu_rows", lambda: check_menu_rows(browser, base)),
                       ("check_no_outline_key", lambda: check_no_outline_key(browser, base, data)),
                       ("check_phone_legend", lambda: check_phone_legend(browser, base, data)),
                       ("check_empty_layer_switch", lambda: check_empty_layer_switch(browser, base, data)),
@@ -316,11 +316,11 @@ def frame_note(page) -> str:
                          " return n && !n.hidden ? n.textContent : ''; }")
 
 
-ROWS_HIT = """() => [...document.querySelectorAll('#layers label')].map(l => {
+ROWS_HIT = """() => [...document.querySelectorAll('#map-options .mo-chip, #map-options .mo-card, #map-options .mo-switch-row')].map(l => {
   l.scrollIntoView({block: 'nearest'});
   const r = l.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
   const hit = document.elementFromPoint(x, y);
-  return {row: l.innerText.trim().split('\\n')[0].trim(), inside: !!(hit && document.getElementById('layers').contains(hit)),
+  return {row: l.innerText.trim().split('\\n')[0].trim(), inside: !!(hit && document.getElementById('map-options').contains(hit)),
           hit: hit ? (hit.id || hit.className || hit.tagName) : null};
 })"""
 
@@ -328,8 +328,8 @@ ROWS_HIT = """() => [...document.querySelectorAll('#layers label')].map(l => {
 # These waits are for the town bubbles to be drawn (attached). The first one in towns.json (Anaconda)
 # is hidden at the first view (min_zoom 7), so waiting for a visible one would wait for the wrong town.
 def check_menu_rows(browser, base) -> list[str]:
-    """Phones held sideways and short windows: the layer menu sits over the timeline and every row
-    (scrolled into the menu's view if need be) takes a tap at its centre."""
+    """Phones held sideways and short windows: the options sheet sits over the timeline and every row
+    (scrolled into the sheet's view if need be) takes a tap at its centre."""
     problems = []
     ctx = browser.new_context(viewport={"width": 844, "height": 390}, reduced_motion="reduce")
     page = ctx.new_page()
@@ -342,7 +342,7 @@ def check_menu_rows(browser, base) -> list[str]:
         page.wait_for_timeout(150)
         for row in page.evaluate(ROWS_HIT):
             if not row["inside"]:
-                problems.append(f"layer menu {w}x{h}: a tap on '{row['row']}' lands on {row['hit']}")
+                problems.append(f"options sheet {w}x{h}: a tap on '{row['row']}' lands on {row['hit']}")
         page.keyboard.press("Escape")
     ctx.close()
     return problems
@@ -448,7 +448,7 @@ def check_empty_layer_switch(browser, base, data) -> list[str]:
     try:
         page.wait_for_function("() => document.getElementById('app').classList.contains('is-loading')", timeout=15000)
         page.click("#btn-layers")
-        page.get_by_role("radio", name="Temperature").check()
+        page.locator('#map-options .mo-chip[data-group="live"]', has_text="Temperature").click()
         page.keyboard.press("Escape")
         page.wait_for_timeout(200)
         page.unroute("**/map/frames/precip-*")                         # later requests pass at once
@@ -495,9 +495,12 @@ def check_card_words(browser, base, root) -> list[str]:
 
 
 def pick_layer(page, name: str) -> None:
-    """Open the layer menu, tick one layer in it and close the menu again."""
+    """Open the map options sheet, turn on one live chip in it (a chip that is on stays on: a tap would turn it off) and
+    close the sheet again."""
     page.click("#btn-layers")
-    page.get_by_role("radio", name=name).check()
+    chip = page.locator('#map-options .mo-chip[data-group="live"]', has_text=name)
+    if chip.get_attribute("aria-pressed") != "true":
+        chip.click()
     page.keyboard.press("Escape")
     page.wait_for_timeout(200)
 
@@ -558,7 +561,7 @@ def changed_share(before: bytes, after: bytes) -> float:
 
 
 def check_satellite(browser, base, data) -> list[str]:
-    """The Satellite layer (--storm-layers builds only). The layer menu picks it, the legend says Satellite, one
+    """The Satellite layer (--storm-layers builds only). The options sheet picks it, the legend says Satellite, one
     of its pictures is on screen and its swatch is painted from its legend. The picture also changes the map: the
     map canvas differs from the Precipitation layer's in more than 2% of its pixels, on a desktop and a phone."""
     if not data["layers"].get("satellite", {}).get("frames"):
@@ -580,10 +583,9 @@ def check_satellite(browser, base, data) -> list[str]:
             problems.append(f"{label}: switching to Satellite left the legend at {title!r}")
         if not picture_on_screen(page, "satellite"):
             problems.append(f"{label}: the satellite picture was not drawn")
-        painted = page.evaluate("() => { const s = document.querySelector('#layers .sw-satellite');"
-                                " return s ? getComputedStyle(s).backgroundImage : ''; }")
+        painted = page.evaluate("() => getComputedStyle(document.getElementById('legend-bar')).backgroundImage")
         if "gradient" not in painted:
-            problems.append(f"{label}: the Satellite swatch in the layer menu is not painted from its legend")
+            problems.append(f"{label}: the Satellite legend bar is not painted from its legend")
         share = changed_share(before, map_canvas(page))
         if share <= 0.02:
             problems.append(f"{label}: switching to Satellite changed {share:.1%} of the map canvas "
@@ -633,7 +635,7 @@ VECTOR = "path.bm-land, path.bm-lake, path.bm-river, path.bm-road, path.bm-count
 NAMES = ".bm-label span"                    # the white map's place and region names (HTML), hidden on Imagery
 BORDERS = "path.bm-border"                  # the state and country lines and the Montana outline: they stay
 IMAGERY_ON = "() => document.getElementById('app').classList.contains('is-imagery')"
-CHOICE = "() => (document.querySelector('input[name=base]:checked') || {}).value || ''"
+CHOICE = "() => { const c = document.querySelector('#map-options .mo-card[aria-pressed=\"true\"]'); return c ? c.getAttribute('data-key') : ''; }"
 CREDIT_ROWS = "() => [...document.querySelectorAll('#legend-keys li')].map(li => li.textContent.trim())"
 BUBBLES = ("() => [...document.querySelectorAll('.leaflet-marker-icon.town')]"
            ".filter(e => getComputedStyle(e).display !== 'none').length")
@@ -696,9 +698,9 @@ def tile_problem(tile, label: str) -> str | None:
 
 
 def base_choice(page, value: str) -> None:
-    """Open the Layers menu, pick the base map ("map" or "imagery") and close the menu again."""
+    """Open the options sheet, pick the base map ("map" or "imagery") and close the sheet again."""
     page.click("#btn-layers")
-    page.locator(f"input[name=base][value={value}]").check()
+    page.locator(f'#map-options .mo-card[data-group="base"][data-key="{value}"]').click()
     page.keyboard.press("Escape")
     page.wait_for_timeout(200)
 
@@ -766,7 +768,7 @@ def imagery_problem(data) -> str | None:
 
 
 def check_imagery_switch(browser, base, data, shots) -> list[str]:
-    """The Imagery base map on a desktop (D32). The white map asks the imagery host for nothing. The Layers menu
+    """The Imagery base map on a desktop (D32). The white map asks the imagery host for nothing. The options sheet
     picks Imagery, and one tile from the host must load (HTTP 200, image/jpeg). The vector land, lakes, rivers,
     roads, county lines and names are hidden, and the borders stay. The credit row and the address (base=imagery)
     show. The bubbles and the weather picture stay, and zooming reaches the imagery's maximum. Switching back
@@ -792,8 +794,8 @@ def check_imagery_switch(browser, base, data, shots) -> list[str]:
             problems.append("imagery: the page opens on Imagery without a switch")
         if not page.evaluate(PAINTED, "path.bm-land"):
             problems.append("imagery: the white map's land is not drawn before any switch")
-        if page.locator("input[name=base][value=imagery]").count() != 1:
-            return problems + ["imagery: the Layers menu has no Imagery choice (input name=base, value imagery)"]
+        if page.locator('#map-options .mo-card[data-group="base"][data-key="imagery"]').count() != 1:
+            return problems + ["imagery: the options sheet has no Imagery card (data-group base, data-key imagery)"]
         if data["layers"].get("precip", {}).get("frames") and not picture_on_screen(page, "precip"):
             problems.append("imagery: no weather picture is on screen before the switch")
         snap(page, shots, "desktop-map.png")
@@ -1006,7 +1008,7 @@ def check_imagery_refused(browser, base, data) -> list[str]:
         ctx.unroute(f"https://{IMAGERY_HOST}/**")
         box = page.locator("#map").bounding_box()
         page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
-        page.mouse.wheel(0, 110)
+        page.mouse.wheel(0, -110)
         page.wait_for_timeout(400)
         tile = watch.tile()
         if tile is None:
@@ -2753,7 +2755,7 @@ def wait_live(page, loading: str, seconds: float = 15) -> str:
 
 
 def check_swath_layers(browser, base, root: Path, data: dict, shots) -> list[str]:
-    """Each hail layer on a desktop and a phone: the layer menu picks it and the legend says its title; every class has
+    """Each hail layer on a desktop and a phone: the options sheet picks it and the legend says its title; every class has
     its word on the scale (none thinned) and its colour in the bar; the legend's kind and uncoloured sentences are in view; the
     swatch is painted from the legend; the state line is the fresh line with the age the browser works out; the picture
     is on screen. The pixel gate is check_swath_gate. The page's clock is set to two minutes after the frame, so a build
@@ -2792,10 +2794,9 @@ def check_swath_layers(browser, base, root: Path, data: dict, shots) -> list[str
                     problems.append(f"{label}: {title}: #{el_id} is not in view with its words: {text!r}")
             if "rgba(" not in page.evaluate("() => document.getElementById('legend-bar').style.background"):
                 problems.append(f"{label}: {title}: the legend bar has no colours")
-            painted = page.evaluate(f"() => {{ const s = document.querySelector('#layers .sw-{key}');"
-                                    " return s ? getComputedStyle(s).backgroundImage : ''; }")
+            painted = page.evaluate("() => getComputedStyle(document.getElementById('legend-bar')).backgroundImage")
             if "gradient" not in painted:
-                problems.append(f"{label}: {title}: the swatch in the layer menu is not painted from its legend")
+                problems.append(f"{label}: {title}: the legend bar is not painted from its legend")
             now_ms, line = page.evaluate(f"() => [Date.now(), document.querySelector('{SWATH_LINE}').textContent]")
             state, want = view_state(L, now_ms)
             if line.strip() != want:
@@ -3047,7 +3048,7 @@ def clear_spot(page, data: dict, lat: float, lon: float) -> None:
 
 # The points of the map that no panel covers (D88(h)): a grid of points over the map, each read by what the screen shows at it,
 # so a point under a panel reads as that panel. Every fixed-position panel counts (map.html and map.css): the top bar with the
-# legend card, the search box and the buttons, the layer menu, the timeline, the card chip, the sheet and the scrim. On a phone
+# legend card, the search box and the buttons, the options sheet, the timeline, the card chip, the sheet and the scrim. On a phone
 # the legend card sits in the middle, so the free points are two bands and their centre can fall on the card: visible_centre
 # takes the free point nearest that centre instead.
 FREE_POINTS_JS = """() => {
@@ -3747,8 +3748,360 @@ def check_summary(browser, base: str, root: Path, data: dict, store: Path, shots
     return problems
 
 
+def check_options_sheet(browser, base: str, data: dict) -> list[str]:
+    """The map options sheet (DESIGN 13.6; B6 stage S1) at 390 by 844, 1280 by 800 and 320 by 568. It opens from the Layers
+    button on its title, and Escape closes it back to the button. Its states come from the data: Precipitation, Points of
+    interest, Warnings and Map are on, the rest off. A live choice shows its legend line and the timeline; a second tap turns
+    it off (layer=none, the timeline and the legend card hidden). Points of interest off waits the landmark chips and opens
+    the waiting reason; a landmark kind shows the landmark line, and the address names it; the held church kind opens its
+    reason with no count; a five-year choice shows its legend line and the address names it; Reset restores the defaults and
+    clears the sheet's address parameters. No control is under 44 by 44 px (a switch by its row), nothing overflows the page
+    width, and there is no script error, console error or request off this site."""
+    import json as _json
+    from urllib.parse import urlsplit as _split
+    problems: list[str] = []
+    host = _split(base).netloc
+    base_loaded = bool((data.get("history_layers") or {}).get("state") == "loaded")
+    for label, size in (("phone", (390, 844)), ("desk", (1280, 800)), ("small", (320, 568))):
+        ctx = browser.new_context(viewport={"width": size[0], "height": size[1]}, reduced_motion="reduce")
+        page = ctx.new_page()
+        errors: list[str] = []
+        off_site: list[str] = []
+        page.on("pageerror", lambda e: errors.append(f"script error: {e}"))
+        page.on("console", lambda m: errors.append(f"console: {m.text}") if m.type == "error" else None)
+        page.on("request", lambda r: off_site.append(r.url) if r.url.startswith(("http:", "https:")) and _split(r.url).netloc != host
+                else None)
+        page.goto(base + "map.html", wait_until="load")
+        page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
+        if base_loaded:
+            try:   # the chips that need base.json leave their pending look once it has loaded
+                page.wait_for_function("() => !document.querySelector('#map-options .mo-chip[data-key=\"hail\"]')"
+                                       ".classList.contains('is-pending')", timeout=15000)
+            except Exception:                                       # noqa: BLE001 - reported below
+                problems.append(f"{label}: base.json did not leave the pending look of the five-year chips")
+        state = page.evaluate("""() => {
+          const chip = (g, k) => document.querySelector(`#map-options [data-group="${g}"][data-key="${k}"]`);
+          return {live: chip('live', 'precip').getAttribute('aria-pressed'),
+                  temp: chip('live', 'temp').getAttribute('aria-pressed'),
+                  base: document.querySelector('#map-options .mo-card[aria-pressed="true"]').getAttribute('data-key'),
+                  poi: document.getElementById('tg-poi').checked, warn: document.getElementById('tg-warnings').checked,
+                  reports: document.getElementById('tg-reports').checked, recent: document.getElementById('tg-hail-recent').checked};
+        }""")
+        want = {"live": "true", "temp": "false", "base": "map", "poi": True, "warn": True, "reports": False, "recent": False}
+        for key, value in want.items():
+            if state.get(key) != value:
+                problems.append(f"options {label}: {key} is {state.get(key)!r} at the start, want {value!r}")
+        page.click("#btn-layers")
+        page.wait_for_timeout(150)
+        if page.locator("#map-options").is_hidden() or page.evaluate("() => document.activeElement.id") != "mo-title":
+            problems.append(f"options {label}: the Layers button does not open the sheet on its title")
+        if page.evaluate("() => document.documentElement.scrollWidth > window.innerWidth"):
+            problems.append(f"options {label}: the page scrolls sideways with the sheet open")
+        small = page.evaluate("""() => [...document.querySelectorAll('#map-options .mo-chip, #map-options .mo-card, '
+          + '#map-options .mo-switch-row, #map-options .mo-close, #map-options .mo-reset-btn')]
+          .filter(e => e.offsetParent !== null).map(e => [e.id || e.getAttribute('data-key') || e.className,
+          Math.round(e.getBoundingClientRect().width), Math.round(e.getBoundingClientRect().height)])
+          .filter(([n, w, h]) => w < 44 || h < 44)""")
+        for name, w, h in small:
+            problems.append(f"options {label}: control {name} is {w} by {h} px (44 by 44 at least)")
+        if base_loaded:
+            page.click('#map-options .mo-chip[data-group="live"][data-key="temp"]')
+            page.wait_for_timeout(300)
+            temp_on = page.evaluate("() => document.querySelector('#map-options [data-key=\"temp\"]').getAttribute('aria-pressed')")
+            if temp_on != "true" or page.locator("#mo-live-line").is_hidden():
+                problems.append(f"options {label}: Temperature did not turn on with its legend line")
+            if "layer=temp" not in page.url:
+                problems.append(f"options {label}: the address does not name the Temperature layer ({page.url})")
+            page.click('#map-options .mo-chip[data-group="live"][data-key="temp"]')          # a second tap: no live layer
+            page.wait_for_timeout(300)
+            if "layer=none" not in page.url or not page.locator("#timeline").is_hidden():
+                problems.append(f"options {label}: a second tap did not turn the live layer off (timeline hidden, layer=none)")
+            page.click('#map-options .mo-chip[data-group="live"][data-key="precip"]')
+            page.wait_for_timeout(300)
+            page.click('#map-options .mo-chip[data-group="landmark"][data-key="s"]')
+            page.wait_for_timeout(200)
+            line = page.locator("#mo-land-line")
+            if line.is_hidden() or not line.inner_text().startswith("Schools from the public lists named under About"):
+                problems.append(f"options {label}: a landmark kind did not show its landmark line")
+            if "landmarks=s" not in page.url:
+                problems.append(f"options {label}: the address does not name the landmark kind ({page.url})")
+            page.click("#tg-poi")
+            page.wait_for_timeout(150)
+            parks = page.locator('#map-options .mo-chip[data-group="landmark"][data-key="p"]')
+            if parks.get_attribute("aria-disabled") != "true" or "is-waiting" not in (parks.get_attribute("class") or ""):
+                problems.append(f"options {label}: Points of interest off did not wait the landmark chips")
+            parks.click(force=True)            # aria-disabled chips open their reason; Playwright would refuse the click
+            reason = page.locator("#mo-land-reason")
+            if reason.is_hidden() or reason.inner_text().strip() != "Turn on Points of interest to show these.":
+                problems.append(f"options {label}: a waiting chip did not open 'Turn on Points of interest to show these.'")
+            if "poi=off" not in page.url:
+                problems.append(f"options {label}: the address does not carry poi=off ({page.url})")
+            page.click("#tg-poi")
+            page.wait_for_timeout(150)
+            church = page.locator('#map-options .mo-chip[data-group="landmark"][data-key="c"]')
+            church.click(force=True)
+            if church.get_attribute("aria-disabled") != "true" or "Places of worship are not shown yet" not in page.locator(
+                    "#mo-land-reason").inner_text():
+                problems.append(f"options {label}: the held church kind did not open its reason")
+            if any(ch.isdigit() for ch in church.inner_text()):
+                problems.append(f"options {label}: the held church kind shows a count")
+            page.click('#map-options .mo-chip[data-group="history"][data-key="hail"]')
+            page.wait_for_timeout(150)
+            if page.locator('#map-options [data-key="hail"]').get_attribute("aria-pressed") != "true" or "history=hail" not in page.url:
+                problems.append(f"options {label}: the five-year Hail choice did not turn on and name itself in the address")
+            hist_line = page.locator("#mo-hist-line")
+            hail_legend = page.evaluate(HAIL_LEGEND_JS)
+            if hist_line.is_hidden() or hist_line.inner_text().strip() != hail_legend:
+                problems.append(f"options {label}: the five-year Hail choice did not show its legend line from data/base.json")
+            page.click("#mo-reset")
+            page.wait_for_timeout(300)
+            after = page.evaluate("""() => ({live: document.querySelector('#map-options [data-key="precip"]').getAttribute('aria-pressed'),
+              hail: document.querySelector('#map-options [data-key="hail"]').getAttribute('aria-pressed'),
+              land: [...document.querySelectorAll('#map-options .mo-chip[data-group="landmark"]')].filter(c => c.getAttribute('aria-pressed') === 'true').length,
+              poi: document.getElementById('tg-poi').checked})""")
+            if after != {"live": "true", "hail": "false", "land": 0, "poi": True}:
+                problems.append(f"options {label}: Reset did not restore the defaults ({after})")
+            if any(k in page.url for k in ("poi=", "landmarks=", "history=", "hail_recent=", "layer=", "base=")):
+                problems.append(f"options {label}: Reset left a sheet parameter in the address ({page.url})")
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(150)
+        if not page.locator("#map-options").is_hidden() or page.evaluate("() => document.activeElement.id") != "btn-layers":
+            problems.append(f"options {label}: Escape did not close the sheet back to the Layers button")
+        problems += [f"options {label}: {e}" for e in errors]
+        problems += [f"options {label}: a request off this site: {u}" for u in off_site][:3]
+        ctx.close()
+    return problems
+
+
+# the Hail legend of data/base.json (the five-year Hail line once it is on): read from the page, never typed here
+HAIL_LEGEND_JS = ("() => fetch('data/base.json').then(r => r.json())"
+                  ".then(d => d.history_layers.pictures.hail1.words.legend)")
+
+
+def check_options_states(browser, base: str, data: dict) -> list[str]:
+    """The options sheet's states that the data can break (DESIGN 13.6; B6 stage S1). With data/base.json unreadable, every
+    chip that needs it gives its reason on tap, the landmark chips and the held church kind show the unavailable word on their
+    faces, and the recent-hail switch gives its line. A five-year part that loaded in part is unavailable with its sentence,
+    and an unavailable landmark kind shows its words on the chip face. A chip still loading is solid, not dashed. The address's
+    poi=0 and hail_recent=1 read as off and on. A tapped unavailable five-year chip's reason shows beside the line of a layer
+    that is on. The sheet never covers the Find button at 1280 by 800 or 1024 by 700, and each switch input is 44 px or more.
+    Every sentence is read from the page's own words (the map-words script) or from the build's data, never typed here."""
+    import json as _json
+    problems: list[str] = []
+
+    def page_words(page):
+        return page.evaluate("() => JSON.parse(document.getElementById('map-words').textContent)")
+
+    def changed(change):
+        def handler(route):
+            response = route.fetch()
+            doc = response.json()
+            change(doc)
+            route.fulfill(response=response, body=_json.dumps(doc), headers={"content-type": "application/json"})
+        return handler
+
+    def open_at(size, path, route=None):
+        ctx = browser.new_context(viewport={"width": size[0], "height": size[1]}, reduced_motion="reduce")
+        page = ctx.new_page()
+        errors: list[str] = []
+        page.on("pageerror", lambda e: errors.append(f"script error: {e}"))
+        page.on("console", lambda m: errors.append(f"console: {m.text}")
+                if m.type == "error" and "Failed to load resource" not in m.text else None)
+        if route is not None:
+            page.route("**/data/base.json", route)
+        page.goto(base + path, wait_until="load")
+        page.wait_for_timeout(1200)
+        page.click("#btn-layers")
+        page.wait_for_timeout(200)
+        return ctx, page, errors
+
+    def chip(page, group, key):
+        return page.locator(f'#map-options .mo-chip[data-group="{group}"][data-key="{key}"]')
+
+    def shown(line):
+        return not line.is_hidden() and line.inner_text().strip()
+
+    # a. data/base.json cannot be read
+    ctx, page, errors = open_at((390, 844), "map.html", lambda route: route.abort())
+    try:
+        words = page_words(page)
+        if not words.get("base_failed") or not words.get("unavailable"):
+            problems.append("options base.json unreadable: the map page carries no base_failed or unavailable word")
+        chip(page, "history", "hail").click(force=True)
+        page.wait_for_timeout(200)
+        if shown(page.locator("#mo-hist-reason")) != words.get("base_failed"):
+            problems.append("options base.json unreadable: a tapped five-year chip did not show the base-map sentence")
+        chip(page, "landmark", "s").click(force=True)
+        page.wait_for_timeout(200)
+        if shown(page.locator("#mo-land-reason")) != words.get("base_failed"):
+            problems.append("options base.json unreadable: a tapped landmark chip did not show the base-map sentence")
+        faces = page.evaluate("""() => Object.fromEntries([...document.querySelectorAll('#map-options .mo-chip[data-group=landmark]')]
+          .map(c => [c.dataset.key, c.querySelector('.mo-note') ? c.querySelector('.mo-note').textContent : null]))""")
+        for code in ("s", "p", "h", "a", "f", "c"):
+            if faces.get(code) != words.get("unavailable"):
+                problems.append(f"options base.json unreadable: landmark chip {code} shows {faces.get(code)!r} on its face, "
+                                f"not the unavailable word")
+        if not page.evaluate("() => document.getElementById('tg-hail-recent').disabled"):
+            problems.append("options base.json unreadable: the recent-hail switch is not disabled")
+        if shown(page.locator("#mo-recent-line")) != words.get("base_failed"):
+            problems.append("options base.json unreadable: the recent-hail switch gives no sentence")
+        problems += [f"options base.json unreadable: {e}" for e in errors]
+    finally:
+        ctx.close()
+
+    # b. a five-year part that loaded in part (the zones of Wind and Flood)
+    def zones_partial(doc):
+        doc["history_layers"]["zones"]["state"] = "partial"
+    ctx, page, errors = open_at((390, 844), "map.html", changed(zones_partial))
+    try:
+        words = page_words(page)
+        wind = chip(page, "history", "wind")
+        if wind.get_attribute("aria-disabled") != "true" or "is-unavailable" not in (wind.get_attribute("class") or ""):
+            problems.append("options zones partial: a part loaded in part is not unavailable")
+        wind.click(force=True)
+        page.wait_for_timeout(200)
+        if shown(page.locator("#mo-hist-reason")) != words.get("partial_history"):
+            problems.append("options zones partial: the tapped chip does not show the partial-layer sentence")
+        problems += [f"options zones partial: {e}" for e in errors]
+    finally:
+        ctx.close()
+
+    # c. an unavailable landmark kind (the school kind) with its own problem sentence
+    def school_unavailable(doc):
+        for kind in doc["base"]["landmarks"]["kinds"].values():
+            if kind and kind.get("code") == "s":
+                kind["state"] = "unavailable"
+                kind["problem"] = "Data unavailable. Smoke school words."
+    ctx, page, errors = open_at((390, 844), "map.html?landmarks=s", changed(school_unavailable))
+    try:
+        words = page_words(page)
+        school = chip(page, "landmark", "s")
+        if school.get_attribute("aria-disabled") != "true":
+            problems.append("options school unavailable: the chip is not unavailable")
+        face = school.locator(".mo-note")
+        if face.count() == 0 or face.inner_text().strip() != words.get("unavailable"):
+            problems.append("options school unavailable: the chip shows no unavailable word on its face")
+        school.click(force=True)
+        page.wait_for_timeout(200)
+        if shown(page.locator("#mo-land-reason")) != "Data unavailable. Smoke school words.":
+            problems.append("options school unavailable: the tapped chip does not show the kind's own sentence")
+        problems += [f"options school unavailable: {e}" for e in errors]
+    finally:
+        ctx.close()
+
+    # d. base.json still loading: a chip that waits is solid, not dashed, and loads with its own look
+    held: list = []
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")
+    page = ctx.new_page()
+    try:
+        page.route("**/data/base.json", lambda route: held.append(route))
+        page.goto(base + "map.html", wait_until="load")
+        page.wait_for_timeout(900)
+        page.click("#btn-layers")
+        page.wait_for_timeout(200)
+        border = chip(page, "landmark", "s").evaluate("e => getComputedStyle(e).borderTopStyle")
+        if border != "solid":
+            problems.append(f"options loading: a chip still loading has a {border} border (solid expected)")
+        if chip(page, "landmark", "s").get_attribute("aria-disabled") != "false":
+            problems.append("options loading: a chip still loading is marked disabled (it is not unavailable yet)")
+        chip(page, "landmark", "s").click(force=True)      # a tap on a chip still loading changes nothing
+        if "landmarks=s" in page.url:
+            problems.append("options loading: a tap on a chip still loading changed the address")
+        for route in held:
+            route.continue_()
+        page.wait_for_timeout(1500)
+        if "is-pending" in (chip(page, "landmark", "s").get_attribute("class") or ""):
+            problems.append("options loading: a chip stays pending after base.json has loaded")
+    finally:
+        ctx.close()
+
+    # e. the address reads poi=0 and hail_recent=1 as off and on
+    ctx, page, errors = open_at((1280, 800), "map.html?poi=0&hail_recent=1")
+    try:
+        if page.evaluate("() => document.getElementById('tg-poi').checked"):
+            problems.append("options link poi=0: Points of interest is still on")
+        recent = page.evaluate("() => [document.getElementById('tg-hail-recent').checked, document.getElementById('tg-hail-recent').disabled]")
+        if not recent[1] and not recent[0]:
+            problems.append("options link hail_recent=1: the recent-hail switch is still off")
+        elif recent[1]:
+            problems.append(NOTE + "options link hail_recent=1 was not checked: the recent-hail switch is unavailable in this build")
+        problems += [f"options link: {e}" for e in errors]
+    finally:
+        ctx.close()
+
+    # f. the sheet's top edge does not cover the Find button at the two wide sizes
+    for size in ((1280, 800), (1024, 700)):
+        ctx, page, errors = open_at(size, "map.html")
+        try:
+            go = page.evaluate("() => { const r = document.getElementById('address-go').getBoundingClientRect();"
+                               " return [r.left, r.top, r.right, r.bottom]; }")
+            x, y = go[0] + 3, go[3] - 3
+            covered = page.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y);"
+                                    " return !!e && document.getElementById('map-options').contains(e); }", [x, y])
+            if covered:
+                problems.append(f"options {size[0]} by {size[1]}: the sheet covers the corner of the Find button")
+            problems += [f"options {size[0]} by {size[1]}: {e}" for e in errors]
+        finally:
+            ctx.close()
+
+    # g. a five-year chip that is on keeps its line, and a tapped unavailable chip's reason shows beside it
+    ctx, page, errors = open_at((1280, 800), "map.html")
+    try:
+        words = page_words(page)
+        hail = chip(page, "history", "hail")
+        if hail.get_attribute("aria-disabled") == "true":
+            problems.append(NOTE + "options history reason: not checked, the five-year Hail chip is unavailable in this build")
+        else:
+            hail.click(force=True)
+            page.wait_for_timeout(200)
+            chip(page, "history", "fire_smoke").click(force=True)
+            page.wait_for_timeout(200)
+            reason = shown(page.locator("#mo-hist-reason")) or ""
+            if "Coming later: fire is not in the map yet." not in reason or "Coming later: smoke is not in the map yet." not in reason:
+                problems.append("options history reason: a tapped Fire and smoke chip does not show its Coming sentences beside "
+                                "the Hail line")
+            hail_legend = page.evaluate(HAIL_LEGEND_JS)
+            if shown(page.locator("#mo-hist-line")) != hail_legend:
+                problems.append("options history reason: the Hail line does not show its legend from data/base.json")
+        problems += [f"options history reason: {e}" for e in errors]
+    finally:
+        ctx.close()
+
+    # h. every switch input is a 44 px target (the row is the label; the input is the control)
+    for size in ((390, 844), (1280, 800)):
+        ctx, page, errors = open_at(size, "map.html")
+        try:
+            boxes = page.evaluate("() => [...document.querySelectorAll('#map-options .mo-switch input[type=checkbox]')]"
+                                  ".map(e => { const r = e.getBoundingClientRect(); return [e.id, r.width, r.height]; })")
+            for name, w, h in boxes:
+                if w < 44 or h < 44:
+                    problems.append(f"options switch {name} at {size[0]} by {size[1]} is {round(w)} by {round(h)} px (44 at least)")
+        finally:
+            ctx.close()
+
+    # i. Reset from a link with base=imagery puts the Map card back and drops base=imagery from the address (DESIGN 13.6)
+    ctx = browser.new_context(allow=(f"https://{IMAGERY_HOST}/",), viewport={"width": 390, "height": 844}, reduced_motion="reduce")
+    page = ctx.new_page()
+    try:
+        page.goto(base + "map.html?base=imagery", wait_until="load")
+        page.wait_for_timeout(1200)
+        page.click("#btn-layers")
+        page.wait_for_timeout(200)
+        page.click("#mo-reset")
+        page.wait_for_timeout(300)
+        cards = dict(page.evaluate("() => [...document.querySelectorAll('#map-options .mo-card[data-group=base]')]"
+                                   ".map(c => [c.dataset.key, c.getAttribute('aria-pressed')])"))
+        if cards.get("map") != "true" or cards.get("imagery") != "false":
+            problems.append(f"options reset from base=imagery: the base cards read {cards}, not Map pressed")
+        if "base=imagery" in page.url:
+            problems.append(f"options reset from base=imagery: the address still names base=imagery ({page.url})")
+    finally:
+        ctx.close()
+    return problems
+
+
 def check_every_layer(browser, base: str, data: dict) -> list[str]:
-    """The phone view at zoom 15 over Billings with every layer of the menu on (gate B5-12, D30, D40, D42, D66): each layer is
+    """The phone view at zoom 15 over Billings with every layer of the options sheet on (gate B5-12, D30, D40, D42, D66): each layer is
     ticked in turn, and the files the view fetches (shell, data, B3 files, B4 live files, B5 history files) must be under the
     phone budget map.json carries (hail.budget.phone_gzip_bytes). The picture frames (map/frames/) are listed apart, as B3's
     note lists them."""
@@ -3766,7 +4119,7 @@ def check_every_layer(browser, base: str, data: dict) -> list[str]:
         except Exception as e:                                  # noqa: BLE001 - reported below
             missing.append(f"{title} ({str(e).splitlines()[0][:70]})")
     if missing:
-        problems.append("the layer menu would not turn on every layer at 390 px: " + "; ".join(missing))
+        problems.append("the options sheet would not turn on every layer at 390 px: " + "; ".join(missing))
     sizes: dict[str, tuple[str, int]] = {}
     unread = 0
     for response in seen:
@@ -3837,6 +4190,11 @@ def main(argv=None) -> int:
     if failures:
         print("Map smoke test failed:\n- " + "\n- ".join(failures))
         return 1
+    unchecked = [n for n in notes if "not checked" in n or "did not run" in n or "not run" in n]
+    if unchecked:
+        print(f"Map smoke test passed with {len(unchecked)} check(s) not run (the notes above say which). The claims of a full "
+              "pass are not all verified by this run.")
+        return 0
     print("Map smoke test passed: page, frames, basemap, bubbles, play, layers, card and the Imagery base map all work, "
           "and on a --hail-history build the hail sheet does too (or, without the flag, no sheet is offered); "
           "on a --storm-layers build the hail swath layers, their freshness and their List do too; "
