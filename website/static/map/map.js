@@ -56,6 +56,14 @@
      its point with its address lines on top, and the source lines of the layers sit in the attribution line at the bottom right, above the timeline. The search
      form (#address-form) finds an address from the city index and one letter file; what is typed never leaves the
      browser. window.hailMapTest is a test-only hook for tools/smoke_map.py.
+   - The map options sheet (DESIGN 13.6, D108): the Layers button opens it. Its chips and switches set the live layer, the
+     five-year choice, the landmark kinds, Points of interest, the recent radar hail highlight, Warnings and Storm reports,
+     and its Reset. This is JavaScript because a chip changes a state the page draws, and the focus trap and the inert page
+     are browser work. Every word the sheet shows is Python's: each chip's data-legend and data-reason, the landmark line's
+     data-template, and data/base.json (its sheet block, the picture and zone words, the held and unavailable sentences and
+     the list joins). The page's first-paint words (the banners and the reports and picture lines, and the sheet's words
+     before base.json answers) are the map-words script that build.py renders (MAP_WORDS, read once into PW). The address
+     keeps the choices: layer, base, poi, hail_recent, history and landmarks (poi=0 and hail_recent=1 read as off and on).
    - The viewer's location never leaves the browser: it draws the dot and finds the nearest town.
 */
 (function () {
@@ -72,7 +80,6 @@
   var BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
   var FALLBACK_VIEW = { bounds: [[44.35, -116.06], [49.01, -104.03]], min_zoom: 5, max_zoom: 11 };
   var KIND_WORD = { warning: "Warning", watch: "Watch", advisory: "Advisory", statement: "Statement" };
-  var LAYER_WORD = { precip: "Precipitation", temp: "Temperature", wind: "Wind gusts", satellite: "Satellite" };   // satellite: --storm-layers builds only
   var LABEL_ZOOM = 5.25;             // from this zoom every town name clears the other bubbles (tools/build_basemap.py)
   // words for the hatching in view (hatchKind): [legend key or card caption, note line]. A gap in the
   // frame shown, the band outside the pictures' box, or both ("on this map" is true of both; only the
@@ -101,12 +108,20 @@
   var limits = readJSON(app.getAttribute("data-limits")) || {};
   var imageryCfg = readJSON(app.getAttribute("data-imagery")) || null;   // the imagery source from build.py (D32)
 
+  /* The page's words, rendered by Python into <script id="map-words"> (build.py MAP_WORDS): read once here. A word with a
+     {name} takes a value from the data (a layer's title, a detail) through wordFill; the script holds no sentence of its own. */
+  var PW = (function () {
+    try { return JSON.parse(document.getElementById("map-words").textContent) || {}; } catch (e) { return {}; }
+  })();
+
   var el = {
     banners: byId("banners"), legendTitle: byId("legend-title"), legendScale: byId("legend-scale"),
     legendBar: byId("legend-bar"), legendStops: byId("legend-stops"), legendNote: byId("legend-note"),
     legendUncoloured: byId("legend-uncoloured"),
     legendKeys: byId("legend-keys"), layersBtn: byId("btn-layers"), locateBtn: byId("btn-locate"),
-    listBtn: byId("btn-list"), layers: byId("layers"), warnings: byId("tg-warnings"), reports: byId("tg-reports"),
+    listBtn: byId("btn-list"), options: byId("map-options"), optTitle: byId("mo-title"), optClose: byId("mo-close"),
+    optReset: byId("mo-reset"), warnings: byId("tg-warnings"), reports: byId("tg-reports"), poi: byId("tg-poi"),
+    hailRecent: byId("tg-hail-recent"), find: byId("find"),
     note: byId("frame-note"), toast: byId("toast"), near: byId("near-chip"), timeline: byId("timeline"),
     play: byId("play"), title: byId("tl-title"), sub: byId("tl-sub"), seg: byId("seg"), scrub: byId("scrub"),
     range: byId("range"), fill: byId("fill-bar"), knob: byId("knob"), ticks: byId("ticks"), labels: byId("labels"),
@@ -126,7 +141,8 @@
     playing: false, timer: null, resumeOnShow: false, dragging: false,
     warnings: true, reports: params.get("overlay") === "reports", goToken: 0, userMoved: false,
     ready: false,                    // true once the first timeline is built
-    autoplay: true                   // play once the first picture shows, unless the viewer chose first (setPlaying)
+    autoplay: true,                  // play once the first picture shows, unless the viewer chose first (setPlaying)
+    history: null, landmarks: {}, poi: true, hailRecent: false   // the sheet's choices (DESIGN 13.6; readOptionParams)
   };
   var overlays = [], front = 0, swapToken = 0;   // two image overlays, crossfaded
   var imageryLayer = null;                       // the imagery tile layer (D32): made on the first switch to Imagery
@@ -270,17 +286,20 @@
     drawTowns();
     drawAlerts();
     drawReports();
-    paintSwatches();
     wireControls();
     b3Start();                                     // --hail-addresses builds: roads, outlines and address dots (B3)
     var want = params.get("layer");
     var mode = params.get("mode");
     if (mode === "1h" || mode === "12h") state.mode = mode;
+    readOptionParams();                            // poi, hail_recent, history and landmarks (DESIGN 13.6)
     el.warnings.checked = state.warnings;
     el.reports.checked = state.reports;
     setReports(state.reports, true);
-    setLayer(want && data.layers[want] ? want : "precip", { atNow: true, first: true });
-    if (params.get("base") === "imagery") setBase(true, { first: true });   // D32: the page address opens on imagery
+    if (want === "none") setLayer(null, { first: true });   // no live layer (layer=none, set by saveUrl)
+    else setLayer(want && data.layers[want] ? want : "precip", { atNow: true, first: true });
+    if (params.get("base") === "imagery") setBase("imagery", { first: true });   // D32: the page address opens on imagery
+    renderOptions();
+    requestAnimationFrame(function () { setTimeout(loadBase, 0); });   // base.json after the first paint (DESIGN 13.6)
     if (CARD) setupCard();        // before the fit: the card's fit keeps Montana above the caption
     fitView();
     if (document.fonts && document.fonts.ready) {   // text first measured in a fallback font: measure again
@@ -368,7 +387,7 @@
       if (data && state.ready && legendFormNow() !== legendForm) renderLegend();   // turned or resized past a breakpoint
       if (!state.userMoved) fitView();
       fitMinZoom();
-      if (!el.layers.hidden) fitLayersMenu();
+      if (!el.options.hidden) placeSheet(el.options);
       if (sheetState) {
         sheetState.resized = true;
         placeSheet();
@@ -856,8 +875,12 @@
     renderKeys();
     renderReportNote();
     refitForBanner();
+    renderOptions();
     if (!quiet) saveUrl();
   }
+
+  /** The storm reports sentence (DESIGN 13.6): Python's words, on the switch's data-legend (tg-reports). */
+  function reportsNoReport() { return el.reports.getAttribute("data-legend") || ""; }
 
   /** When the reports overlay is on: say how many, or that the report files failed. */
   function renderReportNote() {
@@ -866,9 +889,9 @@
     if (!state.reports || !data) return;
     var st = data.status && data.status.reports;
     if (st && !st.ok) {
-      banner("warn", "<strong>Storm reports didn't all load</strong> (" + esc(st.detail) + "). No report is not \u201cno hail\u201d.", "reports-banner");
+      banner("warn", wordFill("reports_failed", { detail: esc(st.detail) }) + reportsNoReport(), "reports-banner");
     } else if (!data.reports.length) {
-      banner("info", "No SPC storm reports in or near Montana in the last 3 days. No report is not \u201cno hail\u201d.", "reports-banner");
+      banner("info", (PW.reports_none || "") + reportsNoReport(), "reports-banner");
     }
   }
 
@@ -877,13 +900,17 @@
   /** The active layer's data. */
   function layer() { return data.layers[state.layer] || { frames: [], modes: {}, now_index: {} }; }
 
+  /** The title of a weather layer as data/map.json gives it (the legend's and the timeline's words). */
+  function layerWord(key) { var L_ = key && data && data.layers[key]; return (L_ && L_.title) || ""; }
+
   /** Switch the weather layer; keep the time on the timeline when the new layer has it. */
   function setLayer(key, opts) {
     opts = opts || {};
+    if (!key) { hideLive(opts); return; }
     var keep = (!opts.atNow && state.frames.length) ? state.times[state.pos] : null;
     state.layer = key;
-    var radios = el.layers.querySelectorAll("input[name=layer]");
-    for (var i = 0; i < radios.length; i++) radios[i].checked = radios[i].value === key;
+    el.timeline.hidden = false;
+    el.legend.hidden = false;
     var L_ = layer();
     var all = Object.keys(L_.modes || {});
     var full = all.filter(function (m) { return (L_.modes[m] || []).length; });
@@ -894,6 +921,21 @@
     hailWatch(!!swathLayer());          // a hail layer's state is worked out again every minute while it is on (D7)
     if (swathLayer()) hailTick();
     if (!opts.first) saveUrl();
+    renderOptions();
+  }
+
+  /** No live layer (DESIGN 13.6, setLayer(null)): the picture goes, the timeline and the legend card are hidden, and the address
+      says layer=none. The town numbers stay, since they are the NWS forecast and not a layer. */
+  function hideLive(opts) {
+    setPlaying(false);
+    state.layer = null;
+    state.frames = []; state.times = []; state.pos = 0; state.nowPos = 0;
+    el.timeline.hidden = true;
+    el.legend.hidden = true;
+    showPicture(null, null);
+    hailWatch(false);
+    renderOptions();
+    if (!(opts && opts.first)) saveUrl();
   }
 
   /** Switch 1h / 12h for layers that have both; keep the time when possible. */
@@ -1215,7 +1257,7 @@
       } else {
         el.title.textContent = state.layer === "precip" ? "No radar or forecast" :
           state.layer === "satellite" ? "No satellite picture" : "No forecast";
-        whenEl.textContent = "Nothing to show for " + LAYER_WORD[state.layer].toLowerCase();
+        whenEl.textContent = wordFill("nothing_to_show", { layer: layerWord(state.layer).toLowerCase() });
       }
       srcEl.textContent = "";
       el.range.setAttribute("aria-valuetext", swath ? swath.words.no_picture : "No pictures in this update");
@@ -1309,11 +1351,11 @@
     if (!n && swathLayer()) return [swathPre(swathLayer()) + swathLayer().state_line];   // the build's words for a hail layer with no picture
     if (!n) {
       var why = [];
-      if (state.layer === "precip" && st.radar && !st.radar.ok) why.push("radar: " + st.radar.detail);
-      if (state.layer === "satellite" && st.satellite && !st.satellite.ok) why.push("satellite: " + st.satellite.detail);
-      if (st.forecast && !st.forecast.ok) why.push("model forecast: " + st.forecast.detail);
-      warns.push("No " + LAYER_WORD[state.layer].toLowerCase() + " pictures in this update" + (why.length ? " (" + why.join("; ") + ")" : "") +
-        ". This is not an all-clear.");
+      if (state.layer === "precip" && st.radar && !st.radar.ok) why.push(wordFill("radar_reason", { detail: st.radar.detail }));
+      if (state.layer === "satellite" && st.satellite && !st.satellite.ok) why.push(wordFill("satellite_reason", { detail: st.satellite.detail }));
+      if (st.forecast && !st.forecast.ok) why.push(wordFill("forecast_reason", { detail: st.forecast.detail }));
+      warns.push(wordFill("no_layer_pictures", { layer: layerWord(state.layer).toLowerCase(),
+                                                 why: why.length ? " (" + why.join("; ") + ")" : "" }));
       return warns;
     }
     var f = state.frames[pos];
@@ -1342,7 +1384,7 @@
   /** Legend for the active layer: title, gradient bar with its stop labels, note and keys. */
   function renderLegend() {
     var L_ = layer();
-    el.legendTitle.textContent = L_.title || LAYER_WORD[state.layer];
+    el.legendTitle.textContent = L_.title || layerWord(state.layer);
     var stops = L_.legend || [];
     el.legendScale.hidden = !stops.length;
     el.legendBar.style.background = L_.gradient || "";
@@ -1486,16 +1528,6 @@
     return "Below " + limits.cold_f + "\u00a0\u00b0F or above " + limits.hot_f + "\u00a0\u00b0F";
   }
 
-  /** The layer menu's swatches use each layer's own legend colours (built by Python). */
-  function paintSwatches() {
-    // every layer in data/map.json (the satellite layer is there only in --storm-layers builds)
-    Object.keys(data.layers).forEach(function (k) {
-      var sw = el.layers.querySelector(".sw-" + k);
-      var L_ = data.layers[k];
-      if (sw && L_ && L_.gradient) sw.style.background = L_.gradient;
-    });
-  }
-
   // ------------------------------------------------------------------ base map: white or imagery (D32)
 
   /** Switch the base map. The white vector map is the default. Imagery (opt-in) is USGS aerial imagery with
@@ -1506,12 +1538,11 @@
       The zoom limit goes up to the imagery's and back to the map's own (Leaflet zooms out to it when needed).
       The credit row shows the credit with its privacy words while it is on, and the failure words while tiles
       fail (setImageryFailed). The card never uses imagery. */
-  function setBase(imagery, opts) {
+  function setBase(value, opts) {
     if (CARD || !data || !imageryCfg) return;
     opts = opts || {};
+    var imagery = value === "imagery";
     state.base = imagery ? "imagery" : "map";
-    var radios = el.layers.querySelectorAll("input[name=base]");
-    for (var i = 0; i < radios.length; i++) radios[i].checked = radios[i].value === state.base;
     app.classList.toggle("is-imagery", imagery);
     if (imagery) {
       if (!imageryLayer) {
@@ -1528,6 +1559,7 @@
       map.setMaxZoom(Math.max((data.view && data.view.max_zoom) || 11, b3TopZoom()));
     }
     renderKeys();                    // the credit row comes and goes with the switch
+    renderOptions();
     if (!opts.first) saveUrl();
   }
 
@@ -1614,17 +1646,12 @@
     r.addEventListener("input", onRangeInput);
     r.addEventListener("keydown", onRangeKey);
 
-    el.layersBtn.addEventListener("click", function () { toggleLayers(el.layers.hidden); });
-    el.layers.addEventListener("focusout", function (e) {      // Tab out of the menu closes it
-      var to = e.relatedTarget;
-      if (to && !el.layers.contains(to) && to !== el.layersBtn) toggleLayers(false);
-    });
-    el.layers.addEventListener("change", function (e) {
-      if (e.target.name === "layer") setLayer(e.target.value);
-      else if (e.target.name === "base") setBase(e.target.value === "imagery");
-      else if (e.target === el.warnings) setWarnings(el.warnings.checked);
-      else if (e.target === el.reports) setReports(el.reports.checked);
-    });
+    el.layersBtn.addEventListener("click", function () { toggleOptions(el.options.hidden); });
+    el.options.addEventListener("click", onOptionsClick);
+    el.options.addEventListener("change", onOptionsChange);
+    el.options.addEventListener("keydown", trapOptionsFocus);
+    el.optClose.addEventListener("click", function () { toggleOptions(false, true); });
+    el.optReset.addEventListener("click", resetOptions);
     el.legendInfo.addEventListener("click", function () {
       var open = !el.legend.classList.contains("show-note");
       el.legend.classList.toggle("show-note", open);
@@ -1655,8 +1682,8 @@
     if (hailData()) map.on("click", onHailClick);      // --hail-history builds: the history at a spot
 
     document.addEventListener("keydown", onKey);
-    document.addEventListener("pointerdown", function (e) {     // a tap outside closes the layer menu
-      if (!el.layers.hidden && !el.layers.contains(e.target) && !el.layersBtn.contains(e.target)) toggleLayers(false);
+    document.addEventListener("pointerdown", function (e) {     // a tap outside closes the options sheet
+      if (!el.options.hidden && !el.options.contains(e.target) && !el.layersBtn.contains(e.target)) toggleOptions(false);
     });
     document.addEventListener("visibilitychange", function () {
       if (document.hidden) { state.resumeOnShow = state.playing; setPlaying(false); }
@@ -1723,15 +1750,15 @@
     stepBy(d);
   }
 
-  /** Page keys: Escape closes the menu or sheet; Space plays; arrows step (outside text fields). */
+  /** Page keys: Escape closes the options sheet or a sheet; Space plays; arrows step (outside text fields). */
   function onKey(e) {
     if (CARD) return;
     if (e.key === "Escape") {
-      if (!el.layers.hidden) { e.preventDefault(); toggleLayers(false, true); return; }
+      if (!el.options.hidden) { e.preventDefault(); toggleOptions(false, true); return; }
       if (sheetState) { e.preventDefault(); closeSheet(); return; }
       return;
     }
-    if (sheetState || !el.layers.hidden || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (sheetState || !el.options.hidden || e.altKey || e.ctrlKey || e.metaKey) return;
     var t = e.target, tag = (t && t.tagName) || "";
     var onPage = t === document.body || t === el.play || t === el.timeline || t === document.documentElement;
     // the map itself too: a click or drag on it focuses it (Leaflet's keys don't use Space)
@@ -1742,26 +1769,18 @@
     }
   }
 
-  /** Open or close the layer menu (focus goes in on open and back to the button on close). While it
-      is open the top controls are lifted over the timeline (.top.menu-open): both are stacking
-      contexts of their own, so the menu's own z-index can't do it. */
-  function toggleLayers(open, refocus) {
-    el.layers.hidden = !open;
-    el.top.classList.toggle("menu-open", !!open);
+  /** Open or close the map options sheet (DESIGN 13.6). It opens on its title and closes back to #btn-layers (refocus). While it
+      is open the page behind it is inert (setInert); Escape and a tap outside close it. */
+  function toggleOptions(open, refocus) {
+    if (open && (CARD || !data)) return;
+    el.options.hidden = !open;
     el.layersBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    setInert(!!open);
     if (open) {
-      fitLayersMenu();
-      var checked = el.layers.querySelector("input[name=layer]:checked") || el.layers.querySelector("input");
-      if (checked) checked.focus();
+      placeSheet(el.options);
+      renderOptions();
+      el.optTitle.focus({ preventScroll: true });
     } else if (refocus) el.layersBtn.focus();
-  }
-
-  /** The layer menu ends above the bottom of the screen and scrolls inside when it is taller (a phone
-      on its side). Measured, since its top moves with the banners. */
-  function fitLayersMenu() {
-    el.layers.style.maxHeight = "";
-    var room = app.getBoundingClientRect().bottom - el.layers.getBoundingClientRect().top - 12;
-    el.layers.style.maxHeight = Math.max(120, Math.floor(room)) + "px";
   }
 
   /** Keep the chosen layer, mode and overlay in the address so a reload keeps them. */
@@ -1769,11 +1788,12 @@
     if (CARD || !window.history || !history.replaceState || !data) return;
     var q = new URLSearchParams(location.search);
     q.delete("town");
-    if (state.layer !== "precip") q.set("layer", state.layer); else q.delete("layer");
+    if (!state.layer) q.set("layer", "none"); else if (state.layer !== "precip") q.set("layer", state.layer); else q.delete("layer");
     var modes = Object.keys(layer().modes || {});
     if (modes.length > 1 && state.mode !== "12h") q.set("mode", state.mode); else q.delete("mode");
     if (state.reports) q.set("overlay", "reports"); else q.delete("overlay");
     if (state.base === "imagery") q.set("base", "imagery"); else q.delete("base");
+    optionParams(q);
     if (hailAt) q.set("at", hailAt); else q.delete("at");
     var s = q.toString();
     history.replaceState(null, "", location.pathname + (s ? "?" + s : "") + location.hash);
@@ -1782,9 +1802,318 @@
   /** "&layer=temp&overlay=reports" for links to the full map (prefix "?" or "&"). */
   function layerQuery(prefix) {
     var q = [];
-    if (state.layer !== "precip") q.push("layer=" + state.layer);
+    if (!state.layer || state.layer !== "precip") q.push("layer=" + (state.layer || "none"));
     if (state.reports) q.push("overlay=reports");
     return q.length ? prefix + q.join("&") : "";
+  }
+
+  // ------------------------------------------------------------------ the map options sheet (DESIGN 13.6, D108, D110)
+
+  /* The sheet's words are Python's. Each chip carries its legend (data-legend), its reason (data-reason) and, for the
+     landmark line, its template (data-template); data/base.json (its "sheet" block, the picture and zone words, the held
+     and unavailable sentences, the list joins) holds the rest. renderOptions turns the data's states into the five looks of
+     a chip: off, on, unavailable (dashed, with its word and its reason), waiting (Points of interest is off) and held. A chip
+     whose data has not loaded yet is pending: disabled, with no reason, until base.json answers. A choice here changes its
+     state, its legend line and the address. What the five-year, landmark and recent layers draw is added on the map in the
+     later stages (DESIGN 13.6, "Browser hooks"). */
+  /** A word with its {name} values filled in: the page's words (PW) hold the words, the data holds the values. */
+  function wordFill(key, values) {
+    var text = PW[key] || "";
+    Object.keys(values || {}).forEach(function (name) { text = text.split("{" + name + "}").join(values[name]); });
+    return text;
+  }
+
+  /** The sheet's words: the page's first-paint block (PW), then data/base.json's sheet block once it has loaded. */
+  function sheetWords() {
+    var out = {}, base = (baseDoc && !baseDoc._error && baseDoc.sheet) || {};
+    Object.keys(PW).forEach(function (k) { out[k] = PW[k]; });
+    Object.keys(base).forEach(function (k) { out[k] = base[k]; });
+    return out;
+  }
+
+  var baseDoc = null;                // data/base.json once it has loaded; { _error } when it could not be fetched
+  var optionNote = {};               // a group's reason, opened by a tap on a chip that is not available (the next change clears it)
+
+  /** The chip or card of one group and key, from the markup (data-group, data-key). */
+  function optionItem(group, key) {
+    return el.options.querySelector("[data-group=\"" + group + "\"][data-key=\"" + key + "\"]");
+  }
+
+  /** The chips of one group, in the order the markup gives them. */
+  function optionChips(group) {
+    return [].slice.call(el.options.querySelectorAll(".mo-chip[data-group=\"" + group + "\"]"));
+  }
+
+  /** The name of the landmark kind whose code is code (base.json landmarks.kinds), or null. */
+  function kindName(kinds, code) {
+    return Object.keys(kinds).filter(function (n) { return kinds[n] && kinds[n].code === code; })[0] || null;
+  }
+
+  /** A chip's aria-pressed and look: "plain" (off or on), "pending", "unavailable", "waiting" or "held". reason, when it is
+      given (a string, maybe empty), replaces the chip's data-reason; noteText, when it is given, replaces the words on its face. */
+  function setChip(node, pressed, look, reason, noteText) {
+    node.setAttribute("aria-pressed", pressed ? "true" : "false");
+    // a pending chip is not disabled (it is not unavailable yet); a tap on it changes nothing (onOptionsClick)
+    node.setAttribute("aria-disabled", look === "plain" || look === "pending" ? "false" : "true");
+    node.classList.toggle("is-pending", look === "pending");
+    node.classList.toggle("is-unavailable", look === "unavailable");
+    node.classList.toggle("is-waiting", look === "waiting");
+    node.classList.toggle("is-held", look === "held");
+    if (reason !== undefined) {
+      if (reason) node.setAttribute("data-reason", reason); else node.removeAttribute("data-reason");
+    }
+    var face = noteText !== undefined ? node.querySelector(".mo-note") : null;
+    if (face) face.textContent = noteText || "";
+  }
+
+  /** A group's line: its text, or hidden when there is none. */
+  function setGroupLine(line, text) {
+    if (!line) return;
+    line.textContent = text || "";
+    line.hidden = !text;
+  }
+
+  /** A chip's legend: its own data-legend, or the layer's note from map.json (the satellite chip has none of its own). */
+  function legendOf(chip) {
+    var L_ = data && data.layers[chip.getAttribute("data-key")];
+    return chip.getAttribute("data-legend") || (L_ && L_.legend_note) || "";
+  }
+
+  /** The five-year chip's picture or zone block in base.json, and its legend words. */
+  function historyBlock(key, b) {
+    var hist = b.history_layers || {}, pics = hist.pictures || {};
+    if (key === "hail") return { block: pics.hail1, legend: ((pics.hail1 || {}).words || {}).legend || "" };
+    if (key === "heat") return { block: pics.heat90, legend: ((pics.heat90 || {}).words || {}).legend || "" };
+    if (key === "wind" || key === "flood") return { block: hist.zones, legend: ((hist.zones || {}).words || {}).legend || "" };
+    return { block: null, legend: "" };
+  }
+
+  /** The base map cards: the chosen one is pressed. The Imagery legend shows under them while Imagery is chosen. */
+  function renderBaseCards() {
+    [].forEach.call(el.options.querySelectorAll(".mo-card"), function (card) {
+      card.setAttribute("aria-pressed", card.getAttribute("data-key") === state.base ? "true" : "false");
+    });
+    var imagery = optionItem("base", "imagery");
+    setGroupLine(byId("mo-base-line"), state.base === "imagery" && imagery ? imagery.getAttribute("data-legend") : "");
+  }
+
+  /** The landmark line (DESIGN 13.6): the kinds that are on, named by their chips (data-name), in the sentence that
+      data-template gives. Hidden while no kind is on or Points of interest is off. */
+  function landmarkLine() {
+    var line = byId("mo-land-line");
+    if (!line) return;
+    var names = optionChips("landmark").filter(function (c) {
+      return state.landmarks[c.getAttribute("data-key")] && c.getAttribute("aria-pressed") === "true";
+    }).map(function (c) { return c.getAttribute("data-name") || ""; });
+    var text = "";
+    if (state.poi && names.length) {
+      var words = sheetWords();
+      var kinds = names.length > 2 ? names.slice(0, -1).join(words.list_comma) + words.list_last + names[names.length - 1]
+                                   : names.join(words.list_and);
+      text = (line.getAttribute("data-template") || "").replace("{kinds}", kinds);
+      text = text.charAt(0).toUpperCase() + text.slice(1);
+    }
+    setGroupLine(line, text);
+  }
+
+  /** Every state on the sheet, read from the data: the base cards, the live chips, the five-year chips, the landmark kinds,
+      the switches and the group lines. map.json gives the layers and the states of the store's blocks; base.json (fetched
+      once after the first paint) gives the picture, zone, landmark and recent words. Calls are cheap; each one sets the same
+      state from the same data. */
+  function renderOptions() {
+    if (!el.options || !data) return;
+    var failed = !!(baseDoc && baseDoc._error), pending = !baseDoc;
+    var b = pending || failed ? {} : baseDoc, words = sheetWords(), note = optionNote;
+    renderBaseCards();
+    // Live weather: one choice at a time; the layers come from map.json, so they are always available
+    optionChips("live").forEach(function (c) { setChip(c, state.layer === c.getAttribute("data-key"), "plain"); });
+    var liveOn = optionChips("live").filter(function (c) { return c.getAttribute("aria-pressed") === "true"; })[0];
+    setGroupLine(byId("mo-live-line"), liveOn ? legendOf(liveOn) : "");
+    // Five-year history: one choice; a chip draws from its picture or zone file in base.json. A part that did not load, or
+    // loaded in part, is unavailable with its own sentence (a zero may be a missing count)
+    optionChips("history").forEach(function (c) {
+      var key = c.getAttribute("data-key");
+      if (key === "fire_smoke") { if (state.history === key) state.history = null; setChip(c, false, "unavailable"); return; }
+      if (pending) { setChip(c, false, "pending", ""); return; }
+      var h = historyBlock(key, b), st = h.block && h.block.state;
+      if (failed || st !== "loaded") {
+        if (state.history === key) state.history = null;
+        var why = !failed && h.block && h.block.problem ? h.block.problem
+          : !failed && st === "partial" ? words.partial_history : words.base_failed;
+        setChip(c, false, "unavailable", why, words.unavailable);
+        return;
+      }
+      setChip(c, state.history === key, "plain", "");
+    });
+    var histOn = optionChips("history").filter(function (c) { return c.getAttribute("aria-pressed") === "true"; })[0];
+    setGroupLine(byId("mo-hist-line"), histOn ? historyBlock(histOn.getAttribute("data-key"), b).legend : "");
+    // a tapped unavailable chip's reason has a line of its own, so the legend of a chip that is on stays beside it
+    setGroupLine(byId("mo-hist-reason"), note.history || "");
+    // Landmarks: any number at once; held kinds say so with their reason, and the chips wait while Points of interest is off
+    var base = b.base || {};                 // base.json: the base map's own block (landmarks, held) sits under "base"
+    var lmBlock = base.landmarks || {}, kinds = lmBlock.kinds || {}, held = (base.held || {}).kinds || {};
+    optionChips("landmark").forEach(function (c) {
+      var code = c.getAttribute("data-key"), name = kindName(kinds, code), kind = name ? kinds[name] : null;
+      if (pending) { setChip(c, false, "pending", ""); return; }
+      if (failed || !kind) {
+        delete state.landmarks[code];
+        setChip(c, false, "unavailable", failed ? words.base_failed : (lmBlock.problem || words.base_failed), words.unavailable);
+        return;
+      }
+      if (kind.held || kind.state === "held") {
+        delete state.landmarks[code];
+        setChip(c, false, "held", (held[name] || {}).reason || kind.problem || "", words.held);
+        return;
+      }
+      if (kind.state !== "loaded") {
+        delete state.landmarks[code];
+        setChip(c, false, "unavailable", kind.problem || lmBlock.problem || words.base_failed, words.unavailable);
+        return;
+      }
+      if (!state.poi) { setChip(c, !!state.landmarks[code], "waiting", byId("mo-land-reason").getAttribute("data-waiting") || ""); return; }
+      setChip(c, !!state.landmarks[code], "plain", "");
+    });
+    landmarkLine();
+    setGroupLine(byId("mo-land-reason"), note.landmark || "");
+    // Switches: Points of interest and Warnings and Storm reports have no data of their own; the recent-hail switch
+    // needs the recent block, and is unavailable (with the store's words) when it is unavailable or stale
+    el.poi.checked = state.poi;
+    el.warnings.checked = state.warnings;
+    el.reports.checked = state.reports;
+    setGroupLine(byId("mo-reports-line"), state.reports ? el.reports.getAttribute("data-legend") : "");
+    var rec = b.recent || null, recOff = pending || failed || !rec || rec.state === "unavailable" || !!rec.stale;
+    var recReason = pending ? "" : (failed || !rec) ? words.base_failed : (rec.state === "unavailable" ? (rec.problem || words.base_failed) : (rec.stale || ""));
+    if (!pending && recOff && state.hailRecent) { state.hailRecent = false; saveUrl(); }   // a link's choice waits for base.json
+    el.hailRecent.disabled = recOff;
+    el.hailRecent.checked = pending ? state.hailRecent : state.hailRecent && !recOff;
+    setGroupLine(byId("mo-recent-line"), pending ? "" : recOff ? recReason :
+      (state.hailRecent ? el.hailRecent.getAttribute("data-legend") : ""));
+  }
+
+  /** Live weather (DESIGN 13.6): one choice, and the chosen one turns off with a tap on it (no live layer: setLayer(null)). */
+  function setLive(key) {
+    optionNote = {};
+    setLayer(key || null);
+  }
+
+  /** Five-year history: one choice; null turns it off. */
+  function setHistory(key) {
+    optionNote = {};
+    state.history = key || null;
+    renderOptions();
+    saveUrl();
+  }
+
+  /** A landmark kind (its code: s, p, h, a, f or c): any number of kinds at once. */
+  function setLandmark(code, on) {
+    optionNote = {};
+    if (on) state.landmarks[code] = true; else delete state.landmarks[code];
+    renderOptions();
+    saveUrl();
+  }
+
+  /** Points of interest: the landmark dots and names. Off, the landmark chips wait with their choices kept. */
+  function setPoi(on) {
+    optionNote = {};
+    state.poi = !!on;
+    renderOptions();
+    saveUrl();
+  }
+
+  /** The recent-hail switch: the building highlight of the recent cells (drawn in a later stage). */
+  function setHailRecent(on) {
+    optionNote = {};
+    state.hailRecent = !!on;
+    renderOptions();
+    saveUrl();
+  }
+
+  /** Reset (DESIGN 13.6): Map as the base map, Precipitation, no five-year choice, no landmark kind, Points of interest on,
+      The recent-hail switch off, Warnings on and Storm reports off. The sheet stays open, and unavailable chips stay so. */
+  function resetOptions() {
+    optionNote = {};
+    state.history = null;
+    state.landmarks = {};
+    state.hailRecent = false;
+    state.poi = true;
+    setBase("map");
+    setLayer("precip");
+    setWarnings(true);
+    setReports(false);
+    renderOptions();
+    saveUrl();
+  }
+
+  /** The sheet's address parameters (DESIGN 13.6): poi=off, hail_recent=on, history=<chip key>, landmarks=<kind codes>. A value
+      that names no chip of this page is ignored. Read on boot. */
+  function readOptionParams() {
+    var poi = params.get("poi"), recent = params.get("hail_recent");
+    state.poi = !(poi === "off" || poi === "0");            // poi=off (or 0) turns Points of interest off
+    state.hailRecent = recent === "on" || recent === "1";   // hail_recent=on (or 1) turns the recent-hail highlight on
+    var h = params.get("history");
+    state.history = h && optionItem("history", h) ? h : null;
+    state.landmarks = {};
+    (params.get("landmarks") || "").split(",").forEach(function (code) {
+      if (code && optionItem("landmark", code)) state.landmarks[code] = true;
+    });
+  }
+
+  /** Writes the sheet's parameters into the address (saveUrl): a default is left out. */
+  function optionParams(q) {
+    if (!state.poi) q.set("poi", "off"); else q.delete("poi");
+    if (state.hailRecent) q.set("hail_recent", "on"); else q.delete("hail_recent");
+    if (state.history) q.set("history", state.history); else q.delete("history");
+    var codes = Object.keys(state.landmarks).filter(function (c) { return state.landmarks[c]; });
+    if (codes.length) q.set("landmarks", codes.join(",")); else q.delete("landmarks");
+  }
+
+  /** data/base.json, fetched once after the first paint by the name data/map.json gives (base.file). Until it answers the
+      chips that need it are pending; when it cannot be read they show unavailable with the sheet's own sentence. */
+  function loadBase() {
+    var file = data && data.base && data.base.file;
+    if (!file) { baseDoc = { _error: true }; renderOptions(); return; }
+    fetchJSON(file).then(function (d) { baseDoc = d; }, function () { baseDoc = { _error: true }; })
+      .then(renderOptions);
+  }
+
+  /** A tap in the sheet: a base card, or a chip. A chip that is not available opens its reason and changes nothing else. */
+  function onOptionsClick(e) {
+    var item = e.target.closest ? e.target.closest(".mo-chip, .mo-card") : null;
+    if (!item || !el.options.contains(item)) return;
+    var group = item.getAttribute("data-group"), key = item.getAttribute("data-key");
+    if (group === "base") { setBase(key); return; }
+    var on = item.getAttribute("aria-pressed") === "true";
+    if (item.classList.contains("is-pending")) return;     // base.json has not answered yet: nothing to change
+    if (item.getAttribute("aria-disabled") === "true") {
+      optionNote = {};
+      optionNote[group] = item.getAttribute("data-reason") || "";
+      renderOptions();
+      return;
+    }
+    if (group === "live") setLive(on ? null : key);
+    else if (group === "history") setHistory(on ? null : key);
+    else if (group === "landmark") setLandmark(key, !on);
+  }
+
+  /** A switch's change. */
+  function onOptionsChange(e) {
+    var t = e.target;
+    if (t === el.warnings) setWarnings(t.checked);
+    else if (t === el.reports) setReports(t.checked);
+    else if (t === el.poi) setPoi(t.checked);
+    else if (t === el.hailRecent) setHailRecent(t.checked);
+  }
+
+  /** Tab and Shift+Tab wrap around inside the open sheet, as they do in the town sheet. */
+  function trapOptionsFocus(e) {
+    if (e.key !== "Tab") return;
+    var f = [].slice.call(el.options.querySelectorAll("button, input, [tabindex='0']")).filter(function (x) {
+      return !x.disabled && x.offsetParent !== null;
+    });
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && (document.activeElement === first || document.activeElement === el.optTitle)) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   }
 
   // ------------------------------------------------------------------ banners, toast, page age
@@ -1988,7 +2317,7 @@
     sheetState.kind = kind;
     sheetState.ll = null;            // openTown sets it: the town to keep in sight on a resize
     sheetState.back = !!opts.back;
-    toggleLayers(false);
+    toggleOptions(false);
     el.sheet.className = "glass sheet sheet-" + kind;
     el.sheetBack.hidden = !opts.back;
     el.sheetTitle.textContent = title;
@@ -2002,14 +2331,19 @@
     (f || el.sheetTitle).focus();
   }
 
-  /** Keep an open sheet clear of the banners at the top, so a source warning ("This is not an
-      all-clear") is never hidden behind it: a side panel (wide screens) starts below the banners it
-      would cover, and a bottom sheet (phones) stops short of them. map.css reads --sheet-top. */
-  function placeSheet() {
-    var b = el.banners.getBoundingClientRect(), s = el.sheet.getBoundingClientRect();
+  /** Keep an open sheet clear of the banners at the top and of the find panel, so a source warning ("This is not an
+      all-clear") is never hidden behind it and the address button stays in reach: a side panel (wide screens) starts below
+      the rows it would cover, and a bottom sheet (phones) stops short of them. map.css reads --sheet-top. */
+  function placeSheet(node) {
+    node = node || el.sheet;
+    node.style.removeProperty("--sheet-top");               // measured where the sheet sits by default
+    var b = el.banners.getBoundingClientRect(), s = node.getBoundingClientRect();
+    var f = el.find ? el.find.getBoundingClientRect() : null;
     var clash = b.height > 0 && b.right > s.left && b.left < s.right;
-    if (clash) el.sheet.style.setProperty("--sheet-top", Math.ceil(b.bottom + 8) + "px");
-    else el.sheet.style.removeProperty("--sheet-top");
+    var findClash = !!f && f.height > 0 && f.right > s.left && f.left < s.right;
+    if (!clash && !findClash) return;
+    var top = Math.max(clash ? b.bottom : 0, findClash ? f.bottom : 0);
+    node.style.setProperty("--sheet-top", Math.ceil(top + 8) + "px");
   }
 
   /** Close the sheet and put focus back where it came from. If the sheet panned the map to keep a
@@ -2272,7 +2606,7 @@
           return '<button type="button" class="row" data-report="' + i + '" data-key="r-' + i + '"><span class="row-main"><span class="row-title">' + esc(what) + "</span>" +
             '<span class="row-meta">' + esc(r.place) + ", " + esc(r.state) + " \u00b7 " + esc(dateClock(Date.parse(r.time))) + "</span></span></button>";
         }).join("") + "</div>";
-      } else if (!repFailed) html += "<p>No reports. No report is not \u201cno hail\u201d.</p>";
+      } else if (!repFailed) html += "<p>" + (PW.no_reports || "") + esc(reportsNoReport()) + "</p>";
     }
     if (hailData() && byId("hail-list")) html += byId("hail-list").innerHTML;   // the hail note (map.html template)
     var st = data.status || {};
@@ -3359,7 +3693,7 @@
   function renderCardChip() {
     var f = state.frames[state.pos], h0 = el.cardChip.offsetHeight;
     var warn = !f || !!f._failed, main;
-    if (!f) main = "No " + LAYER_WORD[state.layer].toLowerCase() + " picture in this update. This is not an all-clear.";
+    if (!f) main = wordFill("no_layer_picture", { layer: layerWord(state.layer).toLowerCase() });
     else if (f._failed) main = "The " + clock(state.times[state.pos]) + " picture didn\u2019t load. This is not an all-clear.";
     else {
       // a sample card also shows the "Sample data ... not weather" banner, so a short name fits one line

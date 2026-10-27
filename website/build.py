@@ -39,6 +39,8 @@ from . import summary as sm
 from . import sources as src
 from . import streets as st
 from . import terrain as tr
+from . import gridded as gd
+from . import swath as sw
 
 HERE = Path(__file__).resolve().parent
 UTC = timezone.utc
@@ -1386,7 +1388,11 @@ LABEL_SHARD_GZIP = 100_000                                     # D66: a building
 BASE_UNAVAILABLE = ("Data unavailable. The base map could not be loaded in this update; that is not the same as no base map. "
                     "This is not an all-clear.")
 NO_DATE = "Data unavailable"          # the words for a date the index does not carry (F2, F12): never a count, never "not recorded"
-# D110(a), (b), (g): the sheet's sub-lines and the switch's name, as the owner saw them in the mock (the words the browser prints)
+# D110(a), (b), (g) and DESIGN section 13.6: every word the options sheet (#map-options, templates/map.html) shows or sets as an
+# attribute. The template takes them as sheet.<key>; data/base.json carries the whole block as its "sheet" key; the browser
+# prints only what the page and that block hold (AGENTS.md rule 4; tests/test_site.py pins the keys and the map script's
+# silence). A sentence another module already holds is imported, not retyped: the imagery credit line (IMAGERY), the live
+# legend notes (gridded.LAYER_TEXT, swath.WORDS_SWATH: DESIGN section 11) and the held church sentence (landmarks.CHURCH_HELD).
 SHEET_WORDS = {
     "points_of_interest": "Landmark dots and names, for the kinds chosen above",
     "five_year_history": "Past records from the last five years. Not a forecast.",
@@ -1396,7 +1402,99 @@ SHEET_WORDS = {
     # F3 (DESIGN section 13.6, item 5): the sub-line the sheet shows under the Landmarks heading
     "landmarks_sub_line": ("Schools, parks, hospitals, airports, and fire and EMS stations, from the public lists named under "
                            "About."),
+    # the header, the close button and the group headings
+    "options_title": "Map options",
+    "close_label": "Close map options",
+    "base_heading": "Base map",
+    "live_heading": "Live weather",
+    "history_heading": "Five-year history",
+    "landmarks_heading": "Landmarks",
+    # the base map cards, and the labels of the live, five-year and landmark chips
+    "map_card": "Map",
+    "imagery_card": "Imagery",
+    "precipitation": "Precipitation",
+    "temperature": "Temperature",
+    "wind_gusts": "Wind gusts",
+    "hail_last_hour": "Hail, last hour",
+    "hail_last_day": "Hail, last 24 hours",
+    "hail_history": "Hail",
+    "heat_history": "Heat",
+    "wind_history": "Wind",
+    "flood_history": "Flood",
+    "fire_smoke": "Fire and smoke",
+    "school": "Schools",
+    "park": "Parks",
+    "hospital": "Hospitals",
+    "airport": "Airports",
+    "fire_ems": "Fire and EMS stations",
+    "church": "Churches",
+    # the kind names inside the landmark line, which opens with them (their lower-case forms, EMS kept)
+    "name_school": "schools",
+    "name_park": "parks",
+    "name_hospital": "hospitals",
+    "name_airport": "airports",
+    "name_fire_ems": "fire and EMS stations",
+    "landmark_line": "{kinds} from the public lists named under About, shown as dots with their names.",
+    "list_and": " and ",
+    "list_comma": ", ",
+    "list_last": ", and ",
+    # the chip states: the tag words, the coming and waiting lines, and the reasons a chip opens
+    "coming": "Coming",
+    "held": "Held",
+    "unavailable": lb.UNAVAILABLE_TEXT,
+    "coming_fire": "Coming later: fire is not in the map yet.",
+    "coming_smoke": "Coming later: smoke is not in the map yet.",
+    "waiting": "Turn on Points of interest to show these.",
+    "held_church": lm.CHURCH_HELD,
+    # base.json did not load: the chips that need it say so (map.json carries states, not sentences)
+    "base_failed": ("Data unavailable. The map's details could not be loaded in this update; that is not the same as no hail, "
+                    "no landmarks and no base map. This is not an all-clear."),
+    # a five-year part that loaded in part: its chip is unavailable with this sentence (a zero may be a missing count)
+    "partial_history": ("Data unavailable. Some counts for this layer could not be made in this update, so a zero may mean "
+                        "a count is missing. This is not an all-clear."),
+    # the legend lines (a chip's data-legend, shown when it is on)
+    "legend_precipitation": ("Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model "
+                             "forecast after."),
+    "legend_temperature": "HRRR model temperature, in \u00b0F. Town numbers are the National Weather Service (NWS) forecast.",
+    "legend_wind": gd.LAYER_TEXT["wind"]["legend_note"],                       # "HRRR model. Roofing limit 25 mph."
+    "legend_hail_last_hour": " ".join((sw.WORDS_SWATH["legend_note"].format(window="hour"),
+                                       sw.WORDS_SWATH["uncoloured"].format(window="hour"))),
+    "legend_hail_last_day": " ".join((sw.WORDS_SWATH["legend_note"].format(window="24 hours"),
+                                      sw.WORDS_SWATH["uncoloured"].format(window="24 hours"))),
+    "legend_imagery": IMAGERY["credit_line"],                                  # D110(d): the same words as the credit row
+    "legend_recent": ("Buildings in cells where radar estimated 1 in or more in the last 30 days are highlighted. Buildings in "
+                      "other cells are not; that is not the same as no hail. Radar estimate, not a measurement at the ground."),
+    "legend_reports": "No report is not \u201cno hail\u201d.",
+    # the switches: each name and its 14 px description
+    "points_of_interest_name": "Points of interest",
+    "recent_description": "Radar estimate of 1 in or more, last 30 days",
+    "warnings": "Warnings",
+    "warnings_description": "NWS outlines",
+    "storm_reports": "Storm reports",
+    "storm_reports_description": "Storm Prediction Center (SPC), last 3 days",
+    # Reset
+    "reset": "Reset",
+    "reset_line": "Back to Map and Precipitation, with Points of interest and Warnings on. Everything else off.",
 }
+# The words the browser prints from the first paint, outside the sheet: the map page's banners and the reports and picture
+# lines. The template renders them as JSON in <script id="map-words"> (map.html context: map_words), and map.js reads them
+# once, so no sentence is a literal in the script (AGENTS.md rule 4; tests/test_site.py pins the keys and the values).
+# A {name} is filled by the script from the data (a layer's title, a detail), never by a word of its own.
+PAGE_WORDS = {
+    "reports_failed": "<strong>Storm reports didn't all load</strong> ({detail}). ",
+    "reports_none": "No SPC storm reports in or near Montana in the last 3 days. ",
+    "no_reports": "No reports. ",
+    "nothing_to_show": "Nothing to show for {layer}",
+    "no_layer_pictures": "No {layer} pictures in this update{why}. This is not an all-clear.",
+    "no_layer_picture": "No {layer} picture in this update. This is not an all-clear.",
+    "radar_reason": "radar: {detail}",
+    "satellite_reason": "satellite: {detail}",
+    "forecast_reason": "model forecast: {detail}",
+}
+# The sheet's words the browser needs before data/base.json has answered: its chips' reasons and notes, the waiting line
+# and the landmark list joins.
+FIRST_PAINT_SHEET = ("base_failed", "unavailable", "held", "waiting", "partial_history", "list_and", "list_comma", "list_last")
+MAP_WORDS = {**PAGE_WORDS, **{key: SHEET_WORDS[key] for key in FIRST_PAINT_SHEET}}
 # D141 (the About words of this round): fixed sentences the About page prints that no module holds. The held sentences and
 # the partial bubble sentence are the modules' own (landmarks, labels); tests/test_site.py pins the About text against them.
 TERMS_LEAD = "Each line below quotes the source's own words where the build read them, and says so where it did not."
@@ -1993,7 +2091,10 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
     pages = {
         "index.html": ("index.html", {"page": "now", "root": "", "alerts": alerts, "towns": towns,
                                       "card": map_card(layers, alerts, towns, c.status, now)}),
-        "map.html": ("map.html", {"page": "map", "root": "", "towns": towns}),
+        "map.html": ("map.html", {"page": "map", "root": "", "towns": towns, "sheet": SHEET_WORDS,
+                                   # the satellite reason is a word of the storm-layer build only (the flag-off page has none)
+                                   "map_words": {k: v for k, v in MAP_WORDS.items() if storm_layers or not k.startswith("satellite")},
+                                   "satellite_title": (layers.get("satellite") or {}).get("title") or ""}),
         "reports.html": ("reports.html", {"page": "reports", "root": "", "reports": reports}),
         "about.html": ("about.html", {"page": "about", "root": ""}),
     }
