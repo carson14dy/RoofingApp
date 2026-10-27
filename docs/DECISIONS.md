@@ -1064,6 +1064,19 @@ What it settles:
 
 *Why:* the owner asked for every kind of weather at a place, in one view, in words a roofer reads without decoding. The grid and the station readings answer the temperature, rain and snow questions, each with its own kind word and, for a station, its distance. The zone, county and warning products answer the wind, storm and flood questions for the zone, county or spot they cover, and they say so. The summary puts five seasons on one screen because the north star is one place that leads with the plain answer. The snow analysis stays out until its unit is settled, because a wrong unit would be a wrong number in every snow row. Nothing here says what a roof needs: the roof lines report the weather and quote their references, and the counts are corrected in the record, not left wrong on the page.
 
+**D143 · The desktop app and the 3D globe research are removed (2026-10-26).** Carson, 2026-10-26: "I want you to merge everything into the app main then. And delete old stuff you think is unnecessary for our new maps." The merges that day: PR 17 as `ec7bfbb` (hail B5), PR 18 as `687a609` (the map's B6, part 1) and PR 12 as `aaf4455` (the hail history research). PRs 14, 15, 16 and 2 were closed as superseded, without a merge. This entry replaces D27's "Parked, not deleted" bullet: the app is no longer parked, and the website is the whole product. D1 to D142 stay as written; where they cite the removed paths, those citations are history.
+
+- *Removed, the desktop app:* `payload/`, `desktop/`, `assets/` (the app icons; the site has its own), the root `build.py` (the installer build; `website/build.py` stays), `ship.py`, the app's three tests (`tests/test_weather.py`, `tests/test_alert_scenarios.py`, `tests/test_updates.py`) and `.github/workflows/build-desktop.yml`. The last commit that changed the app is `33cda31`. Read a removed file with `git show 33cda31:<path>`.
+- *Removed, the 3D globe research:* `research/globe/`, the plan, prototype and evidence for a 3D storm view. The 3D view is out (D107(c)), and the map has no 3D view. The last commit that changed the research is `bf2909b`. The docs and code that cited its evidence now say where it lives; the dated research records under `research/hail-history/` keep their citations as written.
+- *Rules 2 and 3 retired:* the payload contract and the database rule in `AGENTS.md` described the app only. Both are now one line in `AGENTS.md` that says so. The numbers stay, so citations of rules 4 to 9 still read.
+- *Gotchas removed:* the app-only notes (Folium's keyword camel-casing, the installed payload copy, `ship.py` with the update tests, and Folium's `Popup` and stylesheet order) left the Gotchas list; their text is at `687a609`.
+- *Workflow renamed:* `.github/workflows/check-app.yml` is now `tests.yml`, named "Tests". It runs on a push to `main`, on every pull request and by hand, installs `requirements.txt` and runs `python -m unittest discover -s tests`. The self-test step is gone.
+- *requirements.txt:* now the website's list, the packages that `.github/workflows/website.yml` installs with pip. The app's packages (Flask, folium, pywebview, pyinstaller and the rest) are no longer listed.
+- *Not done here:* the branch deletion was refused by the tool and is left to the owner.
+- *An honest line:* PR 12's merge message says 2,537 tests. CI's run of that merge commit (`aaf4455`) ran 2,537 tests, OK, with 343 skipped; its job installed only flask, folium, requests, waitress, tzdata, pillow and numpy. The 1,990 tests OK with 12 skipped are the suite at `ec7bfbb` (PR 17's merge), before PR 18 added 547 test cases. PR 12 adds no test files, so `687a609`, the tree it merged onto, has the same 2,537 tests. The suite after this cleanup runs 2,492 tests, OK, with 12 skipped.
+
+*Why:* Carson asked for everything the new maps do not need to go. The website is the whole product (D27), and the 3D view is out (D107(c)). The app and the research stay in git history, at `33cda31` and `bf2909b`, for anyone who needs them.
+
 ## Gotchas found the hard way
 - An absolutely positioned element escapes a scroll box that isn't its containing block: the
   visually hidden "(over limit)" words in the hourly table widened every town page with a flagged
@@ -1071,17 +1084,9 @@ What it settles:
 - A flex row of links shrinks its items (and wraps the text inside them) before it overflows; with
   `flex-wrap` it wraps whole items instead. Measure both on the narrowest phone.
 - Jinja resolves `h.pop` to the dict method `pop`, not the key; the key is `precip_pct`.
-- Folium camelizes keyword arguments (`_t` → `T`).
 - `{% set %}` at the top level of a child template is ignored; set inside blocks.
 - Leaflet controls lose their icons if CSS uses the `background` shorthand: use `background-color`.
 - A scratch file named like a stdlib module (`inspect.py`) shadows it: run scripts with `python -I`.
-- In development the installed copy of the built-in payload goes stale; the updater reinstalls it
-  when its content hash changes.
-- `ship.py` and the update tests assume the bundled manifest version; the tests pin a copy to 1.0.0.
-- Folium's `Popup` always calls jQuery (`$(…)`); on a page without jQuery use a direct
-  `bindPopup` (the website's `LinkPopup`).
-- Folium adds Leaflet's stylesheet after anything added to the map's header, so header styles
-  need selectors more specific than Leaflet's (`.leaflet-tooltip.town-label`).
 - `actions/upload-artifact@v4` skips dotfiles such as `.nojekyll` unless `include-hidden-files: true`.
 - A zone written into a template is wrong half the year: the Storm reports page said reporting days
   start "at 6 am MDT" in winter too (12:00 UTC is 5 am MST). Format the instant with `%Z`.

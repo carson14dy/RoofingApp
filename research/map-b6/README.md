@@ -89,7 +89,7 @@ builds. Path B would take weeks of cartography (a style, glyphs, sprites, three 
 daily job) and would still not be Apple's map; its 3D view would be honest but plain.
 
 Recommendation: build on Apple's web maps (path A), keep the present white map as the fallback the page shows when the token
-is missing, the script does not load, or the build is a sample (so the offline tests and the parked checks keep running), and
+is missing, the script does not load, or the build is a sample (so the offline tests keep running), and
 leave the 3D choice out of the sheet with one sentence in About that says why. If the owner does not want an Apple membership,
 path B at zoom 13 is the next best, and the caps decision (ROADMAP owner item 2) decides whether the full store and the tiles
 can share one site.

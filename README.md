@@ -8,8 +8,7 @@ three days of SPC hail and wind reports. It also shows a five-year history of ra
 publishes it with GitHub Pages at **https://carson14dy.github.io/RoofingApp/** once Pages is
 turned on. Nothing to install: open it on any phone or computer.
 
-The earlier desktop app is **parked**, not deleted. It is described in the second half of this
-file.
+The earlier desktop app was removed on 2026-10-26 (D143); the last commit that changed it is 33cda31.
 
 **AI agents (Claude Code, ChatGPT/Codex):** read [`AGENTS.md`](AGENTS.md) first. Decisions live in
 [`docs/DECISIONS.md`](docs/DECISIONS.md), the website design in [`docs/DESIGN.md`](docs/DESIGN.md),
@@ -26,10 +25,6 @@ The website
 4. [How it updates](#how-it-updates)
 5. [Build it on your computer](#build-it-on-your-computer)
 6. [Website files](#website-files)
-
-The parked desktop app
-
-7. [Bottom line](#bottom-line) and the app's sections after it.
 
 ---
 
@@ -56,7 +51,7 @@ Website** and re-enable it. Every page says how old it is, so a stalled site is 
 | Storm reports | Hail and wind reports in and near Montana for the last three reporting days, on a map and in tables | SPC |
 | Hail history (build flag `--hail-history`, on `main` at the owner's decision of 2026-10-21) | On the Map, tap or click a spot for its five-year history of NOAA radar-estimated hail: each day at 0.25 in or more, in inches and millimetres, with its SPC day. The same spot also lists its NWS local storm reports, NCEI Storm Events records, radar hail detections, the warnings whose polygon covered it, the zone products for its forecast zone, the red flag warnings for its fire weather zone and the gusts at the nearest stations, each under its own kind label. Station readings come from stations in Montana and the neighbouring states within 40 miles; Canadian stations within reach are not read while the terms for their data are under review. Each town page has the same tables. The history opens with a five-season table (2021-22 to 2025-26, July to June, with the partial 2026-27 season below it), then eleven sections in one fixed order: Hail, Wind, Storms and warnings, Temperature, Rain, Snow, Flooding, Ice and winter, Heat, Weather that matters for a roof, and How this was made. An estimate is not a measurement or an inspection | NOAA MRMS radar estimate (MESH); NWS reports, warnings and zone products (IEM); NCEI Storm Events and SWDI; NCEI GHCN-Daily and NOAA nClimGrid-Daily (station and grid values); IEM station data |
 | Addresses, streets and building outlines (build flag `--hail-addresses`, off on `main`) | On the Map: the street lines, the arterials from zoom 13, the local streets from 15 and the names from 16; from zoom 15 each building outline has one dot, and each address that no outline holds has its own dot. Tap a dot for its address, if one is on file, and the weather history for its cell. A search box, "Find an address", finds a typed address; what is typed stays in the browser | Montana State Library (address points and roads); USA Structures, Oak Ridge National Laboratory and FEMA (building outlines); U.S. Census Bureau (roads, if the fallback is built). The terms are on the About page |
-| About | What each part is, the flag limits, what happens when something fails, the data sources in detail | — |
+| About | What each part is, the flag limits, what happens when something fails, the data sources in detail | None |
 
 Towns: every Montana city over 8,000 in the 2020 census, plus Sidney and four smaller towns
 (Glasgow, Glendive, Lewistown, West Yellowstone): Anaconda, Belgrade, Billings, Bozeman, Butte,
@@ -139,8 +134,7 @@ python -m website.history_layers verify --store store              # check the f
 python -m website.labels build --store store                       # B6 value bubble anchors on the building outlines, zooms 17 and 18 (after the outline step)
 python -m website.labels verify --store store --sample 40          # recompute a sample of shards
 python -m http.server -d _site 8000            # open http://localhost:8000
-pip install pyyaml                                                  # test-only: the workflow-file tests read YAML (requirements.txt does not list it)
-python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_hail tests.test_hail_workflow tests.test_joins tests.test_addresses tests.test_streets tests.test_buildings tests.test_swath tests.test_climate tests.test_stations tests.test_snowgrid tests.test_gauges tests.test_summary tests.test_words_rules tests.test_website_workflow   # website tests, offline
+python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_hail tests.test_joins tests.test_addresses tests.test_streets tests.test_buildings tests.test_swath tests.test_climate tests.test_stations tests.test_snowgrid tests.test_gauges tests.test_summary tests.test_words_rules tests.test_hail_workflow tests.test_website_workflow tests.test_terrain tests.test_basemap2 tests.test_landmarks tests.test_history_layers tests.test_labels   # website tests, offline
 python tools/smoke_map.py _site                # the built map in Chromium (needs playwright)
 python tools/smoke_map.py _site --history --store store   # the sheet's summary words read from a store folder or hail-store.tar.gz (the build passed --hail-history)
 python tools/smoke_pages.py _site              # no page wider than the screen, 288–1440 px
@@ -178,330 +172,16 @@ website/static/map/    map.js and map.css (the interactive map), basemap.json (o
 tools/build_basemap.py rebuilds basemap.json from Natural Earth and Census data (run by hand)
 .github/workflows/hail-store.yml  the daily hail store job (12:43 UTC): build, join, add the B5 weather parts (non-fatal steps with timeouts) and verify them, build and check the address, street and outline steps (non-fatal), pack and publish the release assets; the monthly job runs in its own job on the first of the month or by input, and the once-only backfill by input (D26, D36, D38, D42)
 tests/                 test_site.py (pages, failures), test_gridded.py (radar and model frames),
-                       test_basemap.py (the outline file), test_storm.py (radar echo tops),
+                       test_basemap.py (the outline file), test_basemap2.py (the base map vectors),
+                       test_terrain.py (the terrain tiles), test_landmarks.py (the landmark points),
+                       test_labels.py (the value bubble anchors), test_history_layers.py (the five-year
+                       pictures and zone counts), test_storm.py (radar echo tops),
                        test_satellite.py (the GOES satellite picture), test_hail.py (the hail history store),
-                       test_joins.py (the hail history joins),
-                       test_addresses.py (the address dots and search), test_streets.py (the street lines),
-                       test_buildings.py (the outlines and the join), test_swath.py (the MRMS hail swath layers),
-                       test_climate.py (the grid), test_stations.py
-                       (the station rule), test_snowgrid.py (the snow analysis), test_gauges.py (river gauges),
-                       test_summary.py (the summary table and its words),
-                       test_website_workflow.py
-                       (the workflow file)
-```
-
----
-
-# Parked: the desktop app
-
-Everything below describes the desktop app, parked on 2026-10-14 (D27). It still works and its
-tests still run. No new version is shipped and no installer is built unless Carson asks.
-
-## Bottom line
-
-| You want to… | Do this |
-|---|---|
-| Try it now on your computer | `pip install -r requirements.txt` then `python desktop/launcher.py` |
-| Turn on automatic updates | Already on — installed copies follow this repo's `main` branch |
-| Give crews an installer | GitHub → **Actions → Build desktop installers → Run workflow**, download the Windows/macOS zip |
-| Ship a change | `python ship.py "what changed"` — tests it, bumps the version, pushes. Apps update within the hour or on **Check for updates** |
-
-**Two fixes to the earlier web version you should know about:** its radar layer
-requested NOAA's WMS layer `3`, which is the *boundary* layer and draws nothing —
-the radar is layer `1`. And its map script was inserted without `<script>` tags, so
-the map never actually ran in a browser. Both are fixed here and checked in a real
-browser and a real desktop window. Its base map (CARTO) also now requires an API
-key; this version uses USGS's public-domain maps.
-
----
-
-## Run it today
-
-Needs Python 3.10+.
-
-```bash
-pip install -r requirements.txt
-python desktop/launcher.py            # opens the app in its own window
-python desktop/launcher.py --browser  # or in your web browser
-```
-
-Windows needs the Microsoft Edge **WebView2** runtime (built into Windows 11 and
-installed on most Windows 10 PCs). If the window can't open, the app falls back
-to your browser automatically.
-
----
-
-## Set up updates (once)
-
-Already done: installed copies follow **`carson14dy/RoofingApp`, branch `main`**
-(`desktop/update_config.json`; installers built by GitHub Actions bake it in too).
-
-- This repo is **public**, so apps need no token — and anyone can read the code and docs. To make it
-  private: Settings → General → Change visibility, then create a fine-grained token with
-  *Contents: read-only* on this repo and add it as the repository secret `UPDATE_TOKEN` (installers
-  carry it; it can only read code the installer already contains) or paste it under
-  **App & updates → Update source**.
-- The app checks GitHub when it opens and every hour after (unauthenticated GitHub allows 60 checks
-  per hour per network; unchanged checks are answered from cache).
-
----
-
-## Get the installers (once)
-
-PyInstaller can't cross-compile, so GitHub builds them for you:
-
-- **Actions → Build desktop installers → Run workflow** → download
-  `MontanaHailWatch-Windows.zip` / `MontanaHailWatch-macOS.zip` from the run, **or**
-- push a tag `desktop-v1.1.0` to also publish a GitHub Release with both attached.
-
-Both builds run the app's self-test *inside the built app* before packaging.
-
-**First launch warnings (the apps aren't code-signed):**
-- *Windows:* SmartScreen → **More info → Run anyway**. Unzip anywhere and run `MontanaHailWatch.exe`.
-- *macOS:* right-click the app → **Open**, or System Settings → Privacy & Security → **Open Anyway**.
-  The default runner builds for Apple Silicon Macs.
-
-Linux: run from source, or `python build.py` on a Linux machine.
-
----
-
-## Ship an update (every time)
-
-```bash
-python ship.py "Fixed the alert list order"          # 1.0.0 -> 1.0.1
-python ship.py "Added territory reports" --minor     # -> 1.1.0
-```
-
-`ship.py` stops at the first problem: it runs the same self-test installed apps
-run, runs the full test suite, bumps `payload/manifest.json`, commits and pushes.
-Pushing without changing the version ships nothing — that's deliberate, so
-work-in-progress commits never reach crews.
-
-Claude Code or ChatGPT can make the change: `AGENTS.md` tells them how to test and ship.
-Work happens on a branch with a pull request; merging a version bump to `main` ships it.
-
----
-
-## What updates itself vs. what needs a new installer
-
-| Change | Ships by itself? |
-|---|---|
-| Anything in `payload/` — screens, wording, rules, feeds, maps, database additions | **Yes** — bump the version and push |
-| New Python package (e.g. `shapely`) | **No** — rebuild installers; raise `min_shell` in the manifest and `SHELL_API` in `desktop/launcher.py` |
-| Anything in `desktop/` (window, updater, notifications) | **No** — rebuild installers |
-
-If you push a version that needs a newer installer, apps show **“A new desktop
-installer is needed”** with a download link instead of breaking.
-
----
-
-## How updates stay safe
-
-1. **Checked:** the app reads `payload/manifest.json` at the newest commit; it only
-   considers a strictly higher version.
-2. **Tested before install:** it downloads that exact commit, then runs the new
-   version against a *copy* of your real database and opens every page listed in
-   the manifest. Any error (syntax, missing package, template, migration) → rejected
-   and skipped, with the reason under **App & updates**.
-3. **Installed with a backup:** the database is backed up before every install
-   (and daily; newest 14 kept). Each version lives in its own folder and is never
-   edited in place.
-4. **Swapped live:** **Update now** switches versions instantly — no restart. Or it
-   installs the next time the app opens.
-5. **Rolled back automatically** if a version fails to start; **manually** from
-   **App & updates** or the window menu. A rolled-back version is skipped until a
-   newer number ships.
-6. **Recovery screen:** if a page crashes, you get a one-click roll back instead of
-   an error page.
-
-Database rule for app code: only *add* migrations at the end of
-`payload/store.py → MIGRATIONS`; never edit shipped ones.
-
----
-
-## Data feeds: live, demo, needs a subscription
-
-Verified working 2026-10-11. The **Data sources** screen shows each feed's
-status, data time and last check, plus the full feed contracts (units, timing,
-cadence, missing-value rules).
-
-| Feed | Status | Notes |
-|---|---|---|
-| NWS official alerts (Montana) | **Live** | Every 60 s in the background. Matched by warning polygon, otherwise by the place's NWS forecast zone / county / fire zone. Updates and cancellations reconciled; kept on screen through outages; backfilled after a gap. |
-| NWS forecasts per job (hourly, gridpoint gusts/rain/WBGT, 7-day) | **Live** | Fetched when Crew Outlook opens; NWS caching honored. |
-| NOAA NEXRAD radar mosaic | **Live** | WMS layer `1`; frame valid time shown separately from retrieval time. Precipitation echoes, not hail size. |
-| SPC preliminary hail & wind reports | **Live** | 12:00–11:59 UTC reporting days; `175` = 1.75″; `UNK` wind stays unknown. |
-| Address / city / ZIP search | **Live** | U.S. Census geocoder (addresses), OpenStreetMap (cities, ZIPs). |
-| Base map | **Live** | USGS The National Map (public domain). |
-| Estimated hail footprint | **Demo** (off by default) | Fictional shapes, shown only under “Demo event” and labelled Demo everywhere. A GeoJSON slot is ready for a real source. |
-| MRMS MESH estimated hail | Not connected | Free, but published as GRIB2 grids — needs a processing job, then point the GeoJSON setting at it. |
-| SPC outlooks (Conditional Intensity), ProbSevere v3, LightningCast | Trial candidates | Listed, not built — per the review, evaluate first. |
-| Xweather, The Weather Company HailZone, Verisk, Cotality | Needs subscription | Trial shortlist, not a ranking. No accounts or purchases made. |
-| NOAA NCEI Storm Events | Not connected | Historical context, later. |
-
----
-
-## The screens
-
-- **Live Storms (home)** — in the review's order: active alerts (who each applies to,
-  and how it was matched), today's jobs needing review, tomorrow's scheduling
-  conflicts, inspection candidates, storm matches. Map layers and data freshness
-  sit behind a details panel. Search an address or ZIP and save it as a job or
-  property. Draw a territory or a crew-observed hail area. Log crew inspection
-  findings (kept separate from weather data).
-- **Storm History** — pick an SPC reporting day; see reports on a map and table;
-  every property gets a tier and the reasons in words; add selected ones as
-  inspection candidates. No reports ≠ no hail, and it says so.
-- **Inspections** — candidates with status (not contacted → scheduled → inspected →
-  completed), assigned rep, notes, the evidence captured at the time, a printable
-  exposure summary, and CSV export. Never “confirmed damage.”
-- **Crew Outlook** — per job: phase, roof system and exact product, work hours and
-  time to dry-in, required site checks, and job-specific limits on top of company
-  rules. Hourly status (“Forecast meets configured conditions” / “Weather review
-  needed” / “Data unavailable”) with the reasons, whether a long-enough window
-  exists, forecast WBGT and heat index, rain amounts, 7-day view, supervisor review
-  and crew acknowledgement.
-- **Places** — jobs, properties, territories, and each place's NWS zones.
-- **Data sources** — feed status, trial candidates, settings, feed contracts.
-- **App & updates** — version, update status, update source, roll back, data folder.
-
-The only hand-written JavaScript is a ~20-line bridge (in `live.html`) that passes
-map clicks and drawn shapes to Python and refreshes radar tiles. Everything else
-is Python (Flask, Folium, SQLite).
-
----
-
-## Your data and backups
-
-| OS | Data folder |
-|---|---|
-| Windows | `%LOCALAPPDATA%\MontanaHailWatch` |
-| macOS | `~/Library/Application Support/MontanaHailWatch` |
-| Linux | `~/.local/share/MontanaHailWatch` |
-
-Inside: `hailwatch.db` (your data), `backups/`, `versions/`, `logs/hailwatch.log`,
-`settings.json`. **App & updates → Open data folder** opens it.
-
-**Bringing data from the earlier web version:** quit the app, copy that version's
-`hailwatch.db` into the data folder, start the app. It upgrades the file in place
-(old reports become crew inspection findings; old outlines become crew-observed areas).
-
----
-
-## Handoff and review status
-
-**Independent review P0s (before any production claim):**
-- Alert geography — polygon, else county / forecast zone / fire zone; missing
-  polygon is never “no alert”; can't-tell is shown as can't-tell. Tested.
-- Lifecycle — updates, cancellations, out-of-order delivery, duplicates, outages,
-  history backfill after a gap. 240 generated scenarios + a busy-day replay with a
-  30-minute outage. Tested.
-- “Better forecasting” claim — **not made.** Evaluation (company practice + NWS vs.
-  deterministic job rules vs. extra feeds) is the next step; the app already keeps
-  decision-time records to support it (candidate evidence snapshots, outlook
-  change log, supervisor reviews with the outlook at the time).
-
-**Handoff acceptance checks** (all automated in `tests/`): 175 → 1.75 in; unknown
-wind stays unknown; UTC/local midnight and daylight-saving dates; warning
-update/cancel reconciliation; feed failures show stale/unavailable; estimates and
-reports stay distinct; no report is not an all-clear; repeated ingestion makes no
-duplicate candidates or notifications; no “confirmed damage” wording; exports keep
-sources, legend and timestamps; demo data never shown as live.
-
-**Not done yet:** advanced guidance feeds and vendor trials (shadow mode first),
-the evaluation harness with held-out storm days, phone notifications, the MRMS
-processing job, NCEI history, release-gate load tests at regional scale.
-
----
-
-## Tests
-
-```bash
-python desktop/launcher.py --selftest payload   # what installed apps run before accepting an update
-python -m unittest discover -s tests -v          # about 2,000 tests, offline, about 7 minutes
-```
-
-- `tests/test_weather.py` — handoff acceptance checks, alert geography, outlook rules, targeting, exports, wording.
-- `tests/test_alert_scenarios.py` — 240 geography × lifecycle × message-order scenarios; outage replay with backfill.
-- `tests/test_updates.py` — the whole update channel against a fake GitHub: apply without restart, broken
-  update rejected, needs-new-installer, startup failure rolled back, manual rollback and skip, rate limit,
-  private repo token, unchanged-check caching, zip path traversal, the local server's key/host checks and recovery page.
-
-GitHub runs both on every push (**Actions → Check the app**).
-
----
-
-## Troubleshooting
-
-| Symptom | Likely cause / fix |
-|---|---|
-| Radar is empty | Clear skies — no echoes to draw. **Data sources** shows the radar frame time; if it says stale/unavailable, NOAA's service is down. |
-| “Update check failed” | Read the message under **App & updates**: offline, GitHub's hourly limit (add a token), wrong repo name, or a private repo without a token. |
-| An update was “skipped” | It failed its self-test on your data; the reason is in the update history. Fix, bump the version, ship again. |
-| Window doesn't open (Windows) | Install Microsoft Edge WebView2 Runtime; meanwhile the app opens in your browser. |
-| “This page only opens inside the app” | You opened the local address in a browser tab. Use the app window. |
-| Anything else | `logs/hailwatch.log` in the data folder. |
-
----
-
-## Security notes
-
-- The app runs a private local server bound to `127.0.0.1`. Each launch creates a
-  one-time key that only the app's window receives; other programs and websites
-  get “403”. Requests with a wrong host name are refused.
-- Updates are trusted from your GitHub repo — protect that account with two-factor
-  sign-in. Downloads are checked for path tricks and size before anything is installed.
-- A token entered under **Update source** is stored in `settings.json` in your data folder.
-- Desktop notifications pass text through environment variables, never through a shell command line.
-
----
-
-## Known limits
-
-- Windows and macOS builds are produced by GitHub Actions and haven't been run on
-  a real Windows PC or Mac yet; desktop notifications on those systems are untested.
-  The Linux build, the native window (Qt), and a full update cycle inside the frozen app were tested.
-- Unsigned installers trigger the first-launch warnings above.
-- Real hail-size footprints need MRMS processing or a licensed provider.
-- Alerts reach you through the desktop app while it's open; there's no phone delivery yet.
-- Address precision is not weather precision: reports are points, grids are ~1–2.5 km, and nothing here measures a specific roof.
-
----
-
-## Renaming
-
-To rename: grep for `Hail Watch` and `HailWatch` and change every hit — templates (header, titles,
-summary footer, App & updates line), `payload/manifest.json` `name`, `payload/app.py`,
-`desktop/launcher.py`, `desktop/updater.py`, `build.py`, the build workflow and this file. Payload
-changes ship; shell and build changes need a new installer. Changing `APP_ID` (in
-`desktop/launcher.py`, `build.py` and the workflow paths) moves the data folder and renames the
-installer, so leave it unless you're starting fresh; the 2026-10-12 rename to Montana Hail Watch
-did change it before any copies were installed (D26).
-
----
-
-## Project layout
-
-```
-AGENTS.md                rules for AI agents (ChatGPT/Codex read it; CLAUDE.md imports it for Claude Code)
-docs/handoff/            the weather module spec and the independent review
-docs/DECISIONS.md        why things are built this way, bugs already fixed
-docs/ROADMAP.md          status, next steps, open questions
-payload/                 ← the app; updates itself from GitHub
-  manifest.json          version, min_shell, release notes, self-test pages
-  app.py                 screens and routes (Flask)
-  weather.py             feed adapters, evidence model, alert matching, rules, targeting, feed contracts
-  store.py               SQLite schema (append-only migrations)
-  maps.py                Folium maps and the printable exposure map
-  templates/             pages
-  fixtures/              the fictional demo hail footprint
-desktop/                 ← the desktop app shell; changes only with a new installer
-  launcher.py            window, local server, menu, notifications, recovery screen
-  updater.py             GitHub checks, self-test, install, backups, rollback
-  update_config.json     default update source (filled in by the GitHub build)
-tests/                   acceptance, alert scenarios, update channel
-assets/                  app icons
-build.py                 builds the installer folder (PyInstaller)
-ship.py                  test → bump version → commit → push
-.github/workflows/       Check the app (every push) · Build desktop installers
+                       test_hail_workflow.py (the hail store job's workflow file), test_joins.py (the hail
+                       history joins), test_addresses.py (the address dots and search), test_streets.py
+                       (the street lines), test_buildings.py (the outlines and the join), test_swath.py (the
+                       MRMS hail swath layers), test_climate.py (the grid), test_stations.py (the station rule),
+                       test_snowgrid.py (the snow analysis), test_gauges.py (river gauges), test_summary.py
+                       (the summary table and its words), test_words_rules.py (the word rules the tests
+                       share), test_website_workflow.py (the workflow file)
 ```
