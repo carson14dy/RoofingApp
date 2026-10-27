@@ -451,3 +451,12 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   into the website's list and keeps a tests workflow (check-app.yml renamed), see briefs/cleanup-brief.md.
 - Programme: briefs/b6-browser-brief.md (S1 to S5, Haiku builders and skeptics on /home/user/wt/wt-b6b, branch
   claude/map-b6-browser from 687a609). The cleanup runs on /home/user/wt/wt-clean, branch claude/cleanup.
+
+## 2026-10-27, 00:14 to 00:27 UTC: main's store runs
+- The daily run 18 (ec7bfbb) passed at 23:17 in 41 minutes; main's scheduled Website run 136 (23:48) passed on its store.
+- The monthly run 20 (687a609, dispatched 22:46, started 23:17 after run 18, published 00:14, 57 minutes in all; the
+  monthly job 29 minutes): the terrain step took 240 s and its check passed; the base map vectors step ran 1,075 s to
+  its deadline and the vectors were marked unavailable (the mark step ran); the landmarks were asked again and passed;
+  caches saved: base map 25,290,082 bytes, terrain 41,526,438 bytes. The store manifest checked and the asset was
+  replaced at 00:14:10. The second monthly run was dispatched at 00:27 to resume band D and the vectors from the cache;
+  check-in at 01:36 UTC. Open item 12 stands: a fresh deployment shows the base map only after two monthly runs.
