@@ -23,7 +23,7 @@ from pathlib import Path
 
 import numpy as np
 try:
-    import h5py   # the daily job installs it; the app check (check-app.yml) does not
+    import h5py   # the daily job installs it, and so does the Tests workflow (requirements.txt)
     HAVE_H5PY = True
 except ImportError:
     HAVE_H5PY = False

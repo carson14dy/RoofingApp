@@ -1,4 +1,5 @@
-"""The GOES satellite picture for the map page (P2 of the storm layers; research/globe README §3, §6).
+"""The GOES satellite picture for the map page (P2 of the storm layers; the globe research
+README §3 and §6 were removed on 2026-10-26, D143, and are in git history at bf2909b).
 
 NOAA's GOES-East (GOES-19) and GOES-West (GOES-18) imagers scan the CONUS every 5 minutes in band 13
 (10.3 µm, the "clean" infrared). Each file holds the brightness temperature in kelvin on a 2 km grid.
@@ -51,8 +52,8 @@ LAYER_TEXT = {"title": "Satellite", "unit": "K",
 SAMPLE_NOTE = "Sample: invented picture, not NOAA GOES."   # a sample build's legend note
 NO_SCAN = "no satellite scan in the last 60 minutes"
 LIVE_SOURCE = "NOAA {name} band 13, observation"
-SAMPLE_SOURCE = "SAMPLE — invented satellite picture, not NOAA data"
-SAMPLE_STATUS = "SAMPLE — invented picture, scan ended {when}"
+SAMPLE_SOURCE = "SAMPLE: invented satellite picture, not NOAA data"
+SAMPLE_STATUS = "SAMPLE: invented picture, scan ended {when}"
 
 PREFIX = "ABI-L2-CMIPC"                   # CONUS band 13 products, one file per 5-minute scan
 GRID = (1500, 2500)                       # (rows, columns) of the CONUS grid
@@ -89,8 +90,9 @@ SAMPLE_NODATA_FROM = (49.2, -103.8)          # north-east corner: from this lati
 
 
 # ---------------------------------------------------------------- geometry (GOES fixed grid)
-# Copied from research/globe/prototype/goes_cloud_height.py (Geos and latlon_to_scan), which agrees with
-# PROJ's geos projection to 1e-9 degrees. tests/test_satellite.py checks it against reference points.
+# Copied from the globe prototype's goes_cloud_height.py (Geos and latlon_to_scan; the research was
+# removed on 2026-10-26, D143, and is in git history at bf2909b), which agrees with PROJ's geos
+# projection to 1e-9 degrees. tests/test_satellite.py checks it against reference points.
 
 @dataclass(frozen=True)
 class Geos:

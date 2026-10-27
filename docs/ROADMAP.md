@@ -1,13 +1,12 @@
 # Roadmap
 
-Status on 2026-10-16: the product is the **Montana Hail Watch website** (D27) with an interactive
+Status on 2026-10-16, updated 2026-10-26: the product is the **Montana Hail Watch website** (D27) with an interactive
 radar, forecast and warning map in the style of Apple Weather (D28) and live station readings
 (D29). The website was merged to `main` on 2026-10-16 (pull request #3) and Carson turned on GitHub
 Pages the same day, so `main` publishes to https://carson14dy.github.io/RoofingApp/ every 10
-minutes. The desktop app (payload 1.0.0, shell 1.1.0) is **parked**: unchanged, still tested, not
-shipped. Branches: `claude/desktop-app` (the app, then the website); `codex/kansas-city-weather-pilot`
-and `codex/montana-weather-pilot` (ChatGPT's pilots, reviewed in D23 and D25, not merged). It also
-carries the 3D storm view research in `research/globe/`, with `main` merged in; pull request #2 is open.
+minutes. The desktop app was removed on 2026-10-26 (D143); the last commit that changed it is `33cda31`.
+Branches: `claude/desktop-app` (the app, then the website); `codex/kansas-city-weather-pilot`
+and `codex/montana-weather-pilot` (the pilots on the `codex/` branches, reviewed in D23 and D25, not merged).
 Agents: check this file before starting, move items to Done when merged, keep "Next" in priority
 order.
 
@@ -17,7 +16,6 @@ order.
 3. Replace the placeholder flag limits with the company's own.
 4. Then: decision-time records for an evaluation, nearby station readings, a hail-size map, alerts
    to phones.
-5. Decide whether to delete the parked desktop app.
 
 ## Done: the website (D27)
 | Area | What works | Limits |
@@ -28,9 +26,9 @@ order.
 | Observed now (D29) | The latest reading at each town's three nearest NWS stations (any state): temperature, wind, gusts, time and age, quality flags in words, station and grid elevation; one line per town card on the Now page | Stations report hourly or less, so readings run up to 75 minutes old before they show as stale; a station is not a roof; not on the map |
 | Storm reports | Three SPC reporting days on the map card and in tables; hail in inches, unknown wind kept unknown | Preliminary reports only |
 | Honesty | Per-source status line, last verified alerts kept after a failed refresh, "Alerts not checked" per town, page-age warning, sample data labelled on every page | None |
-| Publishing | GitHub Actions every 10 minutes from `main`; branch builds check live data (`--require-live`) and keep a preview artifact; feed contracts on the About page | GitHub may delay schedules and pauses them after 60 days without activity. Measured 2026-10-17 from the Actions API: the four scheduled runs on `main` started 2026-10-16 at 19:42 and 22:14 UTC and 2026-10-17 at 00:35 and 05:00 UTC, with gaps of 151.5, 141.6 and 264.5 minutes, not every 10, so the live site updated hours apart while the page-age banner carried the real age. GitHub's docs say scheduled runs can be delayed at high load and queued jobs may be dropped (`research/globe/validation-evidence/hosting-options.json`). The offset cron (`7,17,27,37,47,57 * * * *`) was adopted on 2026-10-18 as an experiment; the count of scheduled starts on `main` in the 24 hours after merging is the measurement, to compare with the four runs in about 13 hours before. |
+| Publishing | GitHub Actions every 10 minutes from `main`; branch builds check live data (`--require-live`) and keep a preview artifact; feed contracts on the About page | GitHub may delay schedules and pauses them after 60 days without activity. Measured 2026-10-17 from the Actions API: the four scheduled runs on `main` started 2026-10-16 at 19:42 and 22:14 UTC and 2026-10-17 at 00:35 and 05:00 UTC, with gaps of 151.5, 141.6 and 264.5 minutes, not every 10, so the live site updated hours apart while the page-age banner carried the real age. GitHub's docs say scheduled runs can be delayed at high load and queued jobs may be dropped (`hosting-options.json`, in the globe research removed on 2026-10-26, D143; git history at `bf2909b`). The offset cron (`7,17,27,37,47,57 * * * *`) was adopted on 2026-10-18 as an experiment; the count of scheduled starts on `main` in the 24 hours after merging is the measurement, to compare with the four runs in about 13 hours before. |
 | Design | Light "field sheet" look with dark mode, self-hosted fonts and Leaflet, contrast ≥ 5.86:1, collision-free map labels, 288–1440 px without sideways scroll, checked on every branch push (`docs/DESIGN.md`) | Phone Now page is long (P2) |
-| Tests | 179 website tests (64 pages, map data and station readings, 69 radar and model frames, 41 base map and label layout, 5 Pages publication planning); a Chromium page-width check of every page at 288–1440 px on every branch push alongside the app's tests; a Chromium smoke test of the built map on every branch push (frames, base map, bubbles, play, layers, menu taps, legend, card and its caption) | None |
+| Tests | 179 website tests (64 pages, map data and station readings, 69 radar and model frames, 41 base map and label layout, 5 Pages publication planning); a Chromium page-width check of every page at 288–1440 px on every branch push; a Chromium smoke test of the built map on every branch push (frames, base map, bubbles, play, layers, menu taps, legend, card and its caption) | None |
 
 ## Hail history behind `--hail-history` and `--hail-addresses`, and the live swaths behind `--storm-layers` (D34 to D38): B1 on `main` at the owner's decision of 2026-10-21, the next stages built on branches
 | Area | What works | Limits |
@@ -197,33 +195,22 @@ B6 is the owner's map reference, built on our own public-domain cartography (D10
 14. **More towns, then the contiguous US (D24).** Towns are one line each in `website/towns.json`
     (each needs a label side checked by the label test). Contiguous US: a state list for alerts,
     the SPC filter box and map extent per region.
-15. **The parked app.** Keep or delete `payload/` and `desktop/` (Carson's call). If it comes back,
-    its plan (installers on real machines, pilot, evaluation, guidance trials, vendor comparison)
-    is in this file's history at commit 33cda31.
-16. **3D storm view (globe).** Research done 2026-10-17 in `research/globe/` (read sections 1, 2 and 6).
-    It waits on the owner decisions in README section 2 (D-G1 to D-G26). Chosen 2026-10-17: route (a),
-    storm layers on the Map page behind a default-off flag, P1 (text values) first. P0 gates before it:
-    schedule cadence, counsel on publishing terms before P2, the -99/-999 check (done, D34), the below-ground share.
-    Nothing reaches `main` until they pass. A link-only globe only after P1 to P4 and a library approval.
-    P1 merged in pull request #7 behind the flag (on `main`, off by default: website/storm.py,
-    tests/test_storm.py). P2 is built on branch `claude/storm-layers-p2` behind the same flag (the GOES
-    band 13 picture as a Map layer: website/satellite.py, tests/test_satellite.py) and waits for review
-    and a small pull request. The clear-night reading of -99/-999 needs Carson's ruling first, and no
-    GOES layer reaches users until counsel has read D-G10 and D-G11.
+15. **The parked app: removed (D143).** Carson's instruction of 2026-10-26 left the call to the team, which removed `payload/` and `desktop/`. The app's plan (installers on real machines, pilot, evaluation, guidance trials, vendor comparison) is in this file's history at commit `33cda31`.
+16. **3D storm view (globe): out.** The 3D view is out (D107(c)), so the globe plan and its gates are closed. The research folder `research/globe/` was removed on 2026-10-26 (D143); the last commit that changed it is `bf2909b`. The storm layers stay on the Map page as 2D work behind a default-off flag. P1 (text values) merged in pull request #7 (website/storm.py, tests/test_storm.py). P2 (the GOES band 13 picture: website/satellite.py, tests/test_satellite.py) is built on branch `claude/storm-layers-p2` and waits for review and a small pull request. The two gates still open, for the 2D storm layers, are under Open questions for Carson.
 17. **Imagery base map (D32, opt-in).** Merged 2026-10-18 (PR 11): a Base map switch in the Layers
    menu, from white (the default) to USGS ImageryTopo aerial imagery with roads and names. Its tiles are requested
    only while Imagery is on (after the switch, or on a link that starts on it); the one exception to the site-files
    rule. Checked on 2026-10-18: the unit tests, the sample builds, the browser check (`tools/smoke_map.py`, real
    tiles, with checks for a leftover tile layer, the failure words and the return to the credit) and the evidence
-   records (`research/globe/validation-evidence/imagery-switch-verification.json` and `imagery-switch-review.json`).
-   Left for Carson: the licence for the road and name data (USGS states none; `rights-matrix.json`); whether the
+   records (`imagery-switch-verification.json` and `imagery-switch-review.json`; both were in the globe research removed on 2026-10-26, D143, and are in git history at `bf2909b`).
+   Left for Carson: the licence for the road and name data (USGS states none; `rights-matrix.json` is in git history at `bf2909b`); whether the
    privacy line should also name the request headers; whether a town bubble's name may sit beside USGS's own name;
    the phone legend's height with imagery; and a small pull request. Decided 2026-10-18 (owner-delegated): the credit
    row carries the privacy words; a failed tile says so in the credit row; a link that opens on Imagery loads the
    tiles as the page opens; the About page quotes USGS's requested acknowledgment; the landscape menu scroll is
    accepted.
 18. **Hail B3, addresses, streets and building outlines (D36): built on `claude/hail-b3`, merged into `claude/hail-b5`.** It goes live only after the owner approves the About text and counsel answers the items in "Hail B3: open items (D36)" above; the flag stays off on `main` until then.
-19. **Hail B4, live swaths (D34): built on `claude/hail-b4`, merged into `claude/hail-b5` (D37).** MESH 30 to 1440 minute swath layers on the Map behind `--storm-layers`, after B1 to B3 (the globe plan's P3). Units are verified (D34, the MRMS GRIB2 user table). The module is in the built table above; the site side and the completion pass are in the branch's commit. Gates B4-1 to B4-6 pass (B4-2's name clause reads by parameter number, D18); B4-7 passed locally under the D17 rule on a live build and waits for the branch's live preview after the push (`research/globe/validation-evidence/p3-verification.json`).
+19. **Hail B4, live swaths (D34): built on `claude/hail-b4`, merged into `claude/hail-b5` (D37).** MESH 30 to 1440 minute swath layers on the Map behind `--storm-layers`, after B1 to B3 (the storm layers' P3). Units are verified (D34, the MRMS GRIB2 user table). The module is in the built table above; the site side and the completion pass are in the branch's commit. Gates B4-1 to B4-6 pass (B4-2's name clause reads by parameter number, D18); B4-7 passed locally under the D17 rule on a live build and waits for the branch's live preview after the push (`p3-verification.json`, in the globe research removed on 2026-10-26, D143; git history at `bf2909b`).
 20. **Hail B5, the past weather of every location (D38; the B5 brief).** Built on `claude/hail-b5` (the table above, "Done on the branch"); its browser is item 21. Joins the kinds B2 did not read, with the research's counts for 2021-10-19 to 2026-10-19: NCEI county-coded records (points) within 5 miles, tornado (13 rows), flood (60), flash flood (52), heavy rain (85), funnel cloud (30), lightning (6) and debris flow (10), 256 rows in all; the flood products FL.W (43 events), FA.W (37), FA.Y (548), FL.A (35) and FL.Y (10), and the county-only FA.A (18) and FF.A (2); the snow squall warning SQ.W (78); and the winter, heat, frost and freeze zone products WW.Y (865), WS.A (226), HT.Y (58), EH.W (4), EH.A (3), FR.Y (14) and FZ.W (4). Under D35, B2 joins FA.A (flood watch) as a zone product; FL.W and the other flood products move to B5's polygon path and county path. Settle these first (`DECISIONS.md` D35 open items 17 and 18): whether the zone-coded FF.A (18) events join, and whether the high wind watch HW.A (277) and the blowing dust advisory DU.Y (3) join, which the B5 brief lists and D35 does not. The B5 brief's NCEI counts are 2020 to 2026 totals (open item 19). Zone products that B5 adds follow the period rule (D33).
 21. **Hail B5, part B2 (the browser; built in the completion pass, D91 to D93).** The sheet's summary table and its sections in `website/static/map/map.js` and `map.css`, with every word read from Python (`map_data_summary`; no literal words in the browser); the per-tile event fetch from `hail/j/e/` on a tap; the browser's halves of the failure rule (D16); the phone view at zoom 15 against the 700,000-byte gzip budget (D82(b)); the Chromium smoke at 390 and 1280 px, `smoke_pages`, the live preview build and the zero off-site request count. Gates B5-10, B5-11, B5-14 (browser half), B5-16 (town pages), B5-17 (the About page) and B5-18 are recorded in `research/hail-history/validation-evidence/b5-verification.json`. B3's changes to `map.js` and the sheet markup come first, so this part builds on the merged page.
 22. **Hail B6, the Map page like the owner's reference, on our own map (D106 to D142).** The Python products P1 to P4 are built on `claude/map-b6` (from the B5 head, PR 17) and tested offline. Next: the browser (B6-3) and the options sheet; then the local build and smoke with every layer on; then the owner items and counsel items 21 to 24 in "Open items for B6", before the layers they cover go live.
@@ -234,7 +221,7 @@ B6 is the owner's map reference, built on our own public-domain cartography (D10
 | P0 | Alert geography (polygon, county, zone, null geometry) | Statewide list from NWS; per-town check by point (NWS matches polygons and zones); null geometry listed; tested |
 | P0 | Lifecycle: revisions, duplicates, outages | Replaced updates and test messages dropped; failed refresh keeps the last verified list; tested. No notifications yet, so no duplicate-notification risk |
 | P0 | Baseline and predeclared evaluation metrics | **Not started** (Next 4) |
-| P1 | Roofing job context | Parked with the app |
+| P1 | Roofing job context | Out of scope: the app was removed (D143) |
 | P1 | Advanced guidance trials (SPC CIG, ProbSevere v3, LightningCast) | Listed only |
 | P1 | Broader vendor comparison | Listed only (Next 9) |
 | P1 | Pinned feed contracts | Done: `website/sources.py` `CONTRACTS`, shown on the About page |
@@ -256,15 +243,14 @@ B6 is the owner's map reference, built on our own public-domain cartography (D10
   Lewistown and West Yellowstone stay (under 8,000). Whitefish (7,751) and Laurel (7,222) are under
   8,000, and Lockwood and Evergreen are census-designated places, not towns, so none of those was added.
 - The company's weather limits for each roof system (Next 3).
-- Delete the parked desktop app, or keep it in the repo?
 - Should the site have its own web address (a custom domain) instead of the GitHub one?
 - Check "Montana Hail Watch" against existing products and trademarks before printing it anywhere
   (D26).
 - The repo description says "Roofing Weather and Maps Contact app". What should "Contact" cover?
-- Globe questions (3D storm view): see `research/globe/README.md` section 14. Answer these first: keep or
-  relax the site-files-only browser rule; rule on the one new browser script for the storm text (P1) and,
-  later at the P4 gate, a vendored WebGL library; may storm or height views ever reach homeowners, adjusters
-  or insurers?
+- Closed: the globe questions about the 3D storm view (the browser rule, a WebGL library and the storm text script). The 3D view is out (D107(c)), and the research folder was removed on 2026-10-26 (D143; last commit `bf2909b`).
+- Still open: may the storm layers (radar echo tops, the GOES picture and the hail swath) ever reach homeowners, adjusters or insurers? No decision answers this yet.
+- Still open, counsel (D-G10 and D-G11 in the globe README at `bf2909b`): counsel reads the publishing terms for NOAA-derived products and the GOES access banner before any NOAA-derived product or GOES layer reaches users. Until then none does.
+- Still open, Carson's ruling (D-G13, in the globe README at `bf2909b`): the clear-night reading of -99 and -999. The options are "No radar data" for -99, -999 and every negative value until a coverage code is verified, or keeping "No radar coverage" for all negatives. The live Map keeps its words until decided.
 
 ## Missing inputs
 - The handoff's two images (dashboard concept, hero photo) were not provided.

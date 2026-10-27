@@ -17,7 +17,7 @@ from pathlib import Path
 
 try:
     import yaml
-except ImportError:   # the app check (check-app.yml) installs no pyyaml; the Website workflow's offline step does
+except ImportError:   # a machine without pyyaml skips these; the Tests and Website workflows install it
     yaml = None
 # every class below reads the workflow files through yaml, so each one skips when pyyaml is absent
 needs_yaml = unittest.skipUnless(yaml is not None, "pyyaml is not installed (the Website workflow installs it)")

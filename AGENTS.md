@@ -1,4 +1,4 @@
-# AGENTS.md — RoofingApp
+# AGENTS.md: RoofingApp
 
 Shared instructions for every AI coding agent in this repo. ChatGPT/Codex read this file
 directly; Claude Code reads it through `CLAUDE.md`. Humans: start with `README.md`.
@@ -10,17 +10,16 @@ map in the style of Apple Weather (D28), a 12-hour card and a 24-hour/7-day page
 storm reports. Python builds it into static pages;
 GitHub Actions is asked to rebuild it every 10 minutes from `main` (and builds on every push to `main`) and publishes it with GitHub Pages, so
 **anything merged to `main` is live within about 10 minutes**.
-The earlier desktop app (`payload/`, `desktop/`) is **parked**: unchanged and still tested, not
-shipped. Its rules below (1–3) apply only if work on it resumes.
+The desktop app was removed on 2026-10-26 (D143); its code is in git history, and the last commit that changed it is `33cda31`.
 
 ## Read before you change things
-- `docs/handoff/Roofing_Weather_Claude_Handoff.md` — the weather module spec (Live Storms, Storm
-  History, Crew Outlook, evidence kinds, acceptance checks).
-- `docs/handoff/Roofing_Weather_Independent_Review.md` — supersedes the handoff's provider shortlist;
+- `docs/handoff/Roofing_Weather_Claude_Handoff.md`: the original weather spec (the evidence kinds and
+  the acceptance checks still apply; its app screens are history).
+- `docs/handoff/Roofing_Weather_Independent_Review.md`: supersedes the handoff's provider shortlist;
   its P0/P1 priorities set the order of work.
-- `docs/DECISIONS.md` — why the architecture is the way it is, including bugs already fixed (D27: the website).
-- `docs/DESIGN.md` — the website's design: pages, states, tokens, and why.
-- `docs/ROADMAP.md` — what's done, what's next, open questions.
+- `docs/DECISIONS.md`: why the architecture is the way it is, including bugs already fixed (D27: the website).
+- `docs/DESIGN.md`: the website's design (pages, states, tokens, and why).
+- `docs/ROADMAP.md`: what's done, what's next, open questions.
 
 ## Layout
 ```
@@ -43,14 +42,14 @@ website/   the product. sources.py (NWS/SPC feeds, parsers, feed contracts) · g
            five-season table that leads the sheet and the roof lines, B5; its words are Python's)
 tools/     build_basemap.py (rebuilds static/map/basemap.json from Natural Earth + Census; by hand)
 .github/workflows/website.yml   build every 10 min from main → GitHub Pages; branch pushes = live check
+.github/workflows/tests.yml     the unit tests: on every push to main, on every pull request and by hand (requirements.txt)
 .github/workflows/hail-store.yml   daily 12:43 UTC: build the hail store, join its sources (website/joins.py), add the B5 weather parts (climate, stations, NOHRSC, gauges; non-fatal steps with timeouts) and verify them, build and check the address, street and outline steps (B3, D36; each non-fatal), pack and publish the release assets; a plan job starts the monthly job (the first of the month, or by input) in its own job, and the once-only backfill runs by input (D34, D35, D36, D38, D42)
-payload/   the parked app — updates itself. app.py (routes) · weather.py (feeds, evidence, alert matching,
-           rules, targeting, feed contracts) · store.py (SQLite) · maps.py (Folium) · templates/
-desktop/   the shell — changes only with a new installer. launcher.py (window, local server,
-           notifications, recovery page) · updater.py (GitHub updates, self-test, rollback)
-tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py, test_hail.py, test_joins.py, test_addresses.py, test_streets.py, test_buildings.py, test_swath.py, test_climate.py, test_stations.py, test_snowgrid.py, test_gauges.py, test_summary.py, test_words_rules.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
-           update channel vs fake GitHub
-build.py   PyInstaller build      ship.py   test → bump version → commit → push
+tests/     test_addresses.py, test_basemap.py, test_basemap2.py, test_buildings.py, test_climate.py,
+           test_gauges.py, test_gridded.py, test_hail.py, test_hail_workflow.py, test_history_layers.py,
+           test_joins.py, test_labels.py, test_landmarks.py, test_satellite.py, test_site.py,
+           test_snowgrid.py, test_stations.py, test_storm.py, test_streets.py, test_summary.py,
+           test_swath.py, test_terrain.py, test_website_workflow.py, test_words_rules.py (all website);
+           words_rules.py (the word rules the tests share) · fixtures/ (the archives the tests read)
 ```
 
 ## Commands
@@ -77,32 +76,20 @@ python -m website.snowgrid build --store store --cache b5-cache --offline       
 python -m website.gauges build --store store --cache b5-cache                   # --refresh for the monthly read
 python -m website.build --out _site --require-live       # live data; exit 1 if any source failed
 python -m http.server -d _site 8000                      # then open http://localhost:8000
-pip install -r requirements.txt                          # the parked desktop app
-pip install pyyaml                                       # test-only: the workflow-file tests read YAML (not in requirements.txt)
-python desktop/launcher.py                      # native window (--browser, or --headless --offline for tests)
-python desktop/launcher.py --selftest payload   # the check installed apps run before accepting an update
+pip install -r requirements.txt   # the website
 python -m unittest discover -s tests -v         # offline; must pass before any merge
 python tools/smoke_map.py _site --history --store store   # B5: the sheet's summary words from a store folder or hail-store.tar.gz (the build passed --hail-history)
-python ship.py "one-line note" [--minor]        # ships to users — only when the owner asks
 ```
 
 ## Hard rules
 1. **Shipping.** Website: merging to `main` publishes. Keep `main` green; push to a branch first
    (the Website workflow builds branch pushes against live data) and check the pages in a browser. The hail history flag `--hail-history` is on for the public site from `main` (the owner's decision of 2026-10-21); `--hail-addresses` stays off on `main` until the owner approves its terms and counsel answers them (D34, D36).
-   Parked app: users get a change only when `payload/manifest.json` `version` increases on `main`;
-   don't bump it unless the owner asked to ship; never lower it; use `ship.py`.
-2. **Payload contract (SHELL_API 1).** The shell imports `payload/` as a package: `app.py` exposes
-   `create_app(config)`; sibling modules use relative imports; the app registers
-   `app.extensions["hailwatch.stop"]`. A new pip package needs a new installer: add it to
-   `requirements.txt` and `desktop/launcher.py::_bundle_imports`, raise `SHELL_API` and the
-   manifest's `min_shell`, and rebuild installers.
-3. **Database.** Only append to `store.MIGRATIONS`; never edit a shipped migration (two shipped).
+2 and 3. Retired with the desktop app (D143); the numbers stay so older citations read.
 4. **Python first.** Python builds all data and pages (Jinja; the radar and model frames in
    `website/gridded.py`). Hand-written JavaScript only for browser-only needs, documented inline
    (website: the page-age check in `website/templates/base.html` and the interactive map in
-   `website/static/map/map.js` — playback, scrubbing, menus, sheets, geolocation, D28; app: the
-   ~20-line bridge in `templates/live.html`). Owner
-   preference — don't add a JS framework. Third-party code (Leaflet) and fonts are served by the
+   `website/static/map/map.js`: playback, scrubbing, menus, sheets, geolocation, D28). Owner
+   preference: don't add a JS framework. Third-party code (Leaflet) and fonts are served by the
    site, not a CDN. The browser fetches only site files, except the USGS imagery tiles, which it
    fetches only while Imagery is on (switched on by the viewer, or by a link that starts on it; D32),
    from the one host named in `website/build.py`.
@@ -113,7 +100,7 @@ python ship.py "one-line note" [--minor]        # ships to users — only when t
 6. **Official alerts.** Match by warning polygon, else the place's NWS forecast zone / county /
    fire-zone codes. Null geometry never means “no alert”; can't-tell shows as can't-tell. Never
    clear a warning after a failed request. No AI-generated text anywhere in the alert path.
-7. **Feeds.** `website/sources.py` `CONTRACTS` (and the app's `weather.CONTRACTS`) record each
+7. **Feeds.** `website/sources.py` `CONTRACTS` record each
    feed's units, timing, cadence and missing-value rules; change the parser, the table and the
    tests together. Before building on a source, make
    a live request **and check the content**, not just HTTP 200 (see the radar-layer bug in

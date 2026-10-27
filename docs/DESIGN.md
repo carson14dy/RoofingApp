@@ -2,7 +2,7 @@
 
 Design spec for the Montana Hail Watch website (D27), written 2026-10-14 with the design-playbook
 method (frame → explore → make → validate → ship). It replaces the desktop app's design of
-2026-10-11, which is parked with the app (`payload/`, `desktop/`). Decisions that bind the site
+2026-10-11. The app was removed on 2026-10-26 (D143); its code is in git history at `33cda31`. Decisions that bind the site
 live in `DECISIONS.md`; this file says what the pages are and why. The code is `website/`; the
 look is the tokens at the top of `website/static/style.css` (the map page's own glass look is in
 `website/static/map/map.css`, section 8).
@@ -23,7 +23,7 @@ three questions with nothing to install or set up:
 - A crew lead on a phone in a truck or on a roof: sunlight, one hand, weak signal.
 - A sales rep after a storm, looking for where hail was reported.
 
-**Constraints.** Python builds every page (Jinja + Folium); no server, no framework, no accounts;
+**Constraints.** Python builds every page (Jinja + Leaflet); no server, no framework, no accounts;
 hand-written JavaScript only for what the browser alone can do (rule 4). Evidence honesty (rules 5
 and 6): never a green "safe", missing data is a dash and a sentence, a failed check is never "no
 alerts". No AI text. Montana now, contiguous US later (D24). Works from 320 px phones to 1440 px
@@ -183,7 +183,7 @@ under Ship.
 | Dimension | Rating | Observation → problem → fix |
 |---|---|---|
 | Hierarchy | pass | Warnings, then map, then towns, on both widths; one idea per card. |
-| Brand | pass | Light field-sheet look, a simple mountain-and-hailstone mark, plain voice. The tab icon is the header mark; the phone home-screen icon is the app's icon at 180 px. |
+| Brand | pass | Light field-sheet look, a simple mountain-and-hailstone mark, plain voice. The tab icon is the header mark; the phone home-screen icon is the Montana Hail Watch icon at 180 px. |
 | Composition | minor issue | On quiet desktop days the warnings column is short beside a tall map. Fix (P3): when there are no warnings, let the town cards start beside the map. |
 | Typography | pass | Six sizes, three weights, 17 px body, tabular numbers in tables. |
 | Colour | pass | Every pair at least 5.86:1; colour always paired with words or weight. |
@@ -774,7 +774,7 @@ A stale picture stays on the map, and its line gives the age and ends "This is n
 
 **Measured sizes (2026-10-19, module re-checks).** Live pictures are 2,989 to 3,045 bytes (about 3 KB on a quiet day); the sample pictures are 4,288 and 4,753 bytes. Live tile files are 89 to 180 bytes each: the hour layer's two tiles came to 279 bytes, and the 24-hour layer's five to 656 bytes. A sample tile holding only no-coverage cells is 1,198 bytes (hour) or 1,200 bytes (24 hours), with 175 of each in the sample. Live downloads were 34,299 to 34,328 bytes (hour) and 108,517 to 109,454 bytes (24 hours).
 
-**Status (2026-10-19, close-out).** The site side and its completion pass are in the branch's commit on `claude/hail-b4`. The full suite (895 tests) and the self-test pass. The Chromium smoke (`tools/smoke_map.py`) passes under the D17 rule on a live build (the 24-hour layer changes 2,815 pixels in a box of 160 screen pixels around a listed cell at zoom 11; the hour layer had no value in the box, so its gate is the note) and on a sample build with the real store (14,074 and 14,010 pixels), with the picture hidden in both captures as the control; `smoke_pages` passes at 288 to 1,440 px, light and dark; the Chromium probes of the freshness edges, the 404 and could-not-be-loaded paths, the one-request rule and the Montana-only words pass (the completion re-check of 2026-10-19 15:58 UTC). The default build (no flags) differs from its base commit only in `map.js`, `map.css` and two `?v=` lines in `map.html`; the manifest test in `tests/test_site.py` checks the rest. The branch's live preview build runs on the push. The gates are B4-1 to B4-7 in `research/globe/validation-evidence/p3-verification.json`.
+**Status (2026-10-19, close-out).** The site side and its completion pass are in the branch's commit on `claude/hail-b4`. The full suite (895 tests) and the self-test pass. The Chromium smoke (`tools/smoke_map.py`) passes under the D17 rule on a live build (the 24-hour layer changes 2,815 pixels in a box of 160 screen pixels around a listed cell at zoom 11; the hour layer had no value in the box, so its gate is the note) and on a sample build with the real store (14,074 and 14,010 pixels), with the picture hidden in both captures as the control; `smoke_pages` passes at 288 to 1,440 px, light and dark; the Chromium probes of the freshness edges, the 404 and could-not-be-loaded paths, the one-request rule and the Montana-only words pass (the completion re-check of 2026-10-19 15:58 UTC). The default build (no flags) differs from its base commit only in `map.js`, `map.css` and two `?v=` lines in `map.html`; the manifest test in `tests/test_site.py` checks the rest. The branch's live preview build runs on the push. The gates are B4-1 to B4-7 in `p3-verification.json`, which is in git history at `bf2909b` (the globe research, removed on 2026-10-26, D143).
 
 ## 12. The past weather of every location (B5, 2026-10-19, behind `--hail-history`)
 

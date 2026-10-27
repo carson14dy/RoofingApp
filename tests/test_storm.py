@@ -534,9 +534,10 @@ class SampleValues(unittest.TestCase):
 
 class BrowserScript(unittest.TestCase):
     """website/static/map/storm.js places the words into the Map's sheets; it is browser-only (AGENTS.md rule 4).
-    The cap is a proposal until research/globe/README.md section 9b lists the duty and its limits."""
+    The cap was proposed in section 9b of the globe research README (row S1); that research was removed on
+    2026-10-26 (D143) and is in git history at bf2909b."""
 
-    MAX_LINES, MAX_BYTES = 40, 2000   # the cap proposed in research/globe/README.md section 9b (row S1)
+    MAX_LINES, MAX_BYTES = 40, 2000   # the cap proposed in row S1 of the globe research (removed 2026-10-26, D143; bf2909b)
 
     def setUp(self):
         self.text = (ROOT / "website" / "static" / "map" / "storm.js").read_text(encoding="utf-8")

@@ -18,7 +18,7 @@ from unittest import mock
 
 try:
     import yaml
-except ImportError:   # the app check (check-app.yml) installs no pyyaml; the Website workflow's offline step does
+except ImportError:   # a machine without pyyaml skips these; the Tests and Website workflows install it
     yaml = None
 # every class below reads the workflow files through yaml, so each one skips when pyyaml is absent
 needs_yaml = unittest.skipUnless(yaml is not None, "pyyaml is not installed (the Website workflow installs it)")
@@ -169,11 +169,6 @@ class OfflineWordsRules(unittest.TestCase):
         self.assertTrue((ROOT / "tests" / "test_words_rules.py").is_file())
 
 
-# The parked desktop app's tests (AGENTS.md). check-app.yml runs the whole suite on every push to main, and no website or tools
-# module imports them, so a change to one of them does not start the Website workflow. PushPathsCoverTheTests checks that they stay so.
-PARKED_APP_TESTS = {"test_alert_scenarios.py", "test_updates.py", "test_weather.py"}
-
-
 def push_paths() -> list[str]:
     """The Website workflow's on.push.paths. PyYAML reads the key "on" as the boolean True."""
     doc = yaml.safe_load((ROOT / ".github/workflows/website.yml").read_text(encoding="utf-8"))
@@ -201,12 +196,11 @@ def covered(path: str, patterns: list[str]) -> bool:
 @needs_yaml
 class PushPathsCoverTheTests(unittest.TestCase):
     """D100(a), D91(f): on.push.paths names every website test module and the words-rules helper, so a change to any of them
-    starts the Website workflow. The offline line runs every website test module and names no module the paths miss. The
-    parked app's modules (PARKED_APP_TESTS) are the one exemption, and they must stay outside the website."""
+    starts the Website workflow. The offline line runs every website test module and names no module the paths miss."""
 
     def setUp(self):
         self.paths = push_paths()
-        self.website = sorted(f"tests/{p.name}" for p in (ROOT / "tests").glob("test_*.py") if p.name not in PARKED_APP_TESTS)
+        self.website = sorted(f"tests/{p.name}" for p in (ROOT / "tests").glob("test_*.py"))
 
     def test_every_website_test_module_is_a_push_path(self):
         for module in self.website:
@@ -234,15 +228,6 @@ class PushPathsCoverTheTests(unittest.TestCase):
             if entry.startswith("tests/") and not any(mark in entry for mark in "*?["):
                 with self.subTest(entry=entry):
                     self.assertTrue((ROOT / entry).is_file(), f"{entry} is listed but does not exist")
-
-    def test_the_parked_app_modules_exist_and_stay_outside_the_website(self):
-        for name in sorted(PARKED_APP_TESTS):
-            path = ROOT / "tests" / name
-            with self.subTest(module=name):
-                self.assertTrue(path.is_file(), f"{name} is named as parked but does not exist")
-                self.assertFalse(covered(f"tests/{name}", self.paths), f"{name} is listed, so its exemption is stale")
-                self.assertNotIn(f"tests/{name}", offline_modules())
-                self.assertIsNone(re.search(r"^\s*(from|import)\s+(website|tools)\b", path.read_text(encoding="utf-8"), re.MULTILINE))
 
     def test_the_path_rule_is_githubs_glob_rule(self):
         self.assertTrue(covered("website/static/map/map.js", ["website/**"]))
