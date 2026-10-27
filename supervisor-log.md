@@ -544,3 +544,4 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
 - Side findings from the README agents, for later: tools/smoke_pages.py passes on a missing folder and treats --help as
   a folder (add an existence check); website/climate.py line 8 cites research/temperature-rain-grid.json, which is not on
   main; docs/DESIGN.md 13.8 still says the Python side is on the B6 branch (S5 updates it).
+- PR 21 (the README) merged into main as bcba866 at 03:24 UTC after its Tests run passed; README-only, so no Website build.
