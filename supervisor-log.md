@@ -534,3 +534,13 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
 - Website run 140 (dispatched on main, 02:42 to 02:48) passed; the public site built at 02:48 reads climate loaded,
   the five-season summary loaded, the heat picture loaded, the history layers loaded, the terrain loaded; the base map
   vectors stay unavailable until the fix branch lands. Task 47 closed.
+
+## 2026-10-27, 03:20 UTC: the README update
+- The README workflow (builder, two skeptics with 36 findings, fixer with 34 applied, verifier: 5 of 7 gates pass; the two
+  "fails" are a vacuous smoke_pages --help check and the branch patterns claude/** and codex/** quoted from website.yml,
+  which are git ref patterns, allowed) finished. Supervisor edits: the base map fix sentence (in progress on its own
+  branch) and the "No AI-written text on the site" bullet. Commit c23500b (signed) on claude/readme-update, PR 21 opened
+  and subscribed; merge after the Tests run.
+- Side findings from the README agents, for later: tools/smoke_pages.py passes on a missing folder and treats --help as
+  a folder (add an existence check); website/climate.py line 8 cites research/temperature-rain-grid.json, which is not on
+  main; docs/DESIGN.md 13.8 still says the Python side is on the B6 branch (S5 updates it).
