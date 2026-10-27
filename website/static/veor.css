@@ -356,6 +356,9 @@ body.shell { display: flex; flex-direction: column; height: 100dvh; min-height: 
 .town-page .crumbs a { min-height: 32px; }
 .town-page .section-head { display: flex; align-items: center; justify-content: flex-start; gap: 14px; }
 .town-page .section-head .i { width: 30px; height: 30px; flex: none; stroke-width: 1.4; color: var(--v-icon); }
+/* a long heading ("Five years of weather at West Yellowstone") stays on the icon's line and wraps there: style.css's
+   section-head wraps its items, and a heading at its full width would drop under the icon on phones */
+.town-page .section-head h2 { flex: 1 1 12rem; }
 .town-page .sub { font-size: 1.0625rem; max-width: 42rem; }
 .town-page .empty { padding: 2px 0; border: 0; background: none; font-size: 1.125rem; color: var(--v-text-2); }
 .town-page .alert-list { gap: 12px; }
