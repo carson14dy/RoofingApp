@@ -4570,7 +4570,7 @@ class HailSwathLayers(unittest.TestCase):
         real = (self.off / "about.html").read_bytes()
         digest = expected["files"]["about.html"]
         self.assertEqual(on_purpose_problems("about.html", real, (), digest), [])
-        mutated = real.replace(b"This is not an all-clear.", b"This is not an all-clear now.", 1)
+        mutated = real.replace(b"About this site and its sources", b"About this site and all its sources", 1)   # the footer link
         self.assertNotEqual(mutated, real)
         self.assertTrue(on_purpose_problems("about.html", mutated, (), digest))
         ruling = (("a test ruling", "<h1>About this site</h1>", "<h1>About this page</h1>", 1),)
