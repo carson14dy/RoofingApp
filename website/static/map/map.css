@@ -100,6 +100,8 @@
   --hail-count-size: 12px;
   --hail-count-weight: 700;
   --hail-count-pad: 5px;
+  /* the zone outlines of the Wind and Flood chips (map.js b6Zones); their fills are the classes' colours from base.json */
+  --b6-zone-line: var(--m-grey-3);
 
   /* type, space, shape */
   --font: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -196,6 +198,7 @@
     --hail-dot-ring: #121417;
     --hail-name: #f2f2f7;
     --hail-name-halo: #121417;
+    --b6-zone-line: var(--m-grey-4);
   }
 }
 
@@ -830,10 +833,11 @@ a { color: inherit; }
 /* ---------------------------------------------------------------- roads, building outlines and addresses (B3) */
 /* the canvas map.js draws in the hail pane (Leaflet positions it; the pane passes no pointer events) */
 .hail-canvas { position: absolute; left: 0; top: 0; pointer-events: none; }
-/* the source lines of the layers (map.js b3Credits): Leaflet's attribution line, bottom right, wrapped to the screen width and to
-   560 px, so it stays right of the "Map data" link and the legend column (at 1280 px it starts at x 720). map.js b3Lift sets
-   --credit-lift: the line sits just above the bottom band (the note, toast, chip and timeline), not on top of it */
-.leaflet-container .leaflet-control-attribution { white-space: normal; max-width: min(560px, calc(100% - 16px)); font-size: 11px; line-height: 1.35; margin-bottom: var(--credit-lift, 0px); }
+/* the source lines of the layers (map.js creditControl, the one attribution control of B3 and B6): Leaflet's attribution line,
+   bottom right, wrapped to the screen width and to 560 px, so it stays right of the "Map data" link and the legend column (at
+   1280 px it starts at x 720). map.js creditLift sets --credit-lift: the line sits just above the bottom band (the note, toast,
+   chip and timeline), not on top of it. The lines are plain text, so the control takes no taps (the map under them does). */
+.leaflet-container .leaflet-control-attribution { white-space: normal; max-width: min(560px, calc(100% - 16px)); font-size: 11px; line-height: 1.35; margin-bottom: var(--credit-lift, 0px); pointer-events: none; }
 
 /* find an address (map.html #find, map.js b3Search): a glass panel with one field and a button, 44 px to tap */
 .find { display: grid; gap: 6px; padding: 10px 12px; border-radius: 16px; pointer-events: auto; font-size: 14px; }
@@ -876,10 +880,25 @@ a { color: inherit; }
   line-height: 1.3; overflow-wrap: anywhere; }
 .sheet-body .addr-sec > .muted { margin: 8px 0 0; }
 
-/* the B3 credit box (Leaflet's attribution control, map.js b3Credits, --hail-addresses builds): the map's own glass and ink
+/* the credit box (Leaflet's attribution control, map.js creditControl; B3 and B6 lines): the map's own glass and ink
    tokens, so it follows dark mode like every other panel (the browser review of 2026-10-27 found it light on the dark map) */
 .leaflet-container .leaflet-control-attribution { background: var(--glass-strong); color: var(--ink); }
 .leaflet-container .leaflet-control-attribution a { color: var(--ink); }
+
+/* ---------------------------------------------------------------- B6 drawing (map.js, stage S2): the terrain, the pictures and the zone counts */
+/* the terrain shows through the Montana land fill in the light scheme (the dark scheme draws no terrain); the shading
+   multiplies the tint beneath it (map.js b6Terrain) */
+#app.has-terrain .bm-land.bm-mt { fill-opacity: 0; }
+@media (prefers-color-scheme: dark) { #app.has-terrain .bm-land.bm-mt { fill-opacity: 1; } }
+.leaflet-terrain-pane .b6-shade { mix-blend-mode: multiply; }
+#app.is-imagery .leaflet-terrain-pane { display: none; }
+/* the zone outlines (one path per zone part): the line is a token, the fill is the class colour from base.json (inline);
+   a zone with no count is dashed and unfilled */
+.leaflet-container .leaflet-pane svg path.b6-zone { stroke: var(--b6-zone-line); stroke-width: 1px; }
+.leaflet-container .leaflet-pane svg path.b6-zone-none { fill: none; stroke-dasharray: 4 3; }
+/* the key rows: the swatch takes its colour inline from base.json; a row with no colour is unfilled, a missing tile is paper */
+.key-b6-none { background: none; border: 1px dashed var(--ink-2); box-sizing: border-box; }
+.key-b6-missing { background: var(--land); border: 1px dashed var(--ink-2); box-sizing: border-box; }
 
 /* ---------------------------------------------------------------- card mode (?card=1) */
 .card-ui { display: none; }

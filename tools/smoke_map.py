@@ -274,6 +274,9 @@ def check(root: Path, shots: Path | None = None, addresses: bool = False, store:
                            ("check_every_layer", lambda: check_every_layer(browser, base, data)))
             if "hail_60" in data["layers"]:               # --storm-layers: the live hail swath layers (B4)
                 extras += (("check_swath", lambda: check_swath(browser, base, root, data, shots)),)
+            if data.get("base", {}).get("state") in ("loaded", "partial"):   # B6 stage S2: the terrain, pictures and zone counts
+                extras += (("check_b6_terrain_pictures_zones",
+                            lambda: check_b6_terrain_pictures_zones(browser, base, root, data, shots)),)
             for name, extra in extras:
                 try:
                     problems += extra()
@@ -2686,6 +2689,365 @@ def check_addresses(browser, base: str, root: Path, data: dict, shots: Path | No
             b3_view(page, B3_BILLINGS[0], B3_BILLINGS[1], ADDRESS_GATE_ZOOM, settle_ms=2000)
             snap(page, shots, f"b3-{'notext-' if off else ''}{name}-{width}x{height}.png")
             ctx.close()
+    return problems
+
+
+# ---------------------------------------------------------------- the terrain, the five-year pictures and the zone counts (B6 stage S2)
+
+B6_MONTANA = (46.9, -110.4)                 # a point in the middle of Montana: inside the terrain set at the zoom below
+B6_TERRAIN_ZOOM = 7
+KEY_ROWS = "() => [...document.querySelectorAll('#legend-keys li')].map(li => li.textContent.trim())"
+ATTRIBUTION_TEXT = """() => { const a = document.querySelector('.leaflet-control-attribution');
+    return a ? a.innerText : ''; }"""
+LAND_FILL = """() => { const p = document.querySelector('.leaflet-container .leaflet-pane svg path.bm-land.bm-mt');
+    return p ? getComputedStyle(p).fillOpacity : null; }"""
+TERRAIN_PANE = """() => { const p = document.querySelector('.leaflet-terrain-pane');
+    return p ? getComputedStyle(p).display : 'none'; }"""
+HAS_TERRAIN = "() => document.getElementById('app').classList.contains('has-terrain')"
+PICTURE_IMG = """() => { const i = document.querySelector('img.leaflet-image-layer.b6-picture');
+    return i ? [i.naturalWidth, i.naturalHeight] : null; }"""
+ZONE_PATHS = "() => document.querySelectorAll('.leaflet-pane path.b6-zone').length"
+
+
+def b6_doc(root: Path) -> dict:
+    return json.loads((root / "data" / "base.json").read_text(encoding="utf-8"))
+
+
+def b6_open(browser, base: str, query: str, size=(1280, 800), scheme: str = "light", allow: tuple = (), routes=(),
+            requests: list | None = None, errors: list | None = None):
+    """A map page with the B6 hook ready (window.b6MapTest.base): (context, page). routes are (URL glob, handler) pairs set before
+    the page loads; requests collects every request URL and errors every page error (a script error fails the check)."""
+    ctx = browser.new_context(allow=allow, viewport={"width": size[0], "height": size[1]}, color_scheme=scheme)
+    page = ctx.new_page()
+    if requests is not None:
+        page.on("request", lambda r: requests.append(r.url))
+    if errors is not None:
+        page.on("pageerror", lambda e: errors.append(f"script error: {e}"))
+    for pattern, handler in routes:
+        page.route(pattern, handler)
+    page.goto(base + query, wait_until="load")
+    page.wait_for_function("() => !!(window.b6MapTest && window.b6MapTest.base())", timeout=15000)
+    return ctx, page
+
+
+def b6_view(page, lat: float, lon: float, zoom: float, settle_ms: int = 2000) -> None:
+    page.evaluate("([la, lo, z]) => window.b6MapTest.view(la, lo, z)", [lat, lon, zoom])
+    page.wait_for_timeout(settle_ms)
+
+
+def b6_chip(page, key: str) -> dict | None:
+    """The five-year chip's state: its aria-disabled, its reason (data-reason) and its aria-pressed."""
+    return page.evaluate("""(key) => { const c = document.querySelector('#map-options .mo-chip[data-group="history"][data-key="' + key + '"]');
+        return c ? {disabled: c.getAttribute('aria-disabled'), reason: c.getAttribute('data-reason') || '',
+                    pressed: c.getAttribute('aria-pressed')} : null; }""", key)
+
+
+def b6_in_set(terr_set: dict, url: str) -> bool:
+    """Whether a terrain request's tile (z, x, y) is in base.json's compact set (terrain.set: {z: {y: [[x0, x1], ...]}})."""
+    m = re.search(r"/hail/base/[hl]/(\d+)/(\d+)/(\d+)\.(?:jpg|png)$", url)
+    if not m:
+        return False
+    z, x, y = (int(v) for v in m.groups())
+    runs = (terr_set.get(str(z)) or {}).get(str(y)) or []
+    return any(a <= x <= b for a, b in runs)
+
+
+def b6_zone_parts(g) -> int:
+    """The parts of a zone's outline, as map.js b6Parts reads them: g is a list of parts (each a list of rings), and a list of
+    rings is one part."""
+    if not isinstance(g, list) or not g:
+        return 0
+    try:
+        probe = g[0][0][0]
+    except (IndexError, TypeError):
+        return len(g)
+    return 1 if isinstance(probe, (int, float)) else len(g)
+
+
+def b6_tile(lat: float, lon: float, z: int) -> tuple[int, int]:
+    """The tile (x, y) of a point at zoom z (the slippy-map arithmetic)."""
+    n = 2 ** z
+    x = int((lon + 180.0) / 360.0 * n)
+    y = int((1.0 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2.0 * n)
+    return x, y
+
+
+def check_b6_terrain(browser, base: str, doc: dict, shots: Path | None) -> list[str]:
+    """The terrain (B6, map.js b6Terrain): at zoom 7 over Montana the tiles come from hail/base/h/ and hail/base/l/ only, every
+    tile asked for is in base.json's set, the page has the has-terrain class, the Montana land fill is transparent, and the
+    two terrain credit lines are in the credit row. At the zoom where draw.off_from starts there is no terrain layer. Dark mode
+    asks for no terrain tile, and the Imagery base map hides the terrain pane. A 390 px view shows the terrain too."""
+    problems: list[str] = []
+    terr = doc["base"]["terrain"]
+    tset = terr["set"]
+    credits = [text for text in (terr.get("credits") or {}).values() if text]
+    errors: list[str] = []
+    reqs: list[str] = []
+    ctx, page = b6_open(browser, base, "map.html", requests=reqs, errors=errors)
+    b6_view(page, B6_MONTANA[0], B6_MONTANA[1], B6_TERRAIN_ZOOM)
+    t = page.evaluate("() => window.b6MapTest.terrain()")
+    if not t["on"]:
+        problems.append(f"zoom {B6_TERRAIN_ZOOM} over Montana: the terrain is not on the map")
+    if t["tiles"]["h"] + t["tiles"]["l"] == 0:
+        problems.append(f"zoom {B6_TERRAIN_ZOOM} over Montana: no terrain tile loaded")
+    tile_reqs = [u for u in reqs if re.search(r"/hail/base/[hl]/", u)]
+    if not tile_reqs:
+        problems.append(f"zoom {B6_TERRAIN_ZOOM} over Montana: no terrain tile was requested")
+    outside = [u for u in tile_reqs if not b6_in_set(tset, u)]
+    if outside:
+        problems.append(f"{len(outside)} terrain tile(s) outside base.json's set were requested, e.g. {outside[0]}")
+    if not page.evaluate(HAS_TERRAIN):
+        problems.append("the page has no has-terrain class while the terrain is on")
+    fill = page.evaluate(LAND_FILL)
+    if fill != "0":
+        problems.append(f"the Montana land fill keeps fill-opacity {fill} while the terrain shows (expected 0)")
+    attribution = page.evaluate(ATTRIBUTION_TEXT)
+    for text in credits:
+        if text not in attribution:
+            problems.append(f"the credit row lacks the terrain line {text[:40]!r}")
+    snap(page, shots, "b6-terrain-light-1280.png")
+    problems += [f"terrain light: {e}" for e in errors]
+    ctx.close()
+
+    # zoom off: from draw.off_from up the terrain layers are not on the map
+    off = int(terr["draw"]["off_from"])
+    ctx, page = b6_open(browser, base, "map.html", errors=errors)
+    b6_view(page, B6_MONTANA[0], B6_MONTANA[1], off, settle_ms=1500)
+    if page.evaluate("() => window.b6MapTest.terrain().on") or page.evaluate(HAS_TERRAIN):
+        problems.append(f"zoom {off} (draw.off_from): the terrain is still on the map")
+    ctx.close()
+
+    # dark mode: no terrain tile is asked for, and the page has no terrain class
+    reqs = []
+    ctx, page = b6_open(browser, base, "map.html", scheme="dark", requests=reqs, errors=errors)
+    b6_view(page, B6_MONTANA[0], B6_MONTANA[1], B6_TERRAIN_ZOOM)
+    if any(re.search(r"/hail/base/[hl]/", u) for u in reqs):
+        problems.append("dark mode asked for terrain tiles")
+    if page.evaluate("() => window.b6MapTest.terrain().on") or page.evaluate(HAS_TERRAIN):
+        problems.append("dark mode: the terrain is on the map")
+    snap(page, shots, "b6-terrain-dark-1280.png")
+    problems += [f"terrain dark: {e}" for e in errors]
+    ctx.close()
+
+    # the Imagery base map: the terrain pane is hidden (the imagery shows the land itself)
+    abort = [("https://basemap.nationalmap.gov/**", lambda route: route.abort())]
+    ctx, page = b6_open(browser, base, "map.html?base=imagery", allow=(f"https://{IMAGERY_HOST}/",), routes=abort, errors=errors)
+    b6_view(page, B6_MONTANA[0], B6_MONTANA[1], B6_TERRAIN_ZOOM, settle_ms=1500)
+    if page.evaluate(TERRAIN_PANE) != "none":
+        problems.append("the Imagery base map: the terrain pane is not hidden")
+    if page.evaluate("() => window.b6MapTest.terrain().on"):
+        problems.append("the Imagery base map: the terrain is on the map")
+    problems += [f"terrain imagery: {e}" for e in errors]
+    ctx.close()
+
+    # a phone view of the terrain
+    ctx, page = b6_open(browser, base, "map.html", size=(390, 844), errors=errors)
+    b6_view(page, B6_MONTANA[0], B6_MONTANA[1], B6_TERRAIN_ZOOM)
+    if not page.evaluate("() => window.b6MapTest.terrain().on"):
+        problems.append("the 390 px view at zoom 7: the terrain is not on the map")
+    snap(page, shots, "b6-terrain-phone-390.png")
+    problems += [f"terrain phone: {e}" for e in errors]
+    ctx.close()
+    return problems
+
+
+def check_b6_pictures(browser, base: str, doc: dict, shots: Path | None) -> list[str]:
+    """The five-year pictures (B6, map.js b6Pictures): ?history=hail draws hail1.png at its width and its key rows hold the
+    classes and the transparent words; heat draws heat90.png with its six classes; with no live layer the legend card names the
+    picture. A picture file that cannot be loaded makes its chip unavailable with sheet.picture_failed, and the choice is
+    cleared from the address."""
+    problems: list[str] = []
+    hist = doc.get("history_layers") or {}
+    pics = hist.get("pictures") or {}
+    words = (doc.get("sheet") or {})
+    errors: list[str] = []
+    for key, name, shot in (("hail", "hail1", "b6-hail-1280.png"), ("heat", "heat90", "b6-heat-1280.png")):
+        pic = pics.get(name)
+        if not pic:
+            problems.append(f"note: base.json has no {name} picture block: the {key} picture is not checked")
+            continue
+        ctx, page = b6_open(browser, base, f"map.html?history={key}", errors=errors)
+        try:
+            page.wait_for_function("() => window.b6MapTest.pictures().some(p => p.key === '" + key + "' && p.loaded)", timeout=15000)
+        except Exception:                                                  # noqa: BLE001 - reported below
+            problems.append(f"the {key} picture did not load")
+        shown = page.evaluate(PICTURE_IMG)
+        if not shown or shown[0] != pic["width"]:
+            problems.append(f"the {key} picture is not drawn at its width {pic['width']} (naturalWidth {shown})")
+        rows = page.evaluate(KEY_ROWS)
+        want = [c["word"] for c in pic.get("classes", [])]
+        if pic.get("words", {}).get("transparent"):
+            want.append(pic["words"]["transparent"])
+        for text in want:
+            if text not in rows:
+                problems.append(f"the {key} key rows lack {text[:40]!r}")
+        snap(page, shots, shot)
+        problems += [f"{key} picture: {e}" for e in errors]
+        ctx.close()
+
+    # with no live layer on, the legend card names the five-year picture (its title and note from base.json)
+    hail = pics.get("hail1")
+    if hail:
+        ctx, page = b6_open(browser, base, "map.html?layer=none&history=hail", errors=errors)
+        if page.locator("#legend-title").inner_text().strip() != hail["words"]["title"]:
+            problems.append("with no live layer on, the legend card does not name the hail picture")
+        ctx.close()
+
+    # a picture that fails: its chip is unavailable with the sheet's sentence, and the address drops the choice
+    if hail:
+        block = [("**/hail/history/hail1.png", lambda route: route.abort())]
+        ctx, page = b6_open(browser, base, "map.html?history=hail", routes=block, errors=errors)
+        try:
+            page.wait_for_function("() => window.b6MapTest.pictures().some(p => p.key === 'hail' && p.failed)", timeout=15000)
+        except Exception:                                                  # noqa: BLE001 - reported below
+            problems.append("a hail picture that cannot be loaded did not make its chip unavailable")
+        chip = b6_chip(page, "hail") or {}
+        if chip.get("disabled") != "true":
+            problems.append("a failed hail picture: its chip is not unavailable")
+        sentence = words.get("picture_failed")
+        if sentence is None:
+            problems.append("note: base.json's sheet has no picture_failed sentence: the failed picture's reason is not checked")
+        elif chip.get("reason") != sentence:
+            problems.append("a failed hail picture: its chip does not give the sheet's picture_failed sentence")
+        if page.evaluate("() => document.querySelectorAll('img.b6-picture').length"):
+            problems.append("a failed hail picture is still drawn")
+        if "history=hail" in page.url:
+            problems.append("a failed hail picture: the address still names the choice")
+        problems += [f"hail failure: {e}" for e in errors]
+        ctx.close()
+    return problems
+
+
+def check_b6_zones(browser, base: str, root: Path, doc: dict, shots: Path | None) -> list[str]:
+    """The zone counts (B6, map.js b6Zones): ?history=wind draws one path per zone part of the outline file, filled with the
+    five class colours (its class words in the key rows, the no-count word and the outline credit); switching to flood on the
+    sheet restyles the same zones; a zone outline file that cannot be loaded makes the Wind chip unavailable with the module's
+    sentence and draws nothing."""
+    problems: list[str] = []
+    hist = doc.get("history_layers") or {}
+    layers = hist.get("zone_layers") or {}
+    outline = json.loads((root / hist["outlines"]["url"]).read_text(encoding="utf-8"))
+    parts = sum(b6_zone_parts(zone.get("g")) for zone in outline.get("zones", []))
+    zwords = hist.get("words") or {}
+    errors: list[str] = []
+    ctx, page = b6_open(browser, base, "map.html?history=wind", errors=errors)
+    try:
+        page.wait_for_function("() => window.b6MapTest.zones().drawn > 0", timeout=15000)
+    except Exception:                                                      # noqa: BLE001 - reported below
+        problems.append("the wind zones were not drawn")
+    drawn = page.evaluate(ZONE_PATHS)
+    if drawn != parts:
+        problems.append(f"the wind zones draw {drawn} paths; the outline file has {parts} zone parts")
+    rows = page.evaluate(KEY_ROWS)
+    for c in layers.get("wind", {}).get("classes", []):
+        if c["word"] not in rows:
+            problems.append(f"the wind key rows lack {c['word'][:40]!r}")
+    if zwords.get("zone_unavailable_key") and zwords["zone_unavailable_key"] not in rows:
+        problems.append("the wind key rows lack the no-count word")
+    credit = hist.get("outlines", {}).get("credit")
+    if credit and credit not in page.evaluate(ATTRIBUTION_TEXT):
+        problems.append("the credit row lacks the zone outline credit")
+    snap(page, shots, "b6-wind-1280.png")
+    # the sheet's Flood chip restyles the same zones (one path per part again, the flood classes in the key rows)
+    page.click("#btn-layers")
+    page.wait_for_timeout(200)
+    page.locator('#map-options .mo-chip[data-group="history"][data-key="flood"]').click(force=True)
+    page.wait_for_timeout(1200)
+    if page.evaluate("() => window.b6MapTest.zones().key") != "flood":
+        problems.append("the flood chip did not make flood the zone layer")
+    if page.evaluate(ZONE_PATHS) != parts:
+        problems.append(f"the flood zones draw {page.evaluate(ZONE_PATHS)} paths; the outline file has {parts} zone parts")
+    rows = page.evaluate(KEY_ROWS)
+    for c in layers.get("flood", {}).get("classes", []):
+        if c["word"] not in rows:
+            problems.append(f"the flood key rows lack {c['word'][:40]!r}")
+    problems += [f"zones flood: {e}" for e in errors]
+    ctx.close()
+
+    # a zone outline file that cannot be loaded: the Wind chip is unavailable with the module's sentence, nothing is drawn
+    block = [("**/hail/base/v/zones.json", lambda route: route.abort())]
+    ctx, page = b6_open(browser, base, "map.html?history=wind", routes=block, errors=errors)
+    page.wait_for_timeout(2500)
+    chip = b6_chip(page, "wind") or {}
+    if chip.get("disabled") != "true":
+        problems.append("a zone outline that cannot be loaded: the Wind chip is not unavailable")
+    sentence = zwords.get("zone_outline_failed")
+    if sentence is None:
+        problems.append("note: base.json's history_layers.words has no zone_outline_failed sentence: its reason is not checked")
+    elif chip.get("reason") != sentence:
+        problems.append("a zone outline that cannot be loaded: the Wind chip does not give the module's sentence")
+    if page.evaluate(ZONE_PATHS):
+        problems.append("a zone outline that cannot be loaded: zones are drawn")
+    problems += [f"zones blocked: {e}" for e in errors]
+    ctx.close()
+    return problems
+
+
+def check_b6_tile_gaps(browser, base: str, doc: dict, shots: Path | None) -> list[str]:
+    """The terrain tiles the build lists as missing (base.terrain.layers.*.missing, "z/x/y" keys) get the blank picture with no
+    request, and count for the view: the key row words.tile_missing names them. A tile that fails to load at run time (a
+    request that is aborted) is counted the same way (tileerror)."""
+    problems: list[str] = []
+    terr = doc["base"]["terrain"]
+    x, y = b6_tile(B6_MONTANA[0], B6_MONTANA[1], B6_TERRAIN_ZOOM)
+    if not b6_in_set(terr["set"], f"/hail/base/h/{B6_TERRAIN_ZOOM}/{x}/{y}.jpg"):
+        return ["note: the tile at the view's centre is not in base.json's set: the missing-tile check is not made"]
+    text = terr.get("words", {}).get("tile_missing")
+    seen_missing: list[str] = []
+
+    def drop_missing(route):
+        response = route.fetch()
+        body = response.json()
+        body["base"]["terrain"]["layers"]["h"]["missing"] = [f"{B6_TERRAIN_ZOOM}/{x}/{y}"]
+        route.fulfill(response=response, body=json.dumps(body), headers={"content-type": "application/json"})
+
+    def abort_l(route):
+        if route.request.url.endswith(f"/l/{B6_TERRAIN_ZOOM}/{x}/{y}.png"):
+            seen_missing.append(route.request.url)
+            route.abort()
+        else:
+            route.continue_()
+
+    reqs: list[str] = []
+    errors: list[str] = []
+    routes = [("**/data/base.json", drop_missing), ("**/hail/base/l/**", abort_l)]
+    ctx, page = b6_open(browser, base, "map.html", requests=reqs, errors=errors, routes=routes)
+    b6_view(page, B6_MONTANA[0], B6_MONTANA[1], B6_TERRAIN_ZOOM)
+    if any(url.endswith(f"/hail/base/h/{B6_TERRAIN_ZOOM}/{x}/{y}.jpg") for url in reqs):
+        problems.append("a tile the build lists as missing was requested")
+    t = page.evaluate("() => window.b6MapTest.terrain()")
+    if t["missing"] < 1:
+        problems.append("a tile the build lists as missing is not counted for the view")
+    if t["failedInView"] < 1 or not seen_missing:
+        problems.append("a tile that fails to load is not counted for the view")
+    rows = page.evaluate(KEY_ROWS)
+    if text and text not in rows:
+        problems.append("the key rows do not name the missing or failed terrain tile")
+    snap(page, shots, "b6-tile-gaps-1280.png")
+    problems += [f"tile gaps: {e}" for e in errors]
+    ctx.close()
+    return problems
+
+
+def check_b6_terrain_pictures_zones(browser, base: str, root: Path, data: dict, shots: Path | None) -> list[str]:
+    """The B6 stage S2 drawing (map.js b6*): the terrain, the five-year pictures and the zone counts, checked on the built site's
+    base.json. A part whose block the build does not write yet (terrain.set or terrain.draw, history_layers.zone_layers) is a
+    note, not a failure: the Python side writes them (website/terrain.py, website/history_layers.py)."""
+    problems: list[str] = []
+    doc = b6_doc(root)
+    terr = (doc.get("base") or {}).get("terrain") or {}
+    has_terrain = bool(terr.get("set") and terr.get("draw"))
+    has_zones = bool((doc.get("history_layers") or {}).get("zone_layers"))
+    if not has_terrain:
+        problems.append("note: base.json has no terrain draw rule or tile set (website/terrain.py writes them): the terrain is not checked")
+    if not has_zones:
+        problems.append("note: base.json has no history_layers.zone_layers (website/history_layers.py writes them): the zone counts are not checked")
+    if has_terrain:
+        problems += check_b6_terrain(browser, base, doc, shots)
+        problems += check_b6_tile_gaps(browser, base, doc, shots)
+    problems += check_b6_pictures(browser, base, doc, shots)
+    if has_zones:
+        problems += check_b6_zones(browser, base, root, doc, shots)
     return problems
 
 

@@ -292,6 +292,7 @@
     drawReports();
     wireControls();
     b3Start();                                     // --hail-addresses builds: roads, outlines and address dots (B3)
+    b6Start();                                     // the terrain and history panes; the B6 drawing starts when base.json has loaded (S2)
     var want = params.get("layer");
     var mode = params.get("mode");
     if (mode === "1h" || mode === "12h") state.mode = mode;
@@ -508,8 +509,8 @@
       });
     var nb = noteBox(tlTop);
     if (nb) boxes.push(nb);
-    if (B3 && B3.credit) {                                      // the source lines above the band (b3Lift): towns under them count too
-      var cr = B3.credit.getContainer().getBoundingClientRect();
+    if (creditCtl) {                                            // the source lines above the band (creditLift): towns under them count too
+      var cr = creditCtl.getContainer().getBoundingClientRect();
       if (cr.width && cr.height) boxes.push(cr);
     }
     var best = y0, bestScore = Infinity;
@@ -548,7 +549,7 @@
     if (!data || !state.ready) return LINE;
     var room = LINE;
     noteWarningSet().forEach(function (t) { room = Math.max(room, noteSize(t, true).height + 8); });
-    if (B3 && B3.credit) room += B3.credit.getContainer().offsetHeight + 8;     // the source lines sit above the note (b3Lift)
+    if (creditCtl) room += creditCtl.getContainer().offsetHeight + 8;           // the source lines sit above the note (creditLift)
     return Math.ceil(room);
   }
 
@@ -1339,7 +1340,7 @@
     el.note.classList.toggle("warn", !!warn);
     if (info && !el.note.hidden && overTown(textBox(el.note))) el.note.hidden = true;
     if (before !== html + el.note.hidden) tidyLabels();
-    b3Lift();                        // the note's height is part of the band the source lines sit above (--hail-addresses builds)
+    creditLift();                    // the note's height is part of the band the source lines sit above (--hail-addresses builds)
   }
 
   /** The box of an element's text on screen (without its padding or tap area). */
@@ -1399,8 +1400,8 @@
 
   /** Legend for the active layer: title, gradient bar with its stop labels, note and keys. */
   function renderLegend() {
-    var L_ = layer();
-    el.legendTitle.textContent = L_.title || layerWord(state.layer);
+    var L_ = layer(), H_ = state.layer ? null : b6Legend();   // B6: with no live layer on, a five-year layer names the card
+    el.legendTitle.textContent = L_.title || layerWord(state.layer) || (H_ && H_.title) || "";
     var stops = L_.legend || [];
     el.legendScale.hidden = !stops.length;
     el.legendBar.style.background = L_.gradient || "";
@@ -1420,7 +1421,7 @@
     var w = 0;                       // the scale's width for the two-column legend of short phones
     [].forEach.call(el.legendStops.children, function (li) { w = Math.max(w, li.offsetWidth); });
     if (w) el.legendScale.style.setProperty("--scale-w", Math.ceil(16 + w + 2) + "px");
-    el.legendNote.textContent = L_.legend_note || "";
+    el.legendNote.textContent = L_.legend_note || (H_ && H_.legend) || "";
     b3Credits();                     // --hail-addresses builds: the source lines of the layers (D29)
     if (el.legendUncoloured) el.legendUncoloured.textContent = L_.legend_uncoloured || "";   // a hail layer's own line (build.py); --storm-layers only
     el.legend.classList.toggle("swath-words", swath);               // the kind and uncoloured lines stay in view (map.css)
@@ -1462,9 +1463,11 @@
       if (data.reports.some(function (r) { return r.kind === "hail"; })) keys.push(["key-hail", "Hail report (size)"]);
       if (data.reports.some(function (r) { return r.kind === "wind"; })) keys.push(["key-wind", "Wind report"]);
     }
+    keys = keys.concat(b6Keys());    // B6: the five-year picture's or zone's classes, and the terrain's missing tiles, while they are on
     if (locState && locState.here && townVisible(locState.here)) keys.push(["key-here", "Your location"]);
     if (state.base === "imagery" && imageryCfg) keys.push(["key-credit", imageryFailed ? imageryCfg.failed_line : imageryCfg.credit_line]);   // D32: no colour, so its text lines up with the keys
-    var html = keys.map(function (k) { return '<li><span class="key ' + k[0] + '" aria-hidden="true"></span>' + esc(k[1]) + "</li>"; }).join("");
+    // a row's third value, when it has one, is the swatch's inline style: a colour from base.json (B6), never a literal
+    var html = keys.map(function (k) { return '<li><span class="key ' + k[0] + '"' + (k[2] ? ' style="' + esc(k[2]) + '"' : "") + ' aria-hidden="true"></span>' + esc(k[1]) + "</li>"; }).join("");
     // a frame without the gaps other frames of this timeline have keeps the gap row's room: hidden
     // and last, so it reads as padding
     if (hatch.spare) html += '<li class="key-spare"><span class="key key-hatch"></span>' + esc(hatchWords(hatch.spare)[0]) + "</li>";
@@ -1984,10 +1987,10 @@
       var key = c.getAttribute("data-key");
       if (key === "fire_smoke") { if (state.history === key) state.history = null; setChip(c, false, "unavailable"); return; }
       if (pending) { setChip(c, false, "pending", ""); return; }
-      var h = historyBlock(key, b), st = h.block && h.block.state;
-      if (failed || st !== "loaded") {
+      var h = historyBlock(key, b), st = h.block && h.block.state, gone = b6Gone(key);   // gone: a file that failed in this page (B6)
+      if (gone !== null || failed || st !== "loaded") {
         if (state.history === key) state.history = null;
-        var why = !failed && h.block && h.block.problem ? h.block.problem
+        var why = gone ? gone : !failed && h.block && h.block.problem ? h.block.problem
           : !failed && st === "partial" ? words.partial_history : words.base_failed;
         setChip(c, false, "unavailable", why, words.unavailable);
         return;
@@ -2037,6 +2040,7 @@
     el.hailRecent.checked = pending ? state.hailRecent : state.hailRecent && !recOff;
     setGroupLine(byId("mo-recent-line"), pending ? "" : recOff ? recReason :
       (state.hailRecent ? el.hailRecent.getAttribute("data-legend") : ""));
+    b6Apply();                       // B6: the pictures, zones and terrain follow the choices just drawn on the sheet
   }
 
   /** Live weather (DESIGN 13.6): one choice, and the chosen one turns off with a tap on it (no live layer: setLayer(null)). */
@@ -2122,7 +2126,7 @@
     var file = data && data.base && data.base.file;
     if (!file) { baseDoc = { _error: true }; renderOptions(); return; }
     fetchJSON(file).then(function (d) { baseDoc = d; }, function () { baseDoc = { _error: true }; })
-      .then(renderOptions);
+      .then(renderOptions).then(b6Base);
   }
 
   /** A tap in the sheet: a base card, or a chip. A chip that is not available opens its reason and changes nothing else. */
@@ -2262,7 +2266,7 @@
   function bottomMoved() {
     if (data && state.ready) renderNote();
     tidyLabels();
-    b3Lift();                        // --hail-addresses builds: the source lines stay over the timeline
+    creditLift();                    // --hail-addresses builds: the source lines stay over the timeline
   }
 
   // ------------------------------------------------------------------ location
@@ -5978,6 +5982,43 @@
   }
 
 
+  // ------------------------------------------------------------------ the map's one credit control (B3 and B6 source lines)
+
+  /** The map's one attribution control (bottom right, no prefix): the source lines of every layer go in it (B3's from
+      data/map.json "hail".attribution, B6's from data/base.json). It is made on first use; the lift above the bottom band and
+      the two observers are set up once, with it. A line is escaped by its caller. The band changes height with its contents
+      (a source line, a layer, a turn, the toast) and the screen, so it is measured again when it changes, and so is the
+      line's own height. */
+  var creditCtl = null;                       // the attribution control, made by creditControl on first use
+
+  function creditControl() {
+    if (creditCtl || !map) return creditCtl;
+    creditCtl = L.control.attribution({ prefix: false, position: "bottomright" }).addTo(map);
+    if (window.ResizeObserver) {
+      var band = new ResizeObserver(creditLift);
+      band.observe(el.bottom);
+      band.observe(el.canvas);
+      new ResizeObserver(refitForBanner).observe(creditCtl.getContainer());   // more text, more lines: the room the fit keeps (noteRoom)
+    } else window.addEventListener("resize", creditLift);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(creditLift);   // the band is measured in its own fonts
+    creditLift();
+    return creditCtl;
+  }
+
+  /** The height of the bottom band in px, from its top to the bottom of the map: the note, the toast, the chip and the timeline.
+      Zero when the band is not drawn (print). The source lines sit above it and the count bubbles keep clear of it (b3DrawCounts). */
+  function creditLiftPx() {
+    if (!el.bottom || !el.bottom.getClientRects().length) return 0;
+    return Math.max(0, el.canvas.getBoundingClientRect().bottom - el.bottom.getBoundingClientRect().top);
+  }
+
+  /** The source lines sit just above the bottom band, with the band's own 8 px gap (creditLiftPx, measured). */
+  function creditLift() {
+    if (!creditCtl) return;
+    var h = creditLiftPx();
+    creditCtl.getContainer().style.setProperty("--credit-lift", (h ? Math.ceil(h + 8) : 0) + "px");
+  }
+
   // B3 layers: begin
   // ------------------------------------------------------------------ roads, building outlines and address dots (B3, --hail-addresses builds)
 
@@ -6128,38 +6169,12 @@
     B3.countFont = get("--hail-count-weight") + " " + B3.sz.countSize + "px " + get("--font");
   }
 
-  /** The source lines of the layers built (data/map.json "hail".attribution, D29) go in the map's attribution line, bottom
-      right, so they are on the first screen at phone width too. Leaflet's prefix is left out; a line is escaped like the rest.
-      The line is lifted above the bottom band (b3Lift). The band changes height with its contents (a source line, a layer,
-      a turn, the toast) and the screen, so it is measured again when it changes, and so is the line's own height. */
+  /** The source lines of the layers built (data/map.json "hail".attribution, D29) go in the map's one attribution control
+      (creditControl), bottom right, so they are on the first screen at phone width too. A line is escaped like the rest. */
   function b3Credits() {
     if (!B3 || !map || B3.credits || !(B3.h.attribution || []).length) return;
     B3.credits = true;
-    var ctl = L.control.attribution({ prefix: false, position: "bottomright" }).addTo(map);
-    B3.h.attribution.forEach(function (line) { ctl.addAttribution(esc(line)); });
-    B3.credit = ctl;
-    if (window.ResizeObserver) {
-      var band = new ResizeObserver(b3Lift);
-      band.observe(el.bottom);
-      band.observe(el.canvas);
-      new ResizeObserver(refitForBanner).observe(ctl.getContainer());   // more text, more lines: the room the fit keeps (noteRoom)
-    } else window.addEventListener("resize", b3Lift);
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(b3Lift);   // the band is measured in its own fonts
-    b3Lift();
-  }
-
-  /** The height of the bottom band in px, from its top to the bottom of the map: the note, the toast, the chip and the timeline.
-      Zero when the band is not drawn (print). The source lines sit above it and the count bubbles keep clear of it (b3DrawCounts). */
-  function b3LiftPx() {
-    if (!el.bottom || !el.bottom.getClientRects().length) return 0;
-    return Math.max(0, el.canvas.getBoundingClientRect().bottom - el.bottom.getBoundingClientRect().top);
-  }
-
-  /** The source lines sit just above the bottom band, with the band's own 8 px gap (b3LiftPx, measured). */
-  function b3Lift() {
-    if (!B3 || !B3.credit) return;
-    var h = b3LiftPx();
-    B3.credit.getContainer().style.setProperty("--credit-lift", (h ? Math.ceil(h + 8) : 0) + "px");
+    B3.h.attribution.forEach(function (line) { creditControl().addAttribution(esc(line)); });
   }
 
   /** Ask for a redraw on the next frame (several events in one frame make one draw). */
@@ -6578,7 +6593,7 @@
 
   /** One rounded bubble per tile: the count of outlines in it ("1,240 buildings"; the words come from buildings.templates).
       The bubble is centred in the part of its tile that shows: the tile's corners are clipped to the map below the banners and
-      the search card and above the bottom band (b3LiftPx), so a bubble is never drawn under a panel, under the band or off the
+      the search card and above the bottom band (creditLiftPx), so a bubble is never drawn under a panel, under the band or off the
       screen. A tile with no visible part gets none. */
   function b3DrawCounts(tiles, doc, ox, oy, scale, size) {
     var B = B3, ctx = B.ctx, pad = B.sz.countPad, p0 = [0, 0], p1 = [0, 0];
@@ -6586,7 +6601,7 @@
     [el.banners, find].forEach(function (e) {
       if (e && e.getClientRects().length) top = Math.max(top, e.getBoundingClientRect().bottom - mapTop);
     });
-    var bottom = size.y - b3LiftPx();
+    var bottom = size.y - creditLiftPx();
     ctx.font = B.countFont;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -6964,6 +6979,355 @@
     b3OpenDot({ kind: "a", lon: item.lon, lat: item.lat, lines: null, rows: [item] }, opener);
   }
   // B3 layers: end
+
+  // B6 drawing: begin
+  // ------------------------------------------------------------------ the terrain, the five-year pictures and the zone counts (B6, stage S2)
+
+  /** The B6 drawing (stage S2): the terrain, the five-year pictures and the zone counts that the sheet's chips turn on, from
+      data/base.json (loadBase). Python writes every word, number and colour; the browser draws them and no others:
+        - the terrain (base.terrain): two tile layers in the pane "terrain", the tint then the shading (map.css multiplies it);
+          a tile is the store's file when base.terrain.set lists it and the build does not list it as missing, else blank;
+          off in dark mode, on Imagery, and from draw.off_from up;
+        - the pictures (history_layers.pictures, hail and heat): one image overlay on the picture's bounds, pane "history";
+        - the zones (history_layers.zone_layers, wind and flood): one polygon per zone part, pane "history", filled with the
+          class of the zone's sum over the layer's measures (no count: dashed and unfilled).
+      A file that fails while its chip is on makes the chip unavailable with the module's sentence and clears the choice
+      (B6.failed); a tile that is missing or fails is counted and named by the key row. window.b6MapTest is a test hook. */
+  var B6 = null;                                  // the drawing state, made by b6Start (null on a page with no map data)
+  var B6_PANE = { terrain: 395, history: 406 };   // the terrain (under the base map, 400); the pictures and zones (above it, under the weather)
+  var B6_ALPHA_MAX = 255;                         // the top of an alpha value: the classes' alpha and the zones' alpha are out of it
+  var B6_DARK = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+  /** A terrain tile layer. Its tile is the store's file when base.terrain.set lists the tile and the build did not list it as
+      missing; any other tile is the blank picture, so no request goes for a file the store does not hold. One class serves the
+      land cover tint and the shading. createTile marks a tile the build lists as missing (b6Tiles counts it for the view). */
+  var B6Terrain = L.TileLayer.extend({
+    getTileUrl: function (c) {
+      var o = this.options;
+      return b6Listed(o.set, c.z, c.x, c.y) && !o.missing[b6Key(c.z, c.x, c.y)] ? L.Util.template(this._url, c) : BLANK;
+    },
+    createTile: function (c, done) {
+      var img = L.TileLayer.prototype.createTile.call(this, c, done);
+      if (this.options.missing[b6Key(c.z, c.x, c.y)]) img.classList.add("b6-missing");
+      return img;
+    }
+  });
+
+  /** The key "z/x/y" of a tile. */
+  function b6Key(z, x, y) { return z + "/" + x + "/" + y; }
+
+  /** Whether the compact tile set (base.terrain.set: {z: {y: [[x0, x1], ...]}}) lists the tile. */
+  function b6Listed(set, z, x, y) {
+    var runs = own(own(set, String(z)) || {}, String(y)) || [];
+    return runs.some(function (run) { return x >= run[0] && x <= run[1]; });
+  }
+
+  /** The keys of the tiles a layer's block lists as missing, read from the last three parts of each entry. */
+  function b6MissingKeys(list) {
+    var out = {};
+    (Array.isArray(list) ? list : []).forEach(function (item) {
+      var p = String(item).split("/"), n = p.length;
+      if (n >= 3) out[p[n - 3] + "/" + p[n - 2] + "/" + parseInt(p[n - 1], 10)] = true;
+    });
+    return out;
+  }
+
+  /** The terrain block of base.json when it can be drawn: loaded or partial, with its draw rule, tile set, tile size and both
+      layers' templates. Anything less draws nothing (a build that did not write the rule or the set). */
+  function b6TerrainInfo(base) {
+    var t = base && base.terrain;
+    var ok = t && (t.state === "loaded" || t.state === "partial") && t.draw && t.set && t.zooms && t.zooms.length && t.tile_px &&
+      t.layers && t.layers.h && t.layers.h.template && t.layers.l && t.layers.l.template;
+    return ok ? t : null;
+  }
+
+  /** One terrain layer ("l", the land cover tint; "h", the shading) from the block. */
+  function b6MakeLayer(info, k, cls) {
+    var lay = info.layers[k], zooms = info.zooms;
+    var t = new B6Terrain(lay.template, { pane: "terrain", tileSize: info.tile_px, minZoom: zooms[0], maxNativeZoom: zooms[zooms.length - 1],
+      noWrap: true, className: cls, set: info.set, missing: b6MissingKeys(lay.missing) });
+    t.on("tileerror", function (e) { B6.tileFailed++; if (e.tile) e.tile.classList.add("b6-failed"); b6KeysSoon(); });
+    return t;
+  }
+
+  /** A terrain layer's opacity at a zoom: the rule's opacity for its kind, times the fade of the whole zoom when draw.fade has one. */
+  function b6Opacity(draw, k, zoom) {
+    var fade = own(draw.fade || {}, String(Math.floor(zoom)));
+    return (k === "l" ? draw.tint_opacity : draw.shade_opacity) * (fade === undefined ? 1 : fade);
+  }
+
+  /** The terrain tiles a layer shows that loaded (not the blank picture). */
+  function b6Loaded(lay) {
+    var c = lay && lay.getContainer ? lay.getContainer() : null;
+    if (!c) return 0;
+    return [].filter.call(c.querySelectorAll("img.leaflet-tile-loaded"), function (img) { return img.getAttribute("src") !== BLANK; }).length;
+  }
+
+  /** The tiles of one class (b6-missing: listed as missing by the build; b6-failed: failed to load) that the terrain layers on the
+      map show inside the map's box, counted from the tile elements. */
+  function b6Tiles(cls) {
+    var box = el.canvas.getBoundingClientRect(), n = 0;
+    ["l", "h"].forEach(function (k) {
+      var lay = B6.terr ? B6.terr[k] : null;
+      if (!lay || !map.hasLayer(lay)) return;
+      [].forEach.call(lay.getContainer().querySelectorAll("img." + cls), function (img) {
+        var r = img.getBoundingClientRect();
+        if (r.right > box.left && r.left < box.right && r.bottom > box.top && r.top < box.bottom) n++;
+      });
+    });
+    return n;
+  }
+
+  /** The source lines a layer adds to the one credit control while it is on: added once, removed when it goes. */
+  function b6Credit(group, lines) {
+    var was = B6.lines[group] || [];
+    if (!was.length && !lines.length) return;
+    var ctl = lines.length ? creditControl() : creditCtl;
+    was.forEach(function (line) { ctl.removeAttribution(esc(line)); });
+    lines.forEach(function (line) { ctl.addAttribution(esc(line)); });
+    B6.lines[group] = lines;
+  }
+
+  /** The terrain on the map. Its two layers are made once from the block and added while on, at the opacity of their zoom; they
+      come off when on is false and from draw.off_from up. The page's has-terrain class and the two credit lines follow. */
+  function b6Terrain(on) {
+    var info = B6.info;
+    if (on && info && !B6.terr) B6.terr = { l: b6MakeLayer(info, "l", "b6-tint"), h: b6MakeLayer(info, "h", "b6-shade") };
+    var shown = !!(on && B6.terr && map.getZoom() < info.draw.off_from);
+    if (B6.terr) ["l", "h"].forEach(function (k) {
+      var lay = B6.terr[k];
+      if (!shown) { if (map.hasLayer(lay)) map.removeLayer(lay); return; }
+      lay.setOpacity(b6Opacity(info.draw, k, map.getZoom()));
+      if (!map.hasLayer(lay)) lay.addTo(map);
+    });
+    B6.terrOn = shown;
+    app.classList.toggle("has-terrain", shown);
+    var c = (info && info.credits) || {};
+    b6Credit("terrain", shown ? [c.shading, c.land_cover].filter(Boolean) : []);
+  }
+
+  /** The five-year picture of a chip ("hail" or "heat"): one image overlay on its bounds. Its load is noted for the key rows; a
+      failure makes its chip unavailable with the sheet's picture sentence (b6Fail). */
+  function b6MakePicture(k, base) {
+    var block = historyBlock(k, base).block;
+    if (!block || !block.url || !block.bounds) return null;
+    var pic = { loaded: false, layer: L.imageOverlay(block.url, block.bounds, { pane: "history", interactive: false, className: "b6-picture" }) };
+    pic.layer.on("load", function () { pic.loaded = true; b6KeysSoon(); });
+    pic.layer.on("error", function () { b6Fail([k], sheetWords().picture_failed); });
+    return pic;
+  }
+
+  /** The five-year pictures: the chip on shows its picture (made on first use, then kept); a picture whose chip is off comes off. */
+  function b6Pictures(base) {
+    ["hail", "heat"].forEach(function (k) {
+      var on = !!base && state.history === k && b6Gone(k) === null;
+      if (on && !B6.pics[k]) B6.pics[k] = b6MakePicture(k, base);
+      var pic = B6.pics[k];
+      if (!pic) return;
+      if (on && !map.hasLayer(pic.layer)) pic.layer.addTo(map);
+      else if (!on && map.hasLayer(pic.layer)) map.removeLayer(pic.layer);
+    });
+  }
+
+  /** A zone outline's parts: g is a list of parts, each a list of rings of [lon, lat] points; a list of rings is one part. */
+  function b6Parts(g) {
+    if (!Array.isArray(g) || !g.length) return [];
+    var probe = g[0] && g[0][0] && g[0][0][0];
+    return typeof probe === "number" ? [g] : g;
+  }
+
+  /** The sum of a zone's counts over the layer's measures, or null when one of them is missing (a missing count is not zero). */
+  function b6Sum(row, measures) {
+    if (!row) return null;
+    var sum = 0;
+    for (var i = 0; i < measures.length; i++) {
+      if (typeof row[measures[i]] !== "number") return null;
+      sum += row[measures[i]];
+    }
+    return sum;
+  }
+
+  /** The class of a sum: the first whose min and max (no max: no upper limit) hold it; null for no sum. */
+  function b6Class(classes, sum) {
+    var hit = null;
+    if (sum !== null) (classes || []).some(function (c) {
+      if (sum >= c.min && (c.max == null || sum <= c.max)) hit = c;
+      return hit !== null;
+    });
+    return hit;
+  }
+
+  /** The polygons of one zone layer (wind or flood): one per zone part, filled with the class colour of the zone's sum (dashed
+      and unfilled when the sum is missing or the class has no colour). Null when base.json has no block for the layer. */
+  function b6ZoneGroup(k, base) {
+    var lay = own((base.history_layers || {}).zone_layers || {}, k), geo = B6.zoneGeo;
+    if (!lay || !geo) return null;
+    var counts = own(geo.counts, "zones") || {}, polys = [];
+    (geo.outline.zones || []).forEach(function (z) {
+      var sum = b6Sum(own(counts, z.zone), lay.measures || []), cls = b6Class(lay.classes, sum), colour = cls ? cls.colour : null;
+      var none = sum === null, style = { renderer: B6.renderer, interactive: false, fill: !none && !!colour, fillColor: colour || undefined,
+        fillOpacity: typeof lay.alpha === "number" ? lay.alpha / B6_ALPHA_MAX : 1, className: "b6-zone" + (none ? " b6-zone-none" : "") };
+      b6Parts(z.g).forEach(function (part) {
+        polys.push(L.polygon(part.map(function (ring) { return ring.map(function (p) { return [p[1], p[0]]; }); }), style));
+      });
+    });
+    return L.layerGroup(polys);
+  }
+
+  /** A file the drawing asks for, logged for the hook (window.b6MapTest). */
+  function b6Fetch(url) { B6.fetches.push(url); return fetchJSON(url); }
+
+  /** The zone outline and counts files, fetched once each (the promise is kept). A failure sets the Wind and Flood chips
+      unavailable with the module's sentence (b6Fail); a success draws the chip that is on (b6Apply). */
+  function b6LoadZones(base) {
+    var hl = base.history_layers || {}, out = hl.outlines || {}, counts = hl.zones || {};
+    if (!out.url || !counts.url) return;
+    B6.zoneLoad = Promise.all([b6Fetch(out.url), b6Fetch(counts.url)]).then(function (docs) {
+      B6.zoneGeo = { outline: docs[0], counts: docs[1] };
+      b6Apply();
+    }, function () {
+      b6Fail(["wind", "flood"], own(hl.words || {}, "zone_outline_failed"));
+    });
+  }
+
+  /** The zone layer the chip on shows (wind or flood) is drawn and the other is off. Its outline credit goes in with it. */
+  function b6Zones(base) {
+    var key = state.history === "wind" || state.history === "flood" ? state.history : null;
+    var want = !!(base && key && b6Gone(key) === null);
+    if (want && !B6.zoneLoad) b6LoadZones(base);
+    var shown = false;
+    ["wind", "flood"].forEach(function (k) {
+      var on = want && k === key && !!B6.zoneGeo;
+      if (on && !B6.zones[k]) B6.zones[k] = b6ZoneGroup(k, base);
+      var g = B6.zones[k];
+      if (!g) return;
+      if (on) { if (!map.hasLayer(g)) g.addTo(map); shown = true; }
+      else if (map.hasLayer(g)) map.removeLayer(g);
+    });
+    var credit = shown ? own((base.history_layers || {}).outlines || {}, "credit") : null;
+    b6Credit("zones", credit ? [credit] : []);
+  }
+
+  /** The file or layer of a five-year chip failed while it was on (b6Fail): its sentence, or null. */
+  function b6Gone(k) { var f = B6 ? own(B6.failed, k) : undefined; return f === undefined ? null : f.why; }
+
+  /** A file of the five-year chips failed while one of them was on: those chips are unavailable with the module's sentence, the
+      choice is cleared, and the file is not asked again on this page. */
+  function b6Fail(keys, why) {
+    if (!B6) return;
+    keys.forEach(function (k) { B6.failed[k] = { why: why || "" }; });
+    if (keys.indexOf(state.history) >= 0) { state.history = null; saveUrl(); }
+    renderOptions();
+  }
+
+  /** The five-year layer on the sheet, named for the legend card while no live layer is on: its title and note from base.json. */
+  function b6Legend() {
+    var base = baseDoc && !baseDoc._error ? baseDoc : null, key = state.history;
+    if (!base || !key) return null;
+    if (key === "wind" || key === "flood") {
+      var z = own((base.history_layers || {}).zone_layers || {}, key);
+      return z ? { title: z.title, legend: z.legend } : null;
+    }
+    var w = (historyBlock(key, base).block || {}).words;
+    return w ? { title: w.title, legend: w.legend } : null;
+  }
+
+  /** A key row for a colour from base.json: the swatch is filled with it at the class's alpha (out of 255). A class with no colour
+      is a dashed, unfilled row. */
+  function b6Row(colour, alpha, word) {
+    return colour ? ["key-b6", word, "background:" + colour + ";opacity:" + (typeof alpha === "number" ? (alpha / B6_ALPHA_MAX).toFixed(2) : "1")]
+      : ["key-b6-none", word];
+  }
+
+  /** The key rows of the B6 layers on the map (renderKeys adds them): the picture's classes and its transparent word, the zone's
+      classes and its no-count word, and the terrain's missing or failed tiles in view. */
+  function b6Keys() {
+    var rows = [], base = baseDoc && !baseDoc._error ? baseDoc : null;
+    if (!B6 || !base) return rows;
+    var k = state.history, pic = B6.pics[k], words = (base.history_layers || {}).words || {};
+    if (pic && pic.loaded && map.hasLayer(pic.layer)) {
+      var block = historyBlock(k, base).block || {};
+      (block.classes || []).forEach(function (c) { rows.push(b6Row(c.colour, c.alpha, c.word)); });
+      if (block.words && block.words.transparent) rows.push(["key-b6-none", block.words.transparent]);
+    }
+    var zg = (k === "wind" || k === "flood") && B6.zones[k];
+    if (zg && map.hasLayer(zg)) {
+      var zl = own((base.history_layers || {}).zone_layers || {}, k) || {};
+      (zl.classes || []).forEach(function (c) { rows.push(b6Row(c.colour, zl.alpha, c.word)); });
+      if (words.zone_unavailable_key) rows.push(["key-b6-none", words.zone_unavailable_key]);
+    }
+    var tw = B6.info && B6.info.words ? B6.info.words.tile_missing : "";
+    if (B6.terrOn && tw && b6Tiles("b6-missing") + b6Tiles("b6-failed") > 0) rows.push(["key-b6-missing", tw]);
+    return rows;
+  }
+
+  /** The key rows on the next frame (a tile's load or failure, a move, a zoom): once per frame. */
+  function b6KeysSoon() {
+    if (!B6 || B6.keysQueued) return;
+    B6.keysQueued = true;
+    var later = window.requestAnimationFrame || function (f) { setTimeout(f, 0); };
+    later(function () { if (B6) { B6.keysQueued = false; renderKeys(); } });
+  }
+
+  /** The sheet's choices drawn on the map: the terrain (off in dark mode and on the Imagery base map), the five-year picture and
+      the zone layer the chips show, the legend's title for a five-year layer with no live layer, and the key rows. Called at the
+      end of renderOptions and on a zoom or a colour scheme change. */
+  function b6Apply() {
+    if (!B6 || !map) return;
+    var base = baseDoc && !baseDoc._error ? baseDoc : null, dark = !!(B6_DARK && B6_DARK.matches);
+    b6Terrain(!!B6.info && !dark && state.base !== "imagery");
+    b6Pictures(base);
+    b6Zones(base);
+    var lk = state.layer || !base ? "" : String(state.history || "");     // the card's words come from base.json: none before it loads
+    if (lk !== B6.legendKey && data) { B6.legendKey = lk; renderLegend(); }
+    b6KeysSoon();
+  }
+
+  /** The terrain block of base.json is read once it has loaded (loadBase); the drawing then follows the sheet. */
+  function b6Base() {
+    if (!B6) return;
+    B6.info = b6TerrainInfo(baseDoc && !baseDoc._error ? baseDoc.base : null);
+    b6Apply();
+  }
+
+  /** The B6 state and its panes, once per page (after b3Start): the terrain pane under the base map, the history pane for the
+      pictures and zones (an SVG renderer of its own), the zoom and move listeners, the colour scheme watch and the hook. It
+      draws nothing: b6Base starts the drawing once base.json has loaded. */
+  function b6Start() {
+    if (!map || !data || CARD) return;     // the card (Storm reports) has no sheet and draws none of these layers
+    pane("terrain", B6_PANE.terrain, false);
+    pane("history", B6_PANE.history, false);
+    B6 = { renderer: L.svg({ pane: "history", padding: 0.6 }), info: null, terr: null, terrOn: false, pics: {}, zones: {},
+      zoneLoad: null, zoneGeo: null, failed: {}, fetches: [], tileFailed: 0, keysQueued: false, legendKey: "", lines: {} };
+    map.on("zoomend", b6Apply);
+    map.on("moveend", b6KeysSoon);
+    if (B6_DARK) { if (B6_DARK.addEventListener) B6_DARK.addEventListener("change", b6Apply); else if (B6_DARK.addListener) B6_DARK.addListener(b6Apply); }
+    window.b6MapTest = {                     // test-only (tools/smoke_map.py): the terrain, pictures, zones and credit lines
+      base: function () { return !!(baseDoc && !baseDoc._error); },
+      view: function (lat, lon, zoom) { state.userMoved = true; map.setView([lat, lon], zoom, { animate: false }); return map.getZoom(); },
+      terrain: function () {
+        var t = B6.terr || {};
+        return { on: B6.terrOn, tiles: { h: b6Loaded(t.h), l: b6Loaded(t.l) }, failed: B6.tileFailed, missing: b6Tiles("b6-missing"),
+          failedInView: b6Tiles("b6-failed"), opacity: { h: t.h ? t.h.options.opacity : null, l: t.l ? t.l.options.opacity : null } };
+      },
+      pictures: function () {
+        return ["hail", "heat"].filter(function (k) { return B6.pics[k]; }).map(function (k) {
+          return { key: k, loaded: B6.pics[k].loaded, shown: map.hasLayer(B6.pics[k].layer), failed: b6Gone(k) !== null };
+        });
+      },
+      zones: function () {
+        var k = state.history === "wind" || state.history === "flood" ? state.history : null, g = k ? B6.zones[k] : null;
+        var polys = g && map.hasLayer(g) ? g.getLayers() : [];
+        return { key: k, drawn: polys.length, unavailable: polys.filter(function (p) { return p.options.className.indexOf("b6-zone-none") >= 0; }).length };
+      },
+      credits: function () {                 // the attribution lines on the map, as the control holds them (escaped)
+        var a = creditCtl ? creditCtl._attributions : {};
+        return Object.keys(a).filter(function (line) { return a[line] > 0; });
+      },
+      fetches: function () { return B6.fetches.slice(); }
+    };
+  }
+  // B6 drawing: end
 
   boot();
 })();
