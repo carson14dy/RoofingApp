@@ -164,6 +164,11 @@ LAYER_NAMES = {"h": "terrain shading", "l": "land cover tint"}
 SERVICE_NAMES = {"h": "shading service", "l": "land cover service"}     # the words of a failed description (detail)
 ZOOMS = (5, 6, 7, 8, 9, 10)
 TILE_PX = 256
+# The drawing rules the browser reads from base.json terrain.draw (DESIGN 13; D115(a), D109(a)). tint_opacity: the land cover
+# tint's opacity. shade_opacity: the shading's opacity (the browser draws it with the multiply blend, map.css). fade: the factor
+# each of those opacities takes at the zoom named by its key (the tiles stop at the last zoom in ZOOMS, so zooms 11 and 12
+# stretch them and fade them). off_from: from this zoom up neither layer is on the map.
+DRAW = {"shade_opacity": 0.45, "tint_opacity": 0.9, "fade": {"11": 0.6, "12": 0.3}, "off_from": 13}
 BUDGET_BYTES = 20_000_000                # zooms 5 to 10 together (decimal megabytes, the brief's budget)
 JPEG_QUALITY = 80
 TIMEOUT_S = 20                           # each request's timeout, in seconds
@@ -410,6 +415,28 @@ def tile_set(rings, zooms=ZOOMS) -> dict[int, list[tuple[int, int]]]:
                 if overlaps_outline(z, x, y, rings):
                     found.append((x, y))
         out[z] = sorted(found)
+    return out
+
+
+def compact_set(tiles_by_zoom) -> dict:
+    """The tile set as the browser's compact split map (base.json terrain.set, the shape of map.json's tile_split, D144):
+    {"<zoom>": {"<tile row y>": [[first x, last x], ...]}}. A row's runs are the maximal runs of consecutive x among its
+    tiles, sorted ascending and disjoint; a row with no tile is not listed. tiles_by_zoom is tile_set's result."""
+    out: dict[str, dict[str, list[list[int]]]] = {}
+    for z, tiles in tiles_by_zoom.items():
+        rows: dict[int, set[int]] = {}
+        for x, y in tiles:
+            rows.setdefault(int(y), set()).add(int(x))
+        split: dict[str, list[list[int]]] = {}
+        for y in sorted(rows):
+            runs: list[list[int]] = []
+            for x in sorted(rows[y]):
+                if runs and runs[-1][1] == x - 1:
+                    runs[-1][1] = x
+                else:
+                    runs.append([x, x])
+            split[str(y)] = runs
+        out[str(int(z))] = split
     return out
 
 
@@ -1387,7 +1414,9 @@ def describe(index: dict | None = None) -> dict:
 
 def map_data(index: dict | None = None) -> dict:
     """The map.json "base" block for the terrain layers: the tile templates, the zooms, the missing tiles of each layer,
-    the palette, the words and the credit lines. Nothing here reads a file; the browser requests one tile at a time."""
+    the palette, the words, the credit lines, the drawing rules (draw) and the tile set (set, compact_set). The set is worked
+    out from the Montana outline in static/map/basemap.json (0.2 s); no store file is read, and the browser requests one
+    tile at a time."""
     block = _block_from(index)
     words = {"tile_missing": WORDS["tile_missing"], "unavailable": WORDS["unavailable"],
              "part_unavailable": WORDS["part_unavailable"], "part_partial": WORDS["part_partial"], "what": WORDS["what"]}
@@ -1404,7 +1433,8 @@ def map_data(index: dict | None = None) -> dict:
     return {"state": block["state"], "problem": block.get("problem"), "zooms": list(block["zooms"]),
             "tile_px": TILE_PX, "layers": layers,
             "palette": [{"index": i, "class": name, "hex": colour} for i, name, colour, _codes in TINT],
-            "as_of": block.get("as_of", {}), "words": words, "credits": credit_lines(block)}
+            "as_of": block.get("as_of", {}), "words": words, "credits": credit_lines(block),
+            "draw": dict(DRAW), "set": compact_set(tile_set(montana_rings()))}
 
 
 def _block_from(index: dict | None):

@@ -1470,6 +1470,9 @@ SHEET_WORDS = {
     # Reset
     "reset": "Reset",
     "reset_line": "Back to Map and Precipitation, with Points of interest and Warnings on. Everything else off.",
+    # S2 (DESIGN 13.6): the sentence a picture chip's line shows when its picture (hail or heat) fails to load in this update
+    "picture_failed": ("Data unavailable. The picture for this layer could not be loaded in this update; that is not the same as "
+                       "no hail or no heat. This is not an all-clear."),
 }
 # The words the browser prints from the first paint, outside the sheet: the map page's banners and the reports and picture
 # lines. The template renders them as JSON in <script id="map-words"> (map.html context: map_words), and map.js reads them
@@ -1744,9 +1747,18 @@ def _history_block(out: Path, store_index: dict | None, why: str | None) -> dict
     outline = {"state": outlines.get("state", "unavailable"), "url": hl.OUTLINE_PATH, "credit": hl.WORDS["about_outlines"]}
     if outline["state"] not in ("loaded", "partial"):
         outline["problem"] = outlines.get("problem") or hl.WORDS["outline_unavailable"]
+    # S2: the zone layers' classes, alpha and legend line (the window's dates in the zone legend's own words, hl._words_day)
+    first, last = hl.window_days(block)
+    zone_layers = {key: {"measures": list(layer["measures"]), "title": layer["title"],
+                         "classes": [dict(c) for c in layer["classes"]], "alpha": hl.ZONE_ALPHA,
+                         "legend": hl.WORDS["zones_sum"].format(title=layer["title"], first=hl._words_day(first),
+                                                                last=hl._words_day(last))}
+                   for key, layer in hl.ZONE_LAYERS.items()}
     return {"state": block["state"], "problem": block.get("problem"), "as_of": block.get("as_of"),
             "window": block.get("window"), "stale": sidecar.get("stale"), "pictures": pictures, "zones": zones,
-            "outlines": outline, "failures": _index_failures(block)}
+            "outlines": outline, "zone_layers": zone_layers, "failures": _index_failures(block),
+            "words": {"zone_unavailable_key": hl.WORDS["zone_unavailable_key"],
+                      "zone_outline_failed": hl.WORDS["zone_outline_failed"]}}
 
 
 def _recent_block(store_index: dict | None, why: str | None) -> dict:

@@ -144,6 +144,31 @@ HEAT_CLASSES = (
     {"min": 100, "max": 124, "word": "100 to 124 days", "colour": "#d6452f"},
     {"min": 125, "max": None, "word": "125 days or more", "colour": "#9e1c2b"},
 )
+# The zone layers (the Wind and Flood chips on the Map page; DESIGN 13.4 lists these palettes). A zone's class is set by its sum
+# of counted products over the layer's measures. The first class is a sum of 0 (no product in the archive files read), drawn
+# with no fill; a zone with no count at all is a different row (WORDS zone_unavailable_key). These are picture palettes defined
+# once here, and base.json carries them to the browser (D115(b)).
+ZONE_WIND_CLASSES = (
+    {"min": 0, "max": 0, "word": "none in the archive files read", "colour": None},
+    {"min": 1, "max": 24, "word": "1 to 24 products", "colour": "#e9e4f6"},
+    {"min": 25, "max": 49, "word": "25 to 49 products", "colour": "#c9bbea"},
+    {"min": 50, "max": 99, "word": "50 to 99 products", "colour": "#9b84d1"},
+    {"min": 100, "max": None, "word": "100 products or more", "colour": "#6a4fb0"},
+)
+ZONE_FLOOD_CLASSES = (
+    {"min": 0, "max": 0, "word": "none in the archive files read", "colour": None},
+    {"min": 1, "max": 14, "word": "1 to 14 products", "colour": "#dce9f7"},
+    {"min": 15, "max": 29, "word": "15 to 29 products", "colour": "#abc9eb"},
+    {"min": 30, "max": 49, "word": "30 to 49 products", "colour": "#6f9fd6"},
+    {"min": 50, "max": None, "word": "50 products or more", "colour": "#2f6db5"},
+)
+ZONE_ALPHA = 140                          # of 255: the fill's opacity over the base map
+ZONE_LAYERS = {
+    "wind": {"measures": ("high_wind_warnings", "high_wind_watches", "wind_advisories"),
+             "title": "High wind warnings and watches and wind advisories by forecast zone", "classes": ZONE_WIND_CLASSES},
+    "flood": {"measures": ("flood_watches", "flood_warnings", "flood_advisories", "flash_flood_watches", "flash_flood_warnings"),
+              "title": "Flood and flash flood watches, warnings and advisories by forecast zone", "classes": ZONE_FLOOD_CLASSES},
+}
 
 # The eight zone measures. A measure's zone rows are (kind, significance) pairs in hail/z/; its polygon rows are pairs in
 # hail/j/events.json. A flood watch is the areal flood watch (FA.A, zone rows) and the flood watch (FL.A, polygon rows). A
@@ -199,6 +224,14 @@ WORDS = {
                      "the zone. This is not an all-clear."),
     "zones_newest": "The newest warning in these counts is dated {date}.",
     "zones_newest_unknown": "No warning is counted in these counts, so no newest warning date is shown.",
+    # S2 (DESIGN 13.4): the zone layers' legend line under the classes (its {title} is ZONE_LAYERS' title, {first} and {last} are
+    # the window's dates as _zones_legend gives them); the key row for a zone with no count; the sentence for an outline file
+    # that fails while the page runs
+    "zones_sum": ("{title}: the sum of the counted products for each zone over {first} to {last}, in classes. A zone with no "
+                  "count reads Data unavailable. This is not an all-clear."),
+    "zone_unavailable_key": "No count for this zone: Data unavailable",
+    "zone_outline_failed": ("Data unavailable. The zone outlines could not be loaded, so no zone is drawn; that is not the same "
+                            "as no products. This is not an all-clear."),
     "recent_title": "Recent radar hail",
     "recent_legend": ("Radar estimate of hail 1 inch or more on a day in the last 30 days, {first} to {as_of}. A radar "
                       "estimate, not a measurement. Cells not listed had no such day in the store; that is not the same "
