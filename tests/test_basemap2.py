@@ -13,6 +13,7 @@ import io
 import itertools
 import json
 import math
+import os
 import shutil
 import sys
 import tempfile
@@ -419,6 +420,216 @@ class ParsingTests(unittest.TestCase):
         block = {"state": "partial", "failures": [{"reasons": ["no kind here"]}, {"kind": "place", "reasons": ["x"]}]}
         self.assertEqual(b.map_data_vector(block)["failed_kinds"], ["place"])
         self.assertEqual(b._failed_kinds(block), {"place"})
+
+
+class WaterPageTests(unittest.TestCase):
+    """The state's small-scale water is read page by page (SMALL_SKIP_PAGES): a page the service does not answer is skipped,
+    so the pages that answer still load. The deadline ends the query at once."""
+
+    @staticmethod
+    def _page(oids, more: bool):
+        doc = {"features": [{"attributes": {"OBJECTID": oid}, "geometry": {"paths": [[[-114.0, 47.0], [-113.9, 47.0]]]}}
+                            for oid in oids], "exceededTransferLimit": more}
+        return types.SimpleNamespace(status_code=200, content=json.dumps(doc).encode("utf-8"))
+
+    @staticmethod
+    def _gone():
+        return types.SimpleNamespace(status_code=504, content=b"<html>504 Gateway Time-out</html>")
+
+    def _read(self, answers, skip_pages=b.SMALL_SKIP_PAGES, deadline_at=None):
+        cache = Path(tempfile.mkdtemp(prefix="basemap2-pages-"))
+        try:
+            ctx = b._Ctx(cache, offline=False, refresh=False, deadline_at=deadline_at)
+            with mock.patch("requests.get", side_effect=answers) as get, mock.patch("website.basemap2.time.sleep"):
+                feats, probs = b.fetch_pages(ctx, "nhd_small_lines", b.NHD_URL.format(layer=4), "mt",
+                                             b.nhd_params("small_lines", b.MT_BOX), 2000, attempts=1,
+                                             skip_pages=skip_pages)
+            return [f["attributes"]["OBJECTID"] for f in feats], probs, get.call_count
+        finally:
+            shutil.rmtree(cache, ignore_errors=True)
+
+    def test_a_page_that_fails_is_skipped_and_the_next_page_loads(self):
+        oids, probs, calls = self._read([self._gone(), self._page([2001, 2002], more=False)])
+        self.assertEqual(oids, [2001, 2002], "the page at offset 2000 loads")
+        self.assertEqual(probs, ["HTTP 504"], "the missed page is named")
+        self.assertEqual(calls, 2)
+
+    def test_without_skipping_the_query_ends_at_its_first_failed_page(self):
+        self.assertEqual(self._read([self._gone()], skip_pages=0), ([], ["HTTP 504"], 1))
+
+    def test_two_failed_pages_in_a_row_are_skipped_and_a_third_ends_the_query(self):
+        oids, probs, calls = self._read([self._gone(), self._gone(), self._gone()])
+        self.assertEqual(oids, [])
+        self.assertEqual(len(probs), 3)
+        self.assertEqual(calls, 3, "no request after the third failure")
+
+    def test_a_page_after_two_skipped_pages_still_loads(self):
+        oids, probs, calls = self._read([self._gone(), self._gone(), self._page([4001], more=False)])
+        self.assertEqual(oids, [4001])
+        self.assertEqual(probs, ["HTTP 504", "HTTP 504"])
+        self.assertEqual(calls, 3)
+
+    def test_the_features_before_a_skipped_page_are_kept_and_the_offset_moves_by_the_page(self):
+        full = self._page(range(1, 2001), more=True)            # a full page: the next offset is 2000
+        oids, probs, calls = self._read([full, self._gone(), self._page([4001], more=False)])
+        self.assertEqual(len(oids), 2001)
+        self.assertEqual(oids[-1], 4001, "the page at offset 4000 follows the skipped page at 2000")
+        self.assertEqual(probs, ["HTTP 504"])
+        self.assertEqual(calls, 3)
+
+    def test_the_deadline_ends_the_query_at_once(self):
+        self.assertEqual(self._read([], deadline_at=time.monotonic() - 1.0), ([], ["deadline"], 0))
+
+    def test_pages_cached_at_1000_still_load_when_the_page_is_2000(self):
+        cache = Path(tempfile.mkdtemp(prefix="basemap2-page-size-"))
+        try:
+            params = b.nhd_params("small_lines", b.MT_BOX)
+            for offset, oids, more in ((0, range(1, 1001), True), (1000, range(1001, 1005), False)):
+                path = cache / b.page_name("nhd_small_lines", "mt", params, offset)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(self._page(oids, more).content)
+            ctx = b._Ctx(cache, offline=True, refresh=False, deadline_at=None)
+            feats, probs = b.fetch_pages(ctx, "nhd_small_lines", b.NHD_URL.format(layer=4), "mt", params, 2000)
+            self.assertEqual([f["attributes"]["OBJECTID"] for f in feats], list(range(1, 1005)))
+            self.assertEqual(probs, [])
+        finally:
+            shutil.rmtree(cache, ignore_errors=True)
+
+    def test_a_state_page_is_tried_twice_with_the_short_read_wait(self):
+        cache = Path(tempfile.mkdtemp(prefix="basemap2-tries-"))
+        try:
+            ctx = b._Ctx(cache, offline=False, refresh=False, deadline_at=None)
+            with mock.patch("requests.get", side_effect=[self._gone(), self._gone()]) as get, \
+                    mock.patch("website.basemap2.time.sleep"):
+                feats, probs = b.fetch_pages(ctx, "nhd_small_lines", b.NHD_URL.format(layer=4), "mt",
+                                             b.nhd_params("small_lines", b.MT_BOX), 2000,
+                                             attempts=b.SMALL_TRIES, read_cap=b.SMALL_READ_S, skip_pages=0)
+            self.assertEqual((feats, probs), ([], ["HTTP 504"]))
+            self.assertEqual(get.call_count, 2, "two tries of the failed page")
+            self.assertTrue(all(c.kwargs["timeout"][1] == b.SMALL_READ_S for c in get.call_args_list))
+        finally:
+            shutil.rmtree(cache, ignore_errors=True)
+
+    def test_when_every_state_page_answers_504_after_180_seconds_the_query_ends_inside_the_budget(self):
+        """The service answers every page with a 504 after 180 s (the slow day of 2026-10-27). Each try waits at most
+        SMALL_READ_S, so a page costs about 245 s and three failed pages end the query well inside the 1,020 s budget."""
+        import requests
+        clock = [0.0]
+
+        def monotonic():
+            return clock[0]
+
+        def sleep(seconds):
+            clock[0] += seconds
+
+        def get(url, params=None, headers=None, timeout=None):
+            wait = min(180.0, timeout[1])          # the server would answer after 180 s; the read wait is cut at its timeout
+            clock[0] += wait
+            if wait < 180.0:
+                raise requests.ReadTimeout("read timed out")
+            return self._gone()
+
+        cache = Path(tempfile.mkdtemp(prefix="basemap2-budget-"))
+        try:
+            ctx = b._Ctx(cache, offline=False, refresh=False, deadline_at=1020.0)
+            with mock.patch("time.monotonic", new=monotonic), mock.patch("time.sleep", new=sleep), \
+                    mock.patch("requests.get", side_effect=get) as calls:
+                feats, probs = b.fetch_pages(ctx, "nhd_small_lines", b.NHD_URL.format(layer=4), "mt",
+                                             b.nhd_params("small_lines", b.MT_BOX), 2000,
+                                             attempts=b.SMALL_TRIES, read_cap=b.SMALL_READ_S,
+                                             skip_pages=b.SMALL_SKIP_PAGES)
+            self.assertEqual(feats, [])
+            self.assertEqual(len(probs), 3, "two skipped pages, then the third failed page ends the query")
+            self.assertEqual(calls.call_count, 6, "two tries for each of the three pages")
+            self.assertLess(clock[0], 1020.0 - 120.0, "the query ends with the monthly budget to spare")
+        finally:
+            shutil.rmtree(cache, ignore_errors=True)
+
+    def test_no_request_starts_after_the_deadline_even_when_the_pacing_wait_passes_it(self):
+        cache = Path(tempfile.mkdtemp(prefix="basemap2-pace-"))
+        try:
+            ctx = b._Ctx(cache, offline=False, refresh=False, deadline_at=time.monotonic() + 100.0)
+            ctx.last[b._host(b.EDW_URL)] = time.monotonic()      # a request just before, so the pacing waits
+
+            def sleep(seconds):                                  # the wait runs the clock past the deadline
+                ctx.deadline_at = time.monotonic() - 1.0
+
+            answer = types.SimpleNamespace(status_code=504, content=b"")
+            with mock.patch("website.basemap2.time.sleep", side_effect=sleep), \
+                    mock.patch("requests.get", return_value=answer) as get:
+                data, state, reason = b.fetch(ctx, "edw", b.EDW_URL, "edw/paced.json", b._check_features,
+                                              params=b.forest_params())
+            self.assertEqual(get.call_count, 0, "no request starts after the deadline")
+            self.assertEqual((data, state, reason), (None, "failed", b.REASON_DEADLINE))
+        finally:
+            shutil.rmtree(cache, ignore_errors=True)
+
+
+class RequestTimeoutTests(unittest.TestCase):
+    """A request in flight at the deadline is cut GRACE_S seconds after it, so the build's writing ends inside the job's
+    margin. Without a deadline the module's own timeouts apply."""
+
+    def test_without_a_deadline_the_module_timeouts_apply(self):
+        ctx = b._Ctx(Path(tempfile.gettempdir()), offline=False, refresh=False, deadline_at=None)
+        self.assertEqual(ctx.request_timeout(), b.READ_TIMEOUT)
+
+    def test_a_request_waits_at_most_grace_past_the_deadline(self):
+        ctx = b._Ctx(Path(tempfile.gettempdir()), offline=False, refresh=False, deadline_at=time.monotonic() + 100.0)
+        connect, read = ctx.request_timeout()
+        self.assertLessEqual(connect, b.READ_TIMEOUT[0])
+        self.assertAlmostEqual(read, 100.0 + b.GRACE_S, delta=1.0)
+
+    def test_after_the_grace_a_request_gets_the_least_timeout(self):
+        ctx = b._Ctx(Path(tempfile.gettempdir()), offline=False, refresh=False, deadline_at=time.monotonic() - 500.0)
+        self.assertEqual(ctx.request_timeout(), (1.0, 1.0))
+
+    def test_fetch_passes_the_cut_timeout_to_the_request(self):
+        cache = Path(tempfile.mkdtemp(prefix="basemap2-timeout-"))
+        try:
+            ctx = b._Ctx(cache, offline=False, refresh=False, deadline_at=time.monotonic() + 100.0)
+            answer = types.SimpleNamespace(status_code=200, content=_fixture("edw_forests_page.json"))
+            with mock.patch("requests.get", return_value=answer) as get:
+                data, state, reason = b.fetch(ctx, "edw", b.EDW_URL, "edw/timeout.json", b._check_features,
+                                              params=b.forest_params())
+            self.assertEqual(state, "fetched")
+            self.assertAlmostEqual(get.call_args.kwargs["timeout"][1], 100.0 + b.GRACE_S, delta=1.0)
+        finally:
+            shutil.rmtree(cache, ignore_errors=True)
+
+    def test_a_read_cap_bounds_the_read_wait_with_or_without_a_deadline(self):
+        ctx = b._Ctx(Path(tempfile.gettempdir()), offline=False, refresh=False, deadline_at=None)
+        self.assertEqual(ctx.request_timeout(b.SMALL_READ_S), (b.READ_TIMEOUT[0], b.SMALL_READ_S))
+        ctx = b._Ctx(Path(tempfile.gettempdir()), offline=False, refresh=False, deadline_at=time.monotonic() + 1000.0)
+        self.assertEqual(ctx.request_timeout(b.SMALL_READ_S), (b.READ_TIMEOUT[0], b.SMALL_READ_S))
+
+
+class SmallLayerPageTests(unittest.TestCase):
+    """The small-scale layers ask for pages of 2,000 (their maxRecordCount, read on 2026-10-27), and the build reads the state
+    water with the skip rule. Pinned here so a change to either is a decision, not an accident."""
+
+    def test_the_small_scale_pages_are_2000_and_two_failed_pages_may_be_skipped(self):
+        self.assertEqual(b.NHD["small_lines"]["page"], 2000)
+        self.assertEqual(b.NHD["small_areas"]["page"], 2000)
+        self.assertEqual(b.SMALL_SKIP_PAGES, 2)
+        self.assertEqual(b.SMALL_TRIES, 2)
+        self.assertEqual(b.SMALL_READ_S, 120.0)
+        self.assertEqual(b.NHD["large_lines"]["page"], 250, "the large-scale pages are unchanged")
+
+    def test_the_build_reads_the_state_water_with_the_skip_rule(self):
+        tmp = Path(tempfile.mkdtemp(prefix="basemap2-skip-"))
+        try:
+            cache = tmp / "cache"
+            stage_cache(cache)
+            make_store(tmp / "store", box_tiles())
+            with mock.patch.object(b, "nhd_features", wraps=b.nhd_features) as spy:
+                b.build(tmp / "store", cache, offline=True, box=TEST_BOX)
+            small = [c for c in spy.call_args_list if c.args[1] in ("small_lines", "small_areas")]
+            self.assertEqual(len(small), 2)
+            self.assertTrue(all(c.kwargs.get("skip_pages") == b.SMALL_SKIP_PAGES for c in small))
+            self.assertTrue(all(c.kwargs.get("attempts") == b.SMALL_TRIES and c.kwargs.get("read_cap") == b.SMALL_READ_S
+                                for c in small))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
 
 
 @unittest.skipUnless(HAVE_SHAPEFILE, "pyshp is not installed")
@@ -905,6 +1116,35 @@ class BuildTests(unittest.TestCase):
         self.assertFalse(verdict["ok"])
         self.assertIn(f"hail/base/index.json is the shared format ({b.FORMAT_INDEX})",
                       [c["check"] for c in verdict["checks"] if not c["pass"]])
+
+
+class RelativeStorePathTests(unittest.TestCase):
+    """The monthly and daily jobs pass --store as a relative path (store), from the working directory. verify must find each
+    band file under that folder. Joining a glob result to the store a second time read store/store/... and crashed."""
+
+    def test_verify_with_a_relative_store_reads_every_band_file(self):
+        import contextlib
+        tmp = Path(tempfile.mkdtemp(prefix="basemap2-relative-"))
+        here = os.getcwd()
+        try:
+            cache = tmp / "cache"
+            stage_cache(cache)
+            make_store(tmp / "store", box_tiles())
+            b.build(tmp / "store", cache, offline=True, box=TEST_BOX)
+            os.chdir(tmp)
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                code = b.main(["verify", "--store", "store", "--cache", "cache"])
+            os.chdir(here)
+            result = json.loads(out.getvalue())
+            self.assertEqual([c["check"] for c in result["checks"] if c["pass"] is False], [], "the checks that failed")
+            self.assertEqual(code, 0)
+            checks = {c["check"]: c for c in result["checks"]}
+            self.assertEqual(checks["every band B cell has a file"]["state"], "passed")
+            self.assertEqual(checks["every band C cell has a file"]["state"], "passed")
+        finally:
+            os.chdir(here)
+            shutil.rmtree(tmp, ignore_errors=True)
 
 
 class NameAndScopeTests(unittest.TestCase):

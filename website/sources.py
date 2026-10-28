@@ -558,16 +558,20 @@ CONTRACTS = {
     "base_water": {
         "name": "U.S. Geological Survey National Hydrography Dataset, named lakes and rivers",
         "request": "hydro.nationalmap.gov, nhd map service: small scale lines (layer 4, drainage 100 km2 and up) and areas (layer 10, "
-                   "0.02 km2 and up); large scale lines (layer 6) and areas (layer 12) for each 1 degree cell that holds a listed "
-                   "tile, pages of 250 features; a query the service times out on (HTTP 504) is split into quarters, twice at most; "
-                   "named features only",
+                   "0.02 km2 and up) for the state, pages of 2,000 features, two tries and at most 120 seconds a try; large scale lines (layer 6) and areas (layer 12) for each "
+                   "1 degree cell that holds a listed tile, pages of 250 features; a cell query the service times out on (HTTP 504) is "
+                   "split into quarters, twice at most; named features only",
         "units": "Lines and rings in longitude and latitude (WGS 84), 5 decimals. Drainage area in km2, length in km, lake area in km2. "
                  "Feature ids are the OBJECTID.",
-        "timing": "The service as it stands when a page is requested. Each page is cached. The monthly job requests only the large-scale "
+        "timing": "The service as it stands when a page is requested. Each page is cached. The monthly job requests only the state pages and the large-scale "
                   "cells missing from the cache and stops requesting at its deadline: a request that would start after the deadline is "
-                  "not made, and the cells it leaves are listed with the reason 'deadline'. After a statewide online run in which no "
+                  "not made, and the cells it leaves are listed with the reason 'deadline'. A request still waiting for its response 90 seconds after "
+                  "the deadline is cut. After a statewide online run in which no "
                   "request failed, the cache keeps the current cycle of each source and deletes the older files (the count is in the index).",
-        "missing": "A cell whose water request still does not load after the quarter split, or is stopped by the deadline, leaves its "
+        "missing": "A state page of the small scale lines or areas that does not load after its two tries (each waits at most 120 seconds) is skipped, and the lakes and "
+                   "rivers on it are missing. Up to two pages in a row are skipped; the next page that does not load ends that layer's "
+                   "query. The index names the source, so bands A to C show as partial. "
+                   "A cell whose water request still does not load after the quarter split, or is stopped by the deadline, leaves its "
                    "tiles unbuilt: no shard is written, and the index lists the cells and their reasons. Where a tile has no band D "
                    "shard, the browser keeps drawing band C's lakes and rivers at zoom 13 and up, and the sheet's water line for that "
                    "area reads 'Detailed water and local parks: Data unavailable for this area in this update. This is not an all-clear.' "
