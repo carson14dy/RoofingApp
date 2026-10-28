@@ -5984,21 +5984,66 @@
 
   // ------------------------------------------------------------------ the map's one credit control (B3 and B6 source lines)
 
-  /** The map's one attribution control (bottom right, no prefix): the source lines of every layer go in it (B3's from
-      data/map.json "hail".attribution, B6's from data/base.json). It is made on first use; the lift above the bottom band and
-      the two observers are set up once, with it. A line is escaped by its caller. The band changes height with its contents
-      (a source line, a layer, a turn, the toast) and the screen, so it is measured again when it changes, and so is the
-      line's own height. */
-  var creditCtl = null;                       // the attribution control, made by creditControl on first use
+  /** The map's one credit control (bottom right): the source lines of every layer go in it (B3's from data/map.json
+      "hail".attribution, B6's from data/base.json). It is folded to one button (PW.credits_show, the page's words) that opens
+      the lines in place (D147: the lines covered a third of a phone's map), so its height does not change as lines come and
+      go and the fit keeps the same room; the lines are plain text and take no taps (map.css). It keeps Leaflet's attribution
+      control's addAttribution and removeAttribution (a line is counted, so a line two layers share stays until both go) and
+      its _attributions for the test hook. Made on first use; the lift above the bottom band and the observers are set up
+      once, with it. A line is escaped by its caller. */
+  var creditCtl = null;                       // the credit control, made by creditControl on first use
+  var CreditControl = L.Control.extend({
+    options: { position: "bottomright" },
+    onAdd: function () {
+      var box = L.DomUtil.create("div", "leaflet-control-attribution credits");
+      this._attributions = {};
+      this._open = false;
+      this._btn = L.DomUtil.create("button", "credits-toggle", box);
+      this._btn.type = "button";
+      this._btn.setAttribute("aria-expanded", "false");
+      this._btn.setAttribute("aria-controls", "credit-lines");
+      this._lines = L.DomUtil.create("div", "credits-lines", box);
+      this._lines.id = "credit-lines";
+      this._lines.hidden = true;
+      L.DomEvent.disableClickPropagation(box);
+      L.DomEvent.on(this._btn, "click", this.toggle, this);
+      this._update();
+      return box;
+    },
+    addAttribution: function (text) {
+      if (!text) return this;
+      this._attributions[text] = (this._attributions[text] || 0) + 1;
+      return this._update();
+    },
+    removeAttribution: function (text) {
+      if (!text || !this._attributions[text]) return this;
+      this._attributions[text]--;
+      return this._update();
+    },
+    toggle: function () {
+      this._open = !this._open;
+      return this._update();
+    },
+    _update: function () {
+      var lines = Object.keys(this._attributions).filter(function (k) { return this._attributions[k] > 0; }, this);
+      this._lines.innerHTML = lines.join(", ");
+      this._lines.hidden = !this._open;
+      this._btn.textContent = this._open ? PW.credits_hide || "" : PW.credits_show || "";
+      this._btn.setAttribute("aria-expanded", this._open ? "true" : "false");
+      this._btn.hidden = !lines.length;
+      L.DomUtil[this._open ? "addClass" : "removeClass"](this._lines.parentNode, "is-open");   // the box (onAdd runs before _container is set)
+      return this;
+    }
+  });
 
   function creditControl() {
     if (creditCtl || !map) return creditCtl;
-    creditCtl = L.control.attribution({ prefix: false, position: "bottomright" }).addTo(map);
+    creditCtl = new CreditControl().addTo(map);
     if (window.ResizeObserver) {
       var band = new ResizeObserver(creditLift);
       band.observe(el.bottom);
       band.observe(el.canvas);
-      new ResizeObserver(refitForBanner).observe(creditCtl.getContainer());   // more text, more lines: the room the fit keeps (noteRoom)
+      new ResizeObserver(refitForBanner).observe(creditCtl.getContainer());   // opened or folded: the room the fit keeps (noteRoom)
     } else window.addEventListener("resize", creditLift);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(creditLift);   // the band is measured in its own fonts
     creditLift();
@@ -7112,7 +7157,7 @@
     var block = historyBlock(k, base).block;
     if (!block || !block.url || !block.bounds) return null;
     var pic = { loaded: false, layer: L.imageOverlay(block.url, block.bounds, { pane: "history", interactive: false, className: "b6-picture" }) };
-    pic.layer.on("load", function () { pic.loaded = true; b6KeysSoon(); });
+    pic.layer.on("load", function () { pic.loaded = true; renderKeys(); });
     pic.layer.on("error", function () { b6Fail([k], sheetWords().picture_failed); });
     return pic;
   }

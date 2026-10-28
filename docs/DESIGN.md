@@ -962,6 +962,7 @@ The minimum zooms, by feature:
 | Recent radar hail, `hail/recent/cells.json` | none set | 1,718 bytes; 64 cells |
 | First paint, `data/map.json` | 163,840 bytes raw (D82(a)) | 128,222 bytes raw for the whole file on the history-flag build with the live feeds (2026-10-26, the final modules); 116,336 bytes on the same day's offline build; both under the gate |
 | Second data file, `data/base.json` | within the page budget (D125(d)) | 33,526 bytes raw for the whole file (the final modules, 2026-10-26) |
+| Terrain tiles of the first view (the fitted Montana view), listed apart (D147(b)) | 200,000 bytes gzip | S2_TERRAIN_FIGURE |
 | Phone view, zoom 15 over Billings | 700,000 bytes gzip (D82(b)) | 681,569 bytes gzip on 2026-10-25, before the B6 layers are drawn; 706,562 on the options sheet's first live preview (run 139, 2026-10-27), over the budget; 667,485 on the same store after the compact tile sets (D144), and 672,551 on the branch's live preview (run 144, live feeds) |
 | Monthly terrain step | 25-minute cap (1,500 s), with `--refresh-descriptions` (D128(f)); 60 s request timeout (D112(b), D117(a)) | cold run 1,175 s for 1,818 requests |
 
@@ -1001,6 +1002,25 @@ The relief has no palette. `RENDER_RULE` in `website/terrain.py` is the service'
 | 4 | 75 to 99 days | `#f2843a` |
 | 5 | 100 to 124 days | `#d6452f` |
 | 6 | 125 days or more | `#9e1c2b` |
+
+`ZONE_WIND_CLASSES` and `ZONE_FLOOD_CLASSES` in `website/history_layers.py` (the Wind and Flood chips, S2, D147(a): each zone is filled by the class of its sum of counted products over the layer's measures, `ZONE_LAYERS`; `ZONE_ALPHA` 140, about 0.55 of 255; the first class has no fill, and a zone with no count is dashed and unfilled with the key row "No count for this zone: Data unavailable"):
+
+| Layer | Class | Words | Hex |
+|---|---|---|---|
+| Wind (high wind warnings, high wind watches, wind advisories) | 0 | none in the archive files read | none |
+| | 1 to 24 | 1 to 24 products | `#e9e4f6` |
+| | 25 to 49 | 25 to 49 products | `#c9bbea` |
+| | 50 to 99 | 50 to 99 products | `#9b84d1` |
+| | 100 or more | 100 products or more | `#6a4fb0` |
+| Flood (flood watches, warnings and advisories, flash flood watches and warnings) | 0 | none in the archive files read | none |
+| | 1 to 14 | 1 to 14 products | `#dce9f7` |
+| | 15 to 29 | 15 to 29 products | `#abc9eb` |
+| | 30 to 49 | 30 to 49 products | `#6f9fd6` |
+| | 50 or more | 50 products or more | `#2f6db5` |
+
+On the store of 2026-10-27 the sums run from 8 to 187 (wind) and 9 to 84 (flood) over the 83 current zones, so each class holds zones. The classes are an S2 choice for the owner to veto (D147(a)).
+
+`DRAW` in `website/terrain.py` (the terrain's drawing rule, S2): the tint at opacity 0.9 under the shading at 0.45 (the browser multiplies the shading into the tint, map.css), both times 0.6 at zoom 11 and 0.3 at zoom 12 (the tiles stop at zoom 10 and are stretched there), and off from zoom 13 (D115(a), D109(a)). The browser requests a tile only when `terrain.set` in data/base.json lists it (the 881-tile set as rows of column runs, `compact_set`) and the build does not list it as missing; any other tile is blank, so no request leaves for a file the store does not hold. The terrain is not drawn in dark mode (D115(g)) nor while Imagery is on, and the Montana land fill goes transparent while it shows.
 
 The bubble has no colour constant. Its glyph is `DASH` ("--") and its missing-value text is `UNAVAILABLE_TEXT` ("Data unavailable") in `website/labels.py`; the bubble's colours are style.css roles, set with the browser (B6-3).
 
@@ -1070,7 +1090,7 @@ On a phone the sheet is a bottom sheet; from 640 px wide it is a 380 px panel. I
 
 **13.7 Labels, type and credits.** The browser draws every map label at the site's type scale, 13 px at least. Towns keep the hierarchy of section 8, and each town's label side comes from `towns.json`. Each credit line names the party the terms ask for (D115(d)) and reads "Source: ..." or "... data courtesy of ..." (D113(a)). The exact lines are held by the modules (`basemap2.CREDIT`, the landmark sources, the terrain sources and the history layers' outline credit); the About page quotes one sentence per source. The parties are: U.S. Census Bureau; USDA Forest Service; U.S. Geological Survey; Natural Earth; National Center for Education Statistics; Federal Aviation Administration; Iowa State University (Iowa Environmental Mesonet); NOAA; and the Multi-Resolution Land Characteristics Consortium.
 
-**13.8 Status.** The Python side of B6 is on `main` (P1 to P4). Of the browser (B6-3), the options sheet (13.6) is built: its chips set their states, their legend lines and the address, and the Layers button of the Veor home page opens it inside the map's frame (section 14, D145). The drawing of the tiles, the bands, the landmark dots, the pictures, the recent highlight and the bubbles is the next stage. The phone view with the B6 layers on is measured by the local smoke with the default layers (D125(e)); its figure after the compact tile sets is in 13.3 (D144).
+**13.8 Status.** The Python side of B6 is on `main` (P1 to P4). Of the browser (B6-3), the options sheet (13.6) is built: its chips set their states, their legend lines and the address, and the Layers button of the Veor home page opens it inside the map's frame (section 14, D145). Stage S2 (D147) draws the terrain tiles, the five-year hail and heat pictures and the Wind and Flood zone counts from data/base.json, with their key rows, their credit lines in the folded credit control and their failure states; the landmark dots and names, the recent highlight, the bubbles (S3, S4a) and the base map bands (S4b, which waits for band files on main's store and the owner's budget decision) are the next stages. The phone view with the B6 layers on is measured by the local smoke with the default layers (D125(e)); the terrain tiles of the first view are listed apart against their own budget (D147(b)); the figures are in 13.3.
 
 *Why:* the owner's reference shows what a roofer needs in one view: where the place is, what the land and the water look like, and the weather figure on the house. The map keeps that behaviour and draws its cartography from public-domain sources, so every line on the map has a source the site can name, and a missing value says so.
 

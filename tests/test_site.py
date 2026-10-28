@@ -4937,7 +4937,9 @@ class MapBlocksForTheBrowser(unittest.TestCase):
     def test_the_budget_block_holds_the_phone_view_and_the_per_tile_file(self):                  # D66, D82(b): 700,000 bytes gzip
         from website import joins as jn
         self.assertEqual(self.hail_block()["budget"], {"phone_gzip_bytes": site.PHONE_GZIP_BUDGET,
-                                                       "tile_events_gzip_bytes": jn.TILE_EVENTS_BUDGET_GZIP})
+                                                       "tile_events_gzip_bytes": jn.TILE_EVENTS_BUDGET_GZIP,
+                                                       "terrain_first_view_gzip_bytes": site.TERRAIN_FIRST_VIEW_BUDGET})
+        self.assertEqual(site.TERRAIN_FIRST_VIEW_BUDGET, 200_000)       # D147(b): the first view's terrain tiles, listed apart
         self.assertEqual(self.hail_block()["budget"]["phone_gzip_bytes"], site.PHONE_GZIP_BUDGET)   # D88(r): the build's constant
         self.assertEqual(site.PHONE_GZIP_BUDGET, 700_000)                 # D82(b): restated with its reason, no cut
         self.assertEqual(jn.TILE_EVENTS_BUDGET_GZIP, 100_000)

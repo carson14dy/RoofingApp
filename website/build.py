@@ -1155,6 +1155,10 @@ def county_map_block(index: dict | None) -> dict:
 # tile membership sets are 80,186 bytes gzip (D66), so the budget is restated with that reason and no words or rows are cut.
 # The browser and the smoke read it from map.json hail.budget.
 PHONE_GZIP_BUDGET = 700_000
+# D147(b): the terrain tiles the first view fetches (the fitted Montana view, zooms 5 to 7) are pictures of the base map, listed
+# apart like the weather pictures (D70) with a budget of their own: 200,000 bytes gzip (measured 2026-10-28: about 68,000 at
+# 390 px and 161,000 at 1280 px). The zoom 15 view fetches none (terrain.DRAW off_from).
+TERRAIN_FIRST_VIEW_BUDGET = 200_000
 
 
 def b5_map_blocks(index: dict | None) -> dict:
@@ -1173,7 +1177,8 @@ def b5_map_blocks(index: dict | None) -> dict:
             "snow": snow_map_block(index), "stations": stations_map_block(index),
             "gauges": gauges_map_block(index), "county": county_map_block(index),
             # the sizes the viewer keeps to (B5-12, D30): the phone view's gzip total, and the largest per-tile events file
-            "budget": {"phone_gzip_bytes": PHONE_GZIP_BUDGET, "tile_events_gzip_bytes": jn.TILE_EVENTS_BUDGET_GZIP}}
+            "budget": {"phone_gzip_bytes": PHONE_GZIP_BUDGET, "tile_events_gzip_bytes": jn.TILE_EVENTS_BUDGET_GZIP,
+                       "terrain_first_view_gzip_bytes": TERRAIN_FIRST_VIEW_BUDGET}}
 
 
 TILE_PARTS = re.compile(r"r(\d{4})_c(\d{4})")
@@ -1488,6 +1493,9 @@ PAGE_WORDS = {
     "radar_reason": "radar: {detail}",
     "satellite_reason": "satellite: {detail}",
     "forecast_reason": "model forecast: {detail}",
+    # D147: the credit control is folded to one button that opens the source lines in place (map.js creditControl)
+    "credits_show": "Sources",
+    "credits_hide": "Hide sources",
 }
 # The sheet's words the browser needs before data/base.json has answered: its chips' reasons and notes, the waiting line
 # and the landmark list joins.

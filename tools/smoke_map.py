@@ -2295,11 +2295,20 @@ def b3_kind(url: str) -> str:
 def response_part(url: str) -> str:
     """Which part of the page a response belongs to, for the budget's split: the B3 files (b3_kind), the precipitation
     frames (map/frames/) or the shell and data (the page, its scripts and styles, the map data and the basemap)."""
+    path = "/" + urlsplit(url).path.lstrip("/")
     if b3_kind(url) != "other":
         return "B3 files"
-    if "/map/frames/" in "/" + urlsplit(url).path.lstrip("/"):
+    if "/map/frames/" in path:
         return "precipitation frames"
+    if is_terrain_tile(path):
+        return "terrain tiles"
     return "shell and data"
+
+
+def is_terrain_tile(path: str) -> bool:
+    """A terrain tile of the base map (hail/base/h/ or hail/base/l/; B6, D147(b)): a picture the first view fetches, listed
+    apart from the phone budget like the weather pictures, with its own budget (terrain_first_view_gzip_bytes)."""
+    return "/hail/base/h/" in path or "/hail/base/l/" in path
 
 
 def b3_open(browser, base: str, width: int, height: int, allow: tuple = (), listen=None):
@@ -2441,8 +2450,8 @@ def check_budget_and_pan(browser, base: str, data: dict) -> list[str]:
     seen: list = []
     ctx, page = b3_open(browser, base, 390, 844, listen=lambda r: seen.append(r))    # every response, from the first request
     b3_view(page, lat, lon, ADDRESS_GATE_ZOOM, settle_ms=2500)
-    sizes = {"shell and data": 0, "precipitation frames": 0, "B3 files": 0}
-    counts = {"shell and data": 0, "precipitation frames": 0, "B3 files": 0}
+    sizes = {"shell and data": 0, "precipitation frames": 0, "B3 files": 0, "terrain tiles": 0}
+    counts = {"shell and data": 0, "precipitation frames": 0, "B3 files": 0, "terrain tiles": 0}
     unread = 0
     for response in seen:
         part = response_part(response.url)
@@ -2463,11 +2472,19 @@ def check_budget_and_pan(browser, base: str, data: dict) -> list[str]:
     elif b3_and_shell >= budget:
         problems.append(f"the B3 files and the shell of a 390 px Billings view at zoom {ADDRESS_GATE_ZOOM} fetched "
                         f"{b3_and_shell} bytes gzip; the budget is {budget}")
+    # D147(b): the terrain tiles of the first view (the fitted Montana view; none at zoom 15) are listed apart, like the
+    # frames, against their own budget
+    terrain_budget = map_budget(data, "terrain_first_view_gzip_bytes")
+    if terrain_budget is not None and sizes["terrain tiles"] >= terrain_budget:
+        problems.append(f"the terrain tiles of the first view at 390 px fetched {sizes['terrain tiles']} bytes gzip; the budget "
+                        f"is {terrain_budget}")
     problems.append(f"note: 390 px Billings view at zoom {ADDRESS_GATE_ZOOM}: the B3 files plus the shell {b3_and_shell} bytes "
                     f"gzip against the budget of {budget} (B3 files {sizes['B3 files']} in "
                     f"{counts['B3 files']} files; shell and data {sizes['shell and data']} in {counts['shell and data']} "
                     f"files); the precipitation frames {sizes['precipitation frames']} bytes gzip in "
-                    f"{counts['precipitation frames']} files, a layer that predates B3, listed apart (page total {total})")
+                    f"{counts['precipitation frames']} files, a layer that predates B3, listed apart; the terrain tiles of the "
+                    f"first view {sizes['terrain tiles']} bytes gzip in {counts['terrain tiles']} files, listed apart against "
+                    f"their budget of {terrain_budget} (D147(b)) (page total {total})")
     ctx.close()
 
     ctx, page = b3_open(browser, base, 1280, 800)
@@ -2572,6 +2589,16 @@ def check_attribution(browser, base: str, data: dict) -> list[str]:
         lines.append(ADDRESS_ATTRIBUTION_START)
     ctx, page = b3_open(browser, base, 390, 844)
     page.wait_for_timeout(800)
+    # D147: the credit control is folded to one button on the first screen; a tap opens its lines in place
+    toggle = page.locator(".leaflet-control-attribution .credits-toggle")
+    if toggle.count():
+        box = toggle.bounding_box() or {"x": -1, "y": -1, "width": 0, "height": 0}
+        if box["x"] < 0 or box["y"] < 0 or box["x"] + box["width"] > 390 or box["y"] + box["height"] > 844 or box["height"] < 44:
+            problems.append(f"the credit control's button is not on the first screen at 390 px, 44 px tall ({box})")
+        toggle.click()
+        page.wait_for_timeout(300)
+        if page.evaluate("() => document.getElementById('credit-lines').hidden"):
+            problems.append("a tap on the credit control's button did not open its lines")
     where = page.evaluate("""() => { const out = {};
         const rendered = el => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
         out.keys = [...document.querySelectorAll('#legend-keys .key-line')].map(li => ({text: li.innerText,
@@ -2580,7 +2607,7 @@ def check_attribution(browser, base: str, data: dict) -> list[str]:
             box: s.getBoundingClientRect().toJSON(), shown: rendered(s), where: 'the legend note'}));
         const a = document.querySelector('.leaflet-control-attribution');
         out.control = a ? {text: a.innerText, box: a.getBoundingClientRect().toJSON(), shown: rendered(a),
-            where: 'the Leaflet attribution control'} : null;
+            where: 'the credit control (opened)'} : null;
         out.view = {w: innerWidth, h: innerHeight}; return out; }""")
     for line in lines:
         found = [item for item in where["keys"] + where["credits"] if line[:40] in item["text"]]
@@ -2697,8 +2724,8 @@ def check_addresses(browser, base: str, root: Path, data: dict, shots: Path | No
 B6_MONTANA = (46.9, -110.4)                 # a point in the middle of Montana: inside the terrain set at the zoom below
 B6_TERRAIN_ZOOM = 7
 KEY_ROWS = "() => [...document.querySelectorAll('#legend-keys li')].map(li => li.textContent.trim())"
-ATTRIBUTION_TEXT = """() => { const a = document.querySelector('.leaflet-control-attribution');
-    return a ? a.innerText : ''; }"""
+ATTRIBUTION_TEXT = """() => { const a = document.querySelector('.leaflet-control-attribution .credits-lines')
+    || document.querySelector('.leaflet-control-attribution'); return a ? a.textContent : ''; }"""
 LAND_FILL = """() => { const p = document.querySelector('.leaflet-container .leaflet-pane svg path.bm-land.bm-mt');
     return p ? getComputedStyle(p).fillOpacity : null; }"""
 TERRAIN_PANE = """() => { const p = document.querySelector('.leaflet-terrain-pane');
@@ -2874,6 +2901,11 @@ def check_b6_pictures(browser, base: str, doc: dict, shots: Path | None) -> list
         shown = page.evaluate(PICTURE_IMG)
         if not shown or shown[0] != pic["width"]:
             problems.append(f"the {key} picture is not drawn at its width {pic['width']} (naturalWidth {shown})")
+        try:        # the rows follow the picture's load
+            page.wait_for_function("(w) => [...document.querySelectorAll('#legend-keys li')].some(li => li.textContent.includes(w))",
+                                   arg=pic["classes"][0]["word"], timeout=5000)
+        except Exception:                                                  # noqa: BLE001 - reported below
+            pass
         rows = page.evaluate(KEY_ROWS)
         want = [c["word"] for c in pic.get("classes", [])]
         if pic.get("words", {}).get("transparent"):
@@ -4571,7 +4603,7 @@ def check_every_layer(browser, base: str, data: dict) -> list[str]:
     totals: dict[str, int] = {}
     for part, size in sizes.values():
         totals[part] = totals.get(part, 0) + size
-    scope = sum(size for part, size in totals.items() if part != "frames")
+    scope = sum(size for part, size in totals.items() if part not in ("frames", "terrain tiles"))   # D147(b): the terrain apart
     if unread:
         problems.append(f"{unread} responses could not be read to measure them")
     phone = map_budget(data, "phone_gzip_bytes")                # map.json's phone budget (D66, D75)
@@ -4593,6 +4625,8 @@ def layer_part(url: str) -> str:
     path = "/" + urlsplit(url).path.lstrip("/")
     if "/map/frames/" in path:
         return "frames"
+    if is_terrain_tile(path):
+        return "terrain tiles"
     if b3_kind(url) != "other":
         return "B3 files"
     if "/hail/live/" in path:

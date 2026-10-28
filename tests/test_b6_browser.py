@@ -42,7 +42,14 @@ class B6Browser(unittest.TestCase):
         js = read(MAP_JS)
         self.assertLess(js.index("function creditControl("), js.index(B3_BEGIN))
         self.assertLess(js.index("function creditLift("), js.index(B3_BEGIN))
-        self.assertEqual(js.count("L.control.attribution("), 1, "one attribution control: creditControl makes it")
+        self.assertEqual(js.count("L.control.attribution("), 0, "the credit control is the page's own (CreditControl)")
+        self.assertEqual(js.count("new CreditControl()"), 1, "one credit control: creditControl makes it")
+        ctl = body(js, "var CreditControl = L.Control.extend({", "function creditControl()")
+        for name in ("addAttribution:", "removeAttribution:", "toggle:", "_attributions", "PW.credits_show", "PW.credits_hide",
+                     '"aria-expanded"', "credits-toggle", "credits-lines"):
+            self.assertIn(name, ctl, name)
+        self.assertEqual(site.PAGE_WORDS["credits_show"], "Sources")
+        self.assertEqual(site.PAGE_WORDS["credits_hide"], "Hide sources")
         b3 = body(js, "function b3Credits()", "function b3Queue()")
         self.assertIn("creditControl().addAttribution(esc(line))", b3)
         self.assertNotIn("b3Lift", js, "the lift is creditLift (the one control's helper)")
@@ -123,6 +130,7 @@ class B6Browser(unittest.TestCase):
         rule = re.search(r"\.leaflet-container \.leaflet-control-attribution \{([^}]*)\}", css)
         self.assertIsNotNone(rule)
         self.assertIn("pointer-events: none;", rule.group(1))
+        self.assertIn(".credits-toggle { pointer-events: auto; min-height: 44px;", css)   # the one part that takes taps
 
     def test_the_map_script_names_no_sentence_of_the_sheet_outside_the_b6_section(self):
         js = read(MAP_JS)

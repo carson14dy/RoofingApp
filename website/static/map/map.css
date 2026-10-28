@@ -219,6 +219,7 @@ a { color: inherit; }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.hatch-ground { fill: var(--map-bg); }     /* the paper under the stripes: the terrain tiles (B6) reach past the pictures' box and must not show there */
 .hatch-stripe { fill: var(--hatch-out); }
 [hidden] { display: none !important; }
 
@@ -838,6 +839,14 @@ a { color: inherit; }
    1280 px it starts at x 720). map.js creditLift sets --credit-lift: the line sits just above the bottom band (the note, toast,
    chip and timeline), not on top of it. The lines are plain text, so the control takes no taps (the map under them does). */
 .leaflet-container .leaflet-control-attribution { white-space: normal; max-width: min(560px, calc(100% - 16px)); font-size: 11px; line-height: 1.35; margin-bottom: var(--credit-lift, 0px); pointer-events: none; }
+/* the fold (D147): the control is one button until it is opened; the button is the one part that takes taps, 44 px tall; the
+   lines open above it inside the same box and keep their words */
+.leaflet-container .leaflet-control-attribution.credits { display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 4px; padding: 0 6px 0 8px; }
+.leaflet-container .leaflet-control-attribution.credits.is-open { padding-top: 6px; }
+.credits-toggle { pointer-events: auto; min-height: 44px; padding: 0 4px; margin: 0; border: 0; background: transparent; color: var(--ink);
+  font: inherit; font-weight: 700; font-size: 12px; text-decoration: underline; cursor: pointer; }
+.credits-toggle:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+.credits-lines { text-align: left; }
 
 /* find an address (map.html #find, map.js b3Search): a glass panel with one field and a button, 44 px to tap */
 .find { display: grid; gap: 6px; padding: 10px 12px; border-radius: 16px; pointer-events: auto; font-size: 14px; }
