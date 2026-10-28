@@ -96,16 +96,20 @@ class WebsitePlan(unittest.TestCase):
 
 @needs_yaml
 class StormFlag(unittest.TestCase):
-    """--storm-layers (radar echo tops) is passed on branch builds only, and the storm tests run in CI."""
+    """--storm-layers (radar echo tops) is passed on the branch build line and, since D146, on main's own line; the
+    storm tests run in CI."""
 
     def setUp(self):
         self.text = (ROOT / ".github/workflows/website.yml").read_text()
 
-    def test_only_the_branch_build_line_passes_the_flag(self):
+    def test_both_build_lines_pass_the_flag_and_only_the_branch_line_requires_live_sources(self):
         build_args = [line for line in self.text.splitlines() if "args+=(" in line and "--storm-layers" in line]
-        self.assertEqual(len(build_args), 1)
+        self.assertEqual(len(build_args), 2, "the branch line and main's line (D146: every layer is public from main)")
         self.assertIn('if [ "$GITHUB_REF" != "refs/heads/main" ]', build_args[0])
         self.assertIn("--require-live --storm-layers", build_args[0])
+        self.assertIn('if [ "$GITHUB_REF" = "refs/heads/main" ]', build_args[1])
+        self.assertIn("args+=(--hail-history --hail-addresses --storm-layers)", build_args[1])
+        self.assertNotIn("--require-live", build_args[1])
         self.assertFalse(any("website.build" in line and "--storm-layers" in line for line in self.text.splitlines()))
 
     def test_the_storm_tests_run_in_the_unittest_line_and_the_path_filter(self):
@@ -274,9 +278,9 @@ class SmokeFlags(unittest.TestCase):
 
     def test_the_build_line_keeps_the_history_and_address_flags_and_passes_no_local_store(self):
         build = [line for line in self.lines if "args+=(" in line and "--hail-history" in line]
-        self.assertEqual(len(build), 2, "the branch line and main's own line (D59: main passes --hail-history alone)")
+        self.assertEqual(len(build), 2, "the branch line and main's own line (D59, D146: main passes every layer flag)")
         self.assertIn("--require-live --storm-layers --hail-history --hail-addresses", build[0])
-        self.assertIn("args+=(--hail-history)", build[1])
+        self.assertIn("args+=(--hail-history --hail-addresses --storm-layers)", build[1])
         self.assertNotIn("--require-live", build[1])
         self.assertNotIn("--hail-store", self.text)
 

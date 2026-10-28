@@ -161,15 +161,16 @@ jobs:
           set -o pipefail   # the build's exit code must reach the step: without this, tee's 0 hid a --require-live failure
           args=(--out _site)
           if [ -n "$PAGES_URL" ]; then args+=(--previous "$PAGES_URL"); fi
-          # Branch pushes also read NOAA radar echo tops (text only), the GOES satellite picture, the five-year hail
-          # history (its store is downloaded) and the address, street and outline layers (B3, --hail-addresses); off
-          # on main until reviewed. They fail on any failed source.
+          # Branch pushes read NOAA radar echo tops (text only), the GOES satellite picture, the five-year hail
+          # history (its store is downloaded) and the address, street and outline layers (B3, --hail-addresses), and
+          # fail on any failed source (--require-live).
           if [ "$GITHUB_REF" != "refs/heads/main" ]; then args+=(--require-live --storm-layers --hail-history --hail-addresses); fi
-          # On main at the owner's decision of 2026-10-21: the hail history is public. Its store download is a source
-          # like any other, so a failed download leaves the pages saying the history is unavailable (never an
-          # all-clear) and the rest of the site still publishes; main's first builds after the merge say so until
-          # main's first store job publishes its asset (about 11 minutes).
-          if [ "$GITHUB_REF" = "refs/heads/main" ]; then args+=(--hail-history); fi
+          # On main at the owner's decisions of 2026-10-21 (the hail history, D34) and 2026-10-28 (the address, street and
+          # outline layers and the storm layers, D146): every layer is public. The store download is a source like any
+          # other, so a failed download leaves the pages saying the history is unavailable (never an all-clear) and the
+          # rest of the site still publishes; a storm source that fails shows its own problem line. main never passes
+          # --require-live: a failed source is said on the page, not a failed publish.
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then args+=(--hail-history --hail-addresses --storm-layers); fi
           # Each build reads its own branch's store asset, named as the store job names it (main's is
           # hail-store-main.tar.gz), and a branch with no asset of its own reads main's; a branch job never writes
           # what main reads.

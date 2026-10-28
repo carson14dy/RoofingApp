@@ -1103,6 +1103,14 @@ recorded in DESIGN.md section 14: a reload is still a reload for a screen reader
 four decimals; the sidebar gains Storm reports and About, which the mockup did not show. The branch was merged onto the B6 browser branch on 2026-10-27 (with the
 section and decision renumbered from 10 and D35, which `main` had already used); merging into `main` is a separate decision.
 
+**D146 · Every layer is public from `main`, and the merged branch goes to `main` (2026-10-28).** Carson, 2026-10-28, asked how to get all of it to work on `main` and answered the three steps put to him: "1. Go ahead 2. you have my approval and permission for everything. So step 2 is on. 3 Make sure veor works." So: (1) the branch `claude/dreamy-turing-2s0q04` (the options sheet S1, the compact tile sets D144 and the Veor shell D145) merges into `main` by pull request; (2) `main`'s build passes `--hail-addresses` and `--storm-layers` beside `--hail-history`, with the address text on (the default, D35), so the address dots, the streets, the building outlines and the address search, the radar echo tops, the GOES picture and the hail swath layers are public; (3) the acceptance check is the Veor shell working on the published site, checked in Chromium after the deploy, and the drawing stages S2 to S4 follow on a branch with the same working method (haiku workers, Fable for the architecture, the verification and the schedule).
+
+- *What the approval covers.* The About text of the address layers (D36) and the go-live itself. It does not answer the counsel readings: items 1 to 20 (D36, D37) and 21 to 24 (B6) stay listed as open in ROADMAP, and whether the storm layers may reach homeowners, adjusters or insurers stays an open question there. The layers go live with those open, at the owner's word.
+- *What changed.* `.github/workflows/website.yml`: main's build line passes the three flags, and its comment says so; `tests/test_website_workflow.py` pins both build lines; `AGENTS.md` rule 1; the README's flag lines; ROADMAP items 18 and 19 and the B3 and B4 sections.
+- *Measured.* The branch preview with every flag measured the phone view at 672,551 bytes gzip against the 700,000 budget (run 144, 2026-10-27). Main's store already carried the address (11,714 files), outline (5,615) and street (4,427) shards from its daily job, so the first main build after the merge draws them. Main never passes `--require-live`: a storm or store source that fails is said on the page, never a failed publish.
+
+*Why:* the owner's call. The layers were built, tested and previewed with every flag on since B3 and B4; what held them was the review, and the owner chose to go live with the review open rather than wait for it.
+
 ## Gotchas found the hard way
 - An absolutely positioned element escapes a scroll box that isn't its containing block: the
   visually hidden "(over limit)" words in the hourly table widened every town page with a flagged

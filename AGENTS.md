@@ -84,7 +84,7 @@ python tools/smoke_map.py _site --history --store store   # B5: the sheet's summ
 
 ## Hard rules
 1. **Shipping.** Website: merging to `main` publishes. Keep `main` green; push to a branch first
-   (the Website workflow builds branch pushes against live data) and check the pages in a browser. The hail history flag `--hail-history` is on for the public site from `main` (the owner's decision of 2026-10-21); `--hail-addresses` stays off on `main` until the owner approves its terms and counsel answers them (D34, D36).
+   (the Website workflow builds branch pushes against live data) and check the pages in a browser. Every layer flag is on for the public site from `main`: `--hail-history` (the owner's decision of 2026-10-21, D34), and `--hail-addresses` and `--storm-layers` (the owner's approval of 2026-10-28, D146; the counsel items of D36, D37 and B6 stay listed as open in `docs/ROADMAP.md`).
 2 and 3. Retired with the desktop app (D143); the numbers stay so older citations read.
 4. **Python first.** Python builds all data and pages (Jinja; the radar and model frames in
    `website/gridded.py`). Hand-written JavaScript only for browser-only needs, documented inline

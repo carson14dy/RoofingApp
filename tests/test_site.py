@@ -2085,10 +2085,11 @@ class HailHistory(unittest.TestCase):
         self.assertEqual(len(args), 2)
         self.assertIn('if [ "$GITHUB_REF" != "refs/heads/main" ]', args[0])
         self.assertIn("--require-live --storm-layers --hail-history", args[0])
-        # main passes the flag on its own (at the owner's decision of 2026-10-21) and never --require-live: a failed
-        # store download leaves the pages saying the history is unavailable while the rest of the site publishes.
+        # main passes every layer flag on its own (--hail-history at the owner's decision of 2026-10-21; --hail-addresses
+        # and --storm-layers at the owner's approval of 2026-10-28, D146) and never --require-live: a failed store
+        # download leaves the pages saying the history is unavailable while the rest of the site publishes.
         self.assertIn('if [ "$GITHUB_REF" = "refs/heads/main" ]', args[1])
-        self.assertIn("args+=(--hail-history)", args[1])
+        self.assertIn("args+=(--hail-history --hail-addresses --storm-layers)", args[1])
         self.assertNotIn("--require-live", args[1])
         # every build reads its own branch's asset, named as the store job names it
         self.assertIn('export HAIL_STORE_ASSET="hail-store-$(echo "$GITHUB_REF_NAME" | tr \'/\' \'-\').tar.gz"', text)
@@ -3592,9 +3593,9 @@ class HailAddresses(unittest.TestCase):
     def test_the_workflow_previews_pass_the_addresses_flag_and_the_tests_and_smoke_run(self):
         text = (ROOT / ".github" / "workflows" / "website.yml").read_text(encoding="utf-8")
         args = [line for line in text.splitlines() if "args+=(" in line and "--hail-history" in line]
-        self.assertEqual(len(args), 2, "the branch line and main's own line (D59: main passes --hail-history alone)")
+        self.assertEqual(len(args), 2, "the branch line and main's own line (D146: main passes every layer flag)")
         self.assertIn("--require-live --storm-layers --hail-history --hail-addresses", args[0])
-        self.assertIn("args+=(--hail-history)", args[1])
+        self.assertIn("args+=(--hail-history --hail-addresses --storm-layers)", args[1])
         unit = [line for line in text.splitlines() if "python -m unittest" in line]
         self.assertEqual(len(unit), 2, "the offline unit step and the real-store parity step (D88(a))")
         self.assertIn("tests.test_streets", unit[0])
