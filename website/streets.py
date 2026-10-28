@@ -1733,7 +1733,8 @@ def describe_streets(index: dict | None = None) -> dict:
 
 
 def map_data_streets(index: dict) -> dict:
-    """The map.json["hail"]["streets"] block: the shard pattern and the split map, the class widths and zoom rules (D27),
+    """The map.json["hail"]["streets"] block: the shard pattern, the tiles (build.b3_map_blocks turns the list into the
+    compact tile_split, D40) and the split map, the class widths and zoom rules (D27),
     the abbreviation table, and the sentences for the source built (Python fills them, the browser only places them)."""
     block = index.get(INDEX_KEY) if isinstance(index, dict) else None
     zoom = {"arterials_from": ZOOM["arterials"], "local_from": ZOOM["local"], "names_from": ZOOM["names"],

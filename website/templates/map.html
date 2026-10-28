@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1b1e22" media="(prefers-color-scheme: dark)">
-<title>Map · Montana Hail Watch</title>
+<title>Map · Veor</title>
 <meta name="description" content="Montana weather map: the past hour of NOAA radar, the HRRR model forecast, temperature and wind gusts, NWS warning outlines, storm reports and the NWS forecast for each town.">
 <link rel="icon" href="{{ root }}static/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="{{ root }}static/icon-180.png">
@@ -24,9 +24,19 @@
    page address, which only the browser sees (AGENTS.md rule 4). Setting the class before the
    page paints stops the full-screen controls flashing inside the card. map.js does the rest. */
 if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.add("is-card");
+/* Embedded mode (?embed=1, the full map inside the Veor home page concept): the same map, but its links
+   open in the whole window, not inside the home page's frame, and map.css hides the close and Layers
+   buttons, which the home page's sidebar and top bar replace. */
+else if (/[?&]embed=1(&|$)/.test(location.search)) {
+  document.documentElement.classList.add("is-embed");
+  document.head.appendChild(Object.assign(document.createElement("base"), { target: "_top" }));
+}
 </script>
 <noscript><style>.top .corners, .bottom, .card-ui { display: none !important; }</style></noscript>
 </head>
+{% macro tick() %}<svg class="mo-tick" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 8.5l3.2 3L13 4.5"/></svg>{% endmacro %}
+{% macro chip(group, key, label, pressed, legend, reason, note, name) %}<button type="button" class="mo-chip" data-group="{{ group }}" data-key="{{ key }}" aria-pressed="{{ 'true' if pressed else 'false' }}"{% if legend %} data-legend="{{ legend }}"{% endif %}{% if reason %} data-reason="{{ reason }}"{% endif %}{% if name %} data-name="{{ name }}"{% endif %}><span class="mo-label">{{ label }}</span>{% if note %}<span class="mo-note">{{ note }}</span>{% endif %}{{ tick() }}</button>{% endmacro %}
+{% macro card(group, key, label, pressed, legend) %}<button type="button" class="mo-card" data-group="{{ group }}" data-key="{{ key }}" aria-pressed="{{ 'true' if pressed else 'false' }}"{% if legend %} data-legend="{{ legend }}"{% endif %}><span class="mo-label">{{ label }}</span>{{ tick() }}</button>{% endmacro %}
 {% set v = built.strftime('%Y%m%d%H%M') %}
 <body class="mapapp" data-built="{{ built_ms }}">
 <svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
@@ -130,40 +140,13 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
 
       <div class="corner-right" id="buttons">
         <div class="glass stack">
-          <button type="button" class="icon-btn" id="btn-layers" aria-label="Layers" aria-haspopup="dialog" aria-expanded="false" aria-controls="layers">
+          <button type="button" class="icon-btn" id="btn-layers" aria-label="Layers" aria-haspopup="dialog" aria-expanded="false" aria-controls="map-options">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M12 3.2 21.4 8.4 12 13.6 2.6 8.4Z"/><path class="fill" d="M4.6 11.6 12 15.7l7.4-4.1 2 1.1-9.4 5.2-9.4-5.2Z"/></svg>
           </button>
           <button type="button" class="icon-btn" id="btn-locate" aria-label="Show my location">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 3.8 3.9 10.6l7.2 2.3 2.3 7.2Z"/></svg>
           </button>
         </div>
-        <section class="glass popover" id="layers" role="dialog" aria-labelledby="layers-title" hidden>
-          <h2 class="pop-title" id="layers-title">Map layers</h2>
-          <fieldset class="choices">
-            <legend class="visually-hidden">Weather layer</legend>
-            <label class="choice"><input type="radio" name="layer" value="precip"><span class="swatch sw-precip" aria-hidden="true"></span><span class="choice-text">Precipitation</span></label>
-            <label class="choice"><input type="radio" name="layer" value="temp"><span class="swatch sw-temp" aria-hidden="true"></span><span class="choice-text">Temperature</span></label>
-            <label class="choice"><input type="radio" name="layer" value="wind"><span class="swatch sw-wind" aria-hidden="true"></span><span class="choice-text">Wind gusts</span></label>
-{% if storm_layers %}            <label class="choice"><input type="radio" name="layer" value="satellite"><span class="swatch sw-satellite" aria-hidden="true"></span><span class="choice-text">Satellite</span></label>
-            <label class="choice"><input type="radio" name="layer" value="hail_60"><span class="swatch sw-hail_60" aria-hidden="true"></span><span class="choice-text">Hail, last hour</span></label>
-            <label class="choice"><input type="radio" name="layer" value="hail_1440"><span class="swatch sw-hail_1440" aria-hidden="true"></span><span class="choice-text">Hail, last 24 hours</span></label>
-{% endif %}          </fieldset>
-          <fieldset class="choices base-choices">
-            <legend>Base map</legend>
-            <label class="choice"><input type="radio" name="base" value="map" checked><span class="choice-text">Map</span></label>
-            <label class="choice"><input type="radio" name="base" value="imagery"><span class="choice-text">Imagery<small>Aerial imagery with roads and names from USGS. Your IP address and the map area you view go to USGS while it is on.</small></span></label>
-          </fieldset>
-          <div class="toggles">
-            <label class="toggle"><span class="toggle-text">Warnings<small>NWS outlines</small></span><input type="checkbox" role="switch" id="tg-warnings" checked></label>
-            <label class="toggle"><span class="toggle-text">Storm reports<small>SPC, last 3 days</small></span><input type="checkbox" role="switch" id="tg-reports"></label>
-          </div>
-{% if hail_addresses %}          <div class="b3-keys" id="b3-keys">
-            <p class="legend-tap b3-head">Addresses, streets and building outlines</p>
-            <p class="legend-tap" data-layer="shapes">{{ b3.legend.shapes }}</p>
-            {% if not b3.outlines_loaded %}<p class="legend-tap" data-layer="dots">{{ b3.legend.dots }}</p>
-            {% endif %}<p class="legend-tap" data-layer="streets">{{ b3.legend.streets }}</p>
-          </div>
-{% endif %}        </section>
 {% if hail_addresses and address_text == 'on' %}
         <button type="button" class="glass round icon-btn find-open" id="btn-find" aria-label="{{ b3.form.title }}" title="{{ b3.form.title }}" aria-expanded="false" aria-controls="find">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.2"/><path d="M15.2 15.2 20 20"/></svg>
@@ -227,12 +210,118 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
     <div class="sheet-body" id="sheet-body"></div>
   </section>
 
+  <script type="application/json" id="map-words">{{ map_words | tojson }}</script>
+  <section class="sheet map-options" id="map-options" role="dialog" aria-modal="true" aria-labelledby="mo-title" hidden>
+    <header class="mo-head">
+      <svg class="mo-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="fill" d="M12 3.2 21.4 8.4 12 13.6 2.6 8.4Z"/><path class="fill" d="M4.6 11.6 12 15.7l7.4-4.1 2 1.1-9.4 5.2-9.4-5.2Z"/></svg>
+      <h2 class="mo-title" id="mo-title" tabindex="-1">{{ sheet.options_title }}</h2>
+      <button type="button" class="mo-close" id="mo-close" aria-label="{{ sheet.close_label }}">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
+    <div class="mo-body" id="mo-body">
+      <section class="mo-group" aria-labelledby="mo-base-h">
+        <h3 class="mo-h" id="mo-base-h">{{ sheet.base_heading }}</h3>
+        <div class="mo-cards" role="group" aria-labelledby="mo-base-h">
+          {{ card('base', 'map', sheet.map_card, true) }}
+          {{ card('base', 'imagery', sheet.imagery_card, false, sheet.legend_imagery) }}
+        </div>
+        <p class="mo-line" id="mo-base-line" hidden></p>
+      </section>
+
+      <section class="mo-group" aria-labelledby="mo-live-h">
+        <h3 class="mo-h" id="mo-live-h">{{ sheet.live_heading }}</h3>
+        <div class="mo-chips" role="group" aria-labelledby="mo-live-h">
+          {{ chip('live', 'precip', sheet.precipitation, true, sheet.legend_precipitation) }}
+          {{ chip('live', 'temp', sheet.temperature, false, sheet.legend_temperature) }}
+          {{ chip('live', 'wind', sheet.wind_gusts, false, sheet.legend_wind) }}
+{% if storm_layers %}          {{ chip('live', 'satellite', satellite_title, false) }}
+          {{ chip('live', 'hail_60', sheet.hail_last_hour, false, sheet.legend_hail_last_hour) }}
+          {{ chip('live', 'hail_1440', sheet.hail_last_day, false, sheet.legend_hail_last_day) }}
+{% endif %}        </div>
+        <p class="mo-line" id="mo-live-line" hidden></p>
+      </section>
+
+      <section class="mo-group" aria-labelledby="mo-hist-h">
+        <h3 class="mo-h" id="mo-hist-h">{{ sheet.history_heading }}</h3>
+        <p class="mo-sub">{{ sheet.five_year_history }}</p>
+        <div class="mo-chips" role="group" aria-labelledby="mo-hist-h">
+          {{ chip('history', 'hail', sheet.hail_history, false, None, None, sheet.unavailable) }}
+          {{ chip('history', 'heat', sheet.heat_history, false, None, None, sheet.unavailable) }}
+          {{ chip('history', 'wind', sheet.wind_history, false, None, None, sheet.unavailable) }}
+          {{ chip('history', 'flood', sheet.flood_history, false, None, None, sheet.unavailable) }}
+          {{ chip('history', 'fire_smoke', sheet.fire_smoke, false, None, sheet.coming_fire ~ ' ' ~ sheet.coming_smoke, sheet.coming) }}
+        </div>
+        <p class="mo-line" id="mo-hist-line" hidden></p>
+        <p class="mo-line" id="mo-hist-reason" hidden></p>
+      </section>
+
+      <section class="mo-group" aria-labelledby="mo-land-h">
+        <h3 class="mo-h" id="mo-land-h">{{ sheet.landmarks_heading }}</h3>
+        <p class="mo-sub">{{ sheet.landmarks_sub_line }}</p>
+        <div class="mo-chips" role="group" aria-labelledby="mo-land-h">
+          {{ chip('landmark', 's', sheet.school, false, None, None, sheet.unavailable, sheet.name_school) }}
+          {{ chip('landmark', 'p', sheet.park, false, None, None, sheet.unavailable, sheet.name_park) }}
+          {{ chip('landmark', 'h', sheet.hospital, false, None, None, sheet.unavailable, sheet.name_hospital) }}
+          {{ chip('landmark', 'a', sheet.airport, false, None, None, sheet.unavailable, sheet.name_airport) }}
+          {{ chip('landmark', 'f', sheet.fire_ems, false, None, None, sheet.unavailable, sheet.name_fire_ems) }}
+          {{ chip('landmark', 'c', sheet.church, false, None, sheet.held_church, sheet.held) }}
+        </div>
+        <p class="mo-line" id="mo-land-line" data-template="{{ sheet.landmark_line }}" hidden></p>
+        <p class="mo-line" id="mo-land-reason" data-waiting="{{ sheet.waiting }}" hidden></p>
+      </section>
+
+      <div class="mo-group mo-switches">
+        <div class="mo-switch">
+          <label class="mo-switch-row">
+            <span class="mo-switch-text"><span class="mo-switch-name">{{ sheet.points_of_interest_name }}</span><span class="mo-desc">{{ sheet.points_of_interest }}</span></span>
+            <input type="checkbox" role="switch" id="tg-poi" checked>
+          </label>
+        </div>
+        <div class="mo-switch">
+          <label class="mo-switch-row">
+            <span class="mo-switch-text"><span class="mo-switch-name">{{ sheet.highlight_recent_hail }}</span><span class="mo-desc">{{ sheet.recent_description }}</span></span>
+            <input type="checkbox" role="switch" id="tg-hail-recent" data-legend="{{ sheet.legend_recent }}">
+          </label>
+          <p class="mo-line" id="mo-recent-line" hidden></p>
+        </div>
+        <div class="mo-switch">
+          <label class="mo-switch-row">
+            <span class="mo-switch-text"><span class="mo-switch-name">{{ sheet.warnings }}</span><span class="mo-desc">{{ sheet.warnings_description }}</span></span>
+            <input type="checkbox" role="switch" id="tg-warnings" checked>
+          </label>
+        </div>
+        <div class="mo-switch">
+          <label class="mo-switch-row">
+            <span class="mo-switch-text"><span class="mo-switch-name">{{ sheet.storm_reports }}</span><span class="mo-desc">{{ sheet.storm_reports_description }}</span></span>
+            <input type="checkbox" role="switch" id="tg-reports" data-legend="{{ sheet.legend_reports }}">
+          </label>
+          <p class="mo-line" id="mo-reports-line" hidden></p>
+        </div>
+      </div>
+{% if hail_addresses %}
+      <div class="mo-group mo-keys">
+        <div class="b3-keys" id="b3-keys">
+          <p class="legend-tap b3-head">Addresses, streets and building outlines</p>
+          <p class="legend-tap" data-layer="shapes">{{ b3.legend.shapes }}</p>
+          {% if not b3.outlines_loaded %}<p class="legend-tap" data-layer="dots">{{ b3.legend.dots }}</p>
+          {% endif %}<p class="legend-tap" data-layer="streets">{{ b3.legend.streets }}</p>
+        </div>
+      </div>
+{% endif %}
+      <section class="mo-reset">
+        <button type="button" class="mo-reset-btn" id="mo-reset">{{ sheet.reset }}</button>
+        <p class="mo-sub">{{ sheet.reset_line }}</p>
+      </section>
+    </div>
+  </section>
+
   <noscript>
     <div class="noscript">
       <h2>This map needs JavaScript</h2>
       <p>It plays the radar and forecast pictures in your browser. The same warnings and forecasts are on these pages:</p>
       <ul>
-        <li><a href="{{ root }}index.html">Now: warnings and the 12-hour outlook for every town</a></li>
+        <li><a href="{{ root }}index.html#forecast">Now: warnings and the 12-hour outlook for every town</a></li>
         <li><a href="{{ root }}reports.html">Storm reports</a></li>
         {% for slug, name in towns_nav %}<li><a href="{{ root }}town/{{ slug }}.html">{{ name }}</a></li>{% endfor %}
       </ul>

@@ -27,7 +27,8 @@ website/   the product. sources.py (NWS/SPC feeds, parsers, feed contracts) · g
            + HRRR model → map frames) · storm.py, satellite.py and swath.py (radar echo tops, the GOES
            band 13 picture and the MRMS hail swath, all behind --storm-layers) · build.py (collect → frames + data/map.json →
            pages) · sample.py (labelled sample data) · towns.json · templates/ · static/ (style, Leaflet,
-           fonts, map/ = map.js, map.css, basemap.json)
+           fonts, map/ = map.js, map.css, basemap.json; veor.css, the Veor shell's tokens, D145) · templates/_veor.html (the
+           shell's macros and script)
            hail.py (hail history: grid, size words, store readers, daily build; --hail-history) · hail_fixture_data.py (the
            SAMPLE store's events) · data/hail-fixture/ (the SAMPLE store) · joins.py (the hail history joins, B2, D35:
            reports, official records, radar detections, warnings, zone products and red flag warnings by fire weather
@@ -83,12 +84,14 @@ python tools/smoke_map.py _site --history --store store   # B5: the sheet's summ
 
 ## Hard rules
 1. **Shipping.** Website: merging to `main` publishes. Keep `main` green; push to a branch first
-   (the Website workflow builds branch pushes against live data) and check the pages in a browser. The hail history flag `--hail-history` is on for the public site from `main` (the owner's decision of 2026-10-21); `--hail-addresses` stays off on `main` until the owner approves its terms and counsel answers them (D34, D36).
+   (the Website workflow builds branch pushes against live data) and check the pages in a browser. Every layer flag is on for the public site from `main`: `--hail-history` (the owner's decision of 2026-10-21, D34), and `--hail-addresses` and `--storm-layers` (the owner's approval of 2026-10-28, D146; the counsel items of D36, D37 and B6 stay listed as open in `docs/ROADMAP.md`).
 2 and 3. Retired with the desktop app (D143); the numbers stay so older citations read.
 4. **Python first.** Python builds all data and pages (Jinja; the radar and model frames in
    `website/gridded.py`). Hand-written JavaScript only for browser-only needs, documented inline
    (website: the page-age check in `website/templates/base.html` and the interactive map in
-   `website/static/map/map.js`: playback, scrubbing, menus, sheets, geolocation, D28). Owner
+   `website/static/map/map.js`: playback, scrubbing, menus, sheets, geolocation, D28; the shell's script in
+   `website/templates/_veor.html` (the page age, the reload with the viewer's place, the sidebar's fold and the
+   search) and the home page's controls in `website/templates/index.html`, DESIGN.md section 14). Owner
    preference: don't add a JS framework. Third-party code (Leaflet) and fonts are served by the
    site, not a CDN. The browser fetches only site files, except the USGS imagery tiles, which it
    fetches only while Imagery is on (switched on by the viewer, or by a link that starts on it; D32),

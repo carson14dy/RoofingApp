@@ -521,10 +521,10 @@ class SampleBuild(unittest.TestCase):
             self.assertIn(needed, html)
         self.assertNotRegex(html, r'<(script|link|img)[^>]+(src|href)="(https?:)?//')
         self.assertIn("Sample data", html)
-        self.assertIn('src="map.html?card=1&amp;layer=precip', page(self.out, "index.html"))
+        self.assertIn('src="map.html?embed=1&amp;v=', page(self.out, "index.html"))      # the home page's map
         self.assertIn("overlay=reports", page(self.out, "reports.html"))
-        self.assertIn('href="map.html"', page(self.out, "about.html"))           # main navigation
-        self.assertIn("map.html?town=livingston", page(self.out, "town/livingston.html"))
+        self.assertIn('<a href="index.html"', page(self.out, "about.html"))       # the sidebar's Map (the home page holds the map)
+        self.assertIn("index.html?town=livingston", page(self.out, "town/livingston.html"))
         for name in ("index.html", "about.html", "map.html"):
             self.assertNotIn("googleapis", page(self.out, name))
 
@@ -538,10 +538,11 @@ class SampleBuild(unittest.TestCase):
         for name in ("map/map.js", "map/map.css", "map/basemap.json"):
             self.assertIn(f"static/{name}?v={digest(name)}", html)
         self.assertIn(f"static/style.css?v={digest('style.css')}", page(self.out, "index.html"))
+        self.assertIn(f"static/veor.css?v={digest('veor.css')}", page(self.out, "index.html"))
         self.assertEqual(site.asset_versions(site.HERE / "static"), site.asset_versions(self.out / "static"))
         minute = NOW.strftime("%Y%m%d%H%M")
         self.assertIn(f"data/map.json?v={minute}", html)
-        self.assertIn(f"map.html?card=1&amp;layer=precip&amp;v={minute}", page(self.out, "index.html"))
+        self.assertIn(f"map.html?embed=1&amp;v={minute}", page(self.out, "index.html"))
 
     def test_map_page_landmark_and_text_version(self):
         html = page(self.out, "map.html")
@@ -590,6 +591,13 @@ class SampleBuild(unittest.TestCase):
         self.assertIn("(over limit)", html)
         self.assertIn("Next 7 days", html)
 
+    def test_town_page_says_over_limit_station_values_in_words_and_keeps_the_veor_hooks(self):
+        html = page(self.out, "town/livingston.html")
+        # the gust over the limit: colour plus a spoken "(over limit)", as the hourly table does
+        self.assertIn('<dd class="over">41<small> mph</small><span class="visually-hidden"> (over limit)</span></dd>', html)
+        self.assertIn('<div class="town-page">', html)          # the Veor place layout (veor.css, .town-page)
+        self.assertIn('<span class="hi">', html)                # a day's high, styled apart from its low
+
     def test_about_page_lists_every_source(self):
         html = page(self.out, "about.html")
         b3 = site.B3_ROWS + tuple(site.ROAD_ROWS.values())                         # flag-gated: HailAddresses
@@ -598,6 +606,24 @@ class SampleBuild(unittest.TestCase):
                 self.assertIn(c["name"], html)
         for key in site.STORM_CONTRACTS + site.HAIL_CONTRACTS + b3:
             self.assertNotIn(src.CONTRACTS[key]["name"], html)
+
+    def test_about_page_names_the_app_and_frames_the_sources_table(self):
+        html = page(self.out, "about.html")
+        self.assertIn("Veor is a plain weather page for roofing work in Montana. It gathers public data",
+                      " ".join(html.split()))
+        self.assertIn('<div class="about-page">', html)              # the page's scope in veor.css (.about-page)
+        self.assertIn('<div class="table-box contracts">', html)     # the framed table; it scrolls inside its own box
+
+    def test_about_page_table_card_has_its_own_surface_and_the_office_links_are_targets_on_phones(self):
+        """The data sources card keeps the card surface behind its table (the gradient shorthand alone would reset
+        it). On phones the office links are a row of 44 px targets; links inside sentences keep their lines (padding
+        on an inline link would overlap the next line's link)."""
+        css = (self.out / "static" / "veor.css").read_text()
+        self.assertIn(".about-page .contracts {", css)
+        self.assertIn("background-color: var(--v-surface); }", css)
+        self.assertIn(".about-page .offices a { display: inline-flex; align-items: center; min-height: 44px; }", css)
+        self.assertNotIn(".about-page .prose a {", css)
+        self.assertIn('<p class="offices">', page(self.out, "about.html"))
 
     def test_reports_page_shows_sizes_in_inches_and_unknown_wind(self):
         html = page(self.out, "reports.html")
@@ -614,6 +640,23 @@ class SampleBuild(unittest.TestCase):
         visible = re.sub(r"<(script|style)\b.*?</\1>", " ", page(self.out, "reports.html"), flags=re.S)
         words_rules.assert_clean(self, " ".join(html_text(visible).split()), "reports.html")
 
+    def test_reports_page_frames_the_map_and_its_key_and_colours_the_kind_words(self):
+        """The Veor reports page (docs/DESIGN.md section 14): the map card and its key share one framed block,
+        each reporting day is a card whose heading keeps its count, and the hail and wind words keep the
+        .kind-hail and .kind-wind colours with a dot of the same colour beside them (the dot is aria-hidden)."""
+        html = page(self.out, "reports.html")
+        self.assertIn('<div class="map-block">', html)
+        self.assertIn('<iframe class="map map-card" src="map.html?card=1&amp;layer=precip&amp;overlay=reports&amp;v=', html)
+        self.assertIn('title="Map of storm reports in and near Montana" loading="lazy"></iframe>', html)
+        self.assertIn('<span class="kind kind-hail"><span class="swatch swatch-hail" aria-hidden="true"></span>Hail</span>', html)
+        self.assertIn('<span class="kind kind-wind"><span class="swatch swatch-wind" aria-hidden="true"></span>Wind</span>', html)
+        self.assertIn('<span class="day-count">(0 reports)</span>', html)
+        # the key's link is a 44 px touch target on tablets and phones (45.6 px: the 21.6 px line plus 12 px each side),
+        # and a table wider than its card shows a scroll shade on its edge (veor.css, .reports-page)
+        css = (self.out / "static" / "veor.css").read_text()
+        self.assertIn(".reports-page .legend a { display: inline-block; padding-block: 12px; margin-block: -12px; }", css)
+        self.assertIn("--edge-w: 0.75rem;", css)
+
     def test_reports_map_key_names_the_forecast_numbers_and_outlines(self):
         """The Storm reports card draws town bubbles and warning outlines beside the reports and hides
         its own legend, so the page's key says what they are (rule 5: forecast is not a report). The
@@ -623,7 +666,8 @@ class SampleBuild(unittest.TestCase):
         self.assertIn("<li>Town number: NWS forecast temperature, °F</li>", html)
         self.assertNotIn("orange ring", html)
         self.assertIn("Outline: NWS alert area (red warning, orange watch, gold advisory, grey statement)", html)
-        self.assertIn('Alerts without an outline (issued by county or zone) are listed on the <a href="index.html">Now page</a>', html)
+        self.assertIn('Alerts without an outline (issued by county or zone) are listed in the '
+                      '<a href="index.html#forecast">home page\'s Forecast</a>', html)
 
     def test_reporting_days_start_at_noon_utc_in_montana_time(self):
         self.assertIn("Reporting day starting Wed Oct 14 at 6 am MDT", page(self.out, "reports.html"))
@@ -636,11 +680,13 @@ class SampleBuild(unittest.TestCase):
         self.assertNotIn("MDT", html)
 
     def test_now_page_card_words_match_the_sample_picture(self):
+        """The home page's map frame is named and described in build.map_card's words for the picture it
+        opens on, so a screen reader hears what the map shows (and, below, what is missing)."""
         html = " ".join(page(self.out, "index.html").split())
-        self.assertIn('title="Montana map: sample radar, warning outlines and town temperatures"', html)
-        self.assertIn("The latest sample radar picture (invented, not NOAA radar), NWS warning outlines and the NWS "
-                      'forecast temperature for each town. <a href="map.html">Open the map</a> to play the past hour '
-                      "of sample radar and the sample model forecast, or switch to temperature and wind gusts.", html)
+        self.assertIn('title="Montana map: sample radar, warning outlines and town temperatures" '
+                      'aria-describedby="map-words"', html)
+        self.assertIn('<p class="visually-hidden" id="map-words">The latest sample radar picture (invented, not NOAA '
+                      "radar), NWS warning outlines and the NWS forecast temperature for each town. </p>", html)
 
 
     def test_observed_now_on_the_town_pages_and_cards(self):
@@ -858,11 +904,11 @@ class MapFailures(unittest.TestCase):
         self.assertFalse(m["status"]["radar"]["ok"])
         self.assertEqual(m["now"], "2026-10-14T15:00:00Z")    # no radar frame: "now" is the build time
         self.assertEqual(len(m["towns"]), len(site.TOWNS))    # the towns and alerts still draw
-        html = " ".join(page(out, "index.html").split())    # the Now page's card names what is missing
+        html = " ".join(page(out, "index.html").split())    # the home page's map frame names what is missing
         self.assertIn('title="Montana map: warning outlines and town temperatures"', html)
         self.assertIn("NWS warning outlines and the NWS forecast temperature for each town. Missing from this "
-                      "update: the radar and model pictures. This is not an all-clear. "
-                      '<a href="map.html">Open the map</a> for the List of alerts and towns.', html)
+                      "update: the radar and model pictures. This is not an all-clear.</p>", html)
+        self.assertIn('<p class="bad"><a href="#forecast" data-view="forecast">2 source problems: see Forecast</a>', html)
         self.assertNotIn("radar estimate", html)
 
 
@@ -898,7 +944,7 @@ def map_layers(radar=True, model=True, now=NOW, radar_age=4, sample=False):
 
 
 class MapCard(unittest.TestCase):
-    """The words with the Now page's map card (build.map_card) follow what the card shows: the frame
+    """The words for the home page's map (build.map_card) follow what it shows when it opens: the frame
     map.js opens it on (precipitation, 12h, now_index), the outlines and the town numbers."""
 
     OK = {"radar": {"ok": True}, "forecast": {"ok": True}}
@@ -915,8 +961,6 @@ class MapCard(unittest.TestCase):
         self.assertEqual(c["shown"], "The latest NOAA radar estimate, NWS warning outlines and the NWS forecast "
                                      "temperature for each town.")
         self.assertEqual(c["missing"], "")
-        self.assertEqual(c["then"], "to play the past hour of radar and the HRRR model forecast, or switch to "
-                                    "temperature and wind gusts")
 
     def test_radar_failed_the_model_forecast_is_never_called_radar(self):
         layers = map_layers(radar=False)
@@ -928,7 +972,6 @@ class MapCard(unittest.TestCase):
         self.assertEqual(c["shown"], "The HRRR model forecast for 10 am, NWS warning outlines and the NWS forecast "
                                      "temperature for each town.")
         self.assertEqual(c["missing"], "Missing from this update: NOAA radar. This is not an all-clear.")
-        self.assertEqual(c["then"], "to play the HRRR model forecast, or switch to temperature and wind gusts")
         self.assertNotIn("radar estimate", " ".join(c.values()))
 
     def test_stale_radar_is_still_radar_and_says_how_old(self):
@@ -943,7 +986,6 @@ class MapCard(unittest.TestCase):
         self.assertEqual(c["shown"], "")
         self.assertEqual(c["missing"], "Missing from this update: the radar and model pictures, NWS warning outlines "
                                        "and town temperatures. This is not an all-clear.")
-        self.assertEqual(c["then"], "for the List of alerts and towns")
 
     def test_last_verified_alerts_and_some_town_forecasts(self):
         c = self.card(map_layers(model=False), alerts={"ok": False, "items": [{"id": "w1"}]},
@@ -951,7 +993,6 @@ class MapCard(unittest.TestCase):
         self.assertEqual(c["shown"], "The latest NOAA radar estimate, the outlines of the NWS alerts listed on this "
                                      "page and the NWS forecast temperature for each town whose forecast loaded.")
         self.assertEqual(c["missing"], "")
-        self.assertEqual(c["then"], "to play the past hour of radar")
 
     def test_sample_pictures_say_they_are_invented(self):
         self.assertTrue(self.card(map_layers(sample=True))["shown"].startswith(
@@ -968,7 +1009,7 @@ class MapCard(unittest.TestCase):
 
     def test_forecast_only_build(self):
         """The forecast-only state of a real build: the radar bucket fails, the HRRR answers, NWS and
-        SPC fail. The Now page's caption and frame title name the model forecast, never radar."""
+        SPC fail. The home page's map frame title and description name the model forecast, never radar."""
         def forecast_only(out_dir, get, now, sample=False):
             return map_layers(radar=False, now=now), {
                 "radar": {"label": g.LABELS["radar"], "ok": False,
@@ -978,15 +1019,140 @@ class MapCard(unittest.TestCase):
             out, _ = build_with(FailingFetcher())
         html = " ".join(page(out, "index.html").split())
         self.assertIn('title="Montana map: HRRR model forecast for 10 am"', html)
-        self.assertIn('<p class="caption"> The HRRR model forecast for 10 am. Missing from this update: NOAA radar, '
-                      "NWS warning outlines and town temperatures. This is not an all-clear. "
-                      '<a href="map.html">Open the map</a> to play the HRRR model forecast, or switch to temperature '
-                      "and wind gusts. </p>", html)
+        self.assertIn('<p class="visually-hidden" id="map-words">The HRRR model forecast for 10 am. Missing from '
+                      "this update: NOAA radar, NWS warning outlines and town temperatures. This is not an all-clear.</p>",
+                      html)
         self.assertNotIn("radar estimate", html)
         m = json.loads(page(out, "data/map.json"))
         precip = m["layers"]["precip"]
         self.assertEqual(precip["frames"][precip["modes"]["12h"][precip["now_index"]["12h"]]]["time"],
                          "2026-10-14T16:00:00Z")                     # 10 am MDT: the frame the card opens on
+
+
+class HomeConcept(unittest.TestCase):
+    """The Veor home page concept (design branch; docs/DESIGN.md section 14): an app shell around the site's
+    own map. The map is map.html in its embedded mode, the lead is sample data labelled as such in every build,
+    and the old Now page's freshness line, warnings and town cards are in the Forecast panel, which the other
+    pages' links to the warnings list open (index.html#forecast)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-home-"))
+        site.build(cls.out, None, NOW, sample=True)
+        cls.html = " ".join(page(cls.out, "index.html").split())
+
+    def test_the_map_is_the_sites_own_map_embedded(self):
+        self.assertIn('<iframe class="stage-map" id="map-frame" src="map.html?embed=1&amp;v=', self.html)
+        m = page(self.out, "map.html")
+        self.assertIn('document.documentElement.classList.add("is-embed")', m)
+        self.assertIn('{ target: "_top" }', m)                  # links in the map open in the whole window
+        css = (site.HERE / "static" / "map" / "map.css").read_text(encoding="utf-8")
+        self.assertIn(".is-embed .corner-left > .close, .is-embed #btn-layers { display: none; }", css)
+        js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn('var EMBED = !CARD && params.get("embed") === "1";', js)
+        self.assertIn('window.parent.document.getElementById("btn-layers-top")', js)   # focus and state on the top bar
+        self.assertIn("if (EMBED) copyToHome(q);", js)                     # the map's choices in the home page's address
+        self.assertIn('id="btn-layers-top"', self.html)
+
+    def test_the_sample_lead_is_labelled_in_a_live_build_too(self):
+        out, _ = build_with(FailingFetcher())                   # not a sample build: the weather is not invented
+        html = " ".join(page(out, "index.html").split())
+        self.assertIn('Lead details <span class="tag">Sample</span>', html)
+        self.assertIn("Desktop concept · Sample data", html)
+        self.assertNotIn("Everything on this page is invented", html)
+        self.assertIn("Everything on this page is invented", self.html)      # the sample build says so as well
+
+    def test_the_forecast_panel_has_the_freshness_line_the_warnings_and_every_town(self):
+        self.assertIn('<section class="view view-forecast" id="view-forecast" aria-labelledby="fc-h" hidden>', self.html)
+        self.assertIn("rebuilt on a schedule set to every 10 minutes", self.html)
+        self.assertIn("Loaded: NWS alerts, NWS forecasts", self.html)
+        self.assertIn('Warnings and advisories<span class="count">2</span>', self.html)
+        self.assertIn("High Wind Warning", self.html)
+        self.assertEqual(self.html.count('<li data-slug="'), len(site.TOWNS))
+        self.assertIn("Weather information only. It does not confirm roof damage", self.html)
+        self.assertIn("<style>.shell #view-forecast { display: block; }</style></noscript>", self.html)   # scripting off
+
+    def test_the_forecast_button_counts_the_alerts_and_names_the_kind_or_says_they_did_not_load(self):
+        self.assertIn('<span class="badge badge-warning"><span aria-hidden="true">2</span><span class="visually-hidden">, '
+                      "2 NWS alerts, the most urgent a warning</span></span>", self.html)
+        out, _ = build_with(FailingFetcher())
+        html = " ".join(page(out, "index.html").split())
+        self.assertIn('<span class="badge badge-unknown"><span aria-hidden="true">?</span>'
+                      "<span class=\"visually-hidden\">, NWS alerts didn't load</span></span>", html)
+        self.assertIn("Couldn't load NWS alerts at", html)
+        self.assertNotIn("No active NWS warnings", html)
+        self.assertNotIn('class="alert-now"', html)          # no alert is named from a failed check
+        self.assertNotIn("Every source loaded", html)
+        self.assertIn("Every source loaded", self.html)
+
+    def test_the_status_names_the_most_urgent_alert_and_any_missing_town_data(self):
+        """Alerts issued by county or zone have no outline on the map, so the top bar names the most urgent alert
+        (with a count of the rest) on the first screen. 'Every source loaded' needs every town's values too."""
+        self.assertIn('<p class="alert-now"><a href="#forecast" data-view="forecast">High Wind Warning and 1 more</a></p>',
+                      self.html)
+        def pictures_loaded(out_dir, get, now, sample=False):         # SampleWith's radar and model downloads fail
+            return map_layers(now=now), {"radar": {"label": g.LABELS["radar"], "ok": True, "detail": "7 frames"},
+                                         "forecast": {"label": g.LABELS["forecast"], "ok": True, "detail": "12 hours"}}
+        with mock.patch.object(g, "build_gridded", pictures_loaded):
+            gaps, _ = build_with(SampleWith(NOW, fail=("alerts-point",)))
+            state, _ = build_with(SampleWith(NOW, fail=("alerts-state",)))
+        html = " ".join(page(gaps, "index.html").split())
+        self.assertIn(f'<p class="bad"><a href="#forecast" data-view="forecast">{len(site.TOWNS)} towns with missing data: '
+                      "see Forecast</a></p>", html)
+        self.assertNotIn("Every source loaded", html)
+        self.assertIn("Alerts not checked", html)
+        html = " ".join(page(state, "index.html").split())
+        self.assertIn('<p class="bad"><a href="#forecast" data-view="forecast">NWS alerts problem: see Forecast</a> '
+                      '<span class="bad">NWS alerts problem: ', html)      # the detail and its words follow the link
+        self.assertIn('<span class="badge badge-unknown">', html)        # the count of a failed check is never shown
+        self.assertIn('<p class="alert-now"><a href="#forecast" data-view="forecast">High Wind Warning and 1 more, may be out of date'
+                      "</a></p>", html)                                 # what the town checks found is still named
+
+    def test_the_page_reloads_every_ten_minutes_carrying_the_place_and_without_script_as_before(self):
+        for name in ("index.html", "about.html", "town/billings.html"):
+            raw = page(self.out, name)
+            self.assertEqual(raw.count('http-equiv="refresh"'), 1, name)
+            self.assertIn('<noscript><meta http-equiv="refresh" content="600">', raw, name)
+            self.assertIn("if (Date.now() - loadedAt < 600000 || pressed || typing()) return;", raw, name)   # waits for a press or typing only
+            self.assertIn("function typing() { return Date.now() - lastKey < 30000; }", raw, name)         # typing: a key in the last 30 s
+            self.assertIn('sessionStorage.setItem("veor-restore"', raw, name)              # the viewer's place goes across
+            self.assertIn("showAge();", raw, name)                                          # the age counts on
+        home = page(self.out, "index.html")
+        self.assertIn("s.panel = panel.scrollTop;", home)                                  # the home page's own part
+        js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn('p.set("view", c.lat.toFixed(4)', js)                                # and the map's view
+
+    def test_the_forecast_alerts_sit_under_their_heading_and_the_tab_panels_take_focus(self):
+        self.assertIn("<h4>High Wind Warning</h4>", self.html)
+        self.assertIn("<h3>High Wind Warning</h3>", " ".join(page(self.out, "town/livingston.html").split()))
+        self.assertIn('<h1 class="visually-hidden">Veor: Montana weather map and forecast</h1>', self.html)
+        self.assertEqual(self.html.count('role="tabpanel"'), 3)
+        self.assertEqual(self.html.count('role="tabpanel" id="tp-'), 3)
+        self.assertEqual(len(re.findall(r'role="tabpanel" id="tp-\w+" aria-labelledby="tab-\w+" tabindex="0"', self.html)), 3)
+
+    def test_every_town_is_in_the_area_menu_and_the_search_list(self):
+        for t in site.TOWNS:
+            self.assertIn(f'<option value="{t["slug"]}">{t["name"]} area</option>', self.html)
+            self.assertIn(f'<option value="{t["name"]}"></option>', self.html)
+        self.assertIn('<option value="">All of Montana</option>', self.html)     # the map opens on all of Montana
+
+    def test_the_home_page_loads_only_site_files_and_serves_its_font(self):
+        self.assertNotRegex(self.html, r'<(script|link|img|iframe)[^>]+(src|href)="(https?:)?//')
+        self.assertTrue((self.out / "static" / "fonts" / "newsreader-latin-opsz-normal.woff2").is_file())
+        self.assertIn("url(newsreader-latin-opsz-normal.woff2)", page(self.out, "static/fonts/fonts.css"))
+        self.assertIn("The Newsreader Project Authors", page(self.out, "static/fonts/LICENSE-fonts.txt"))
+
+    def test_the_links_to_the_warnings_list_open_the_forecast_panel(self):
+        self.assertIn('if (location.hash !== "#forecast") return;', self.html)
+        self.assertIn('show("forecast", !!e || nav.type !== "reload");', self.html)     # focus on a link, not a reload
+        self.assertIn("""closest('a[href$="#forecast"]')""", self.html)      # the map's links open it in place
+        self.assertIn('<a href="../index.html#forecast">All towns</a>', page(self.out, "town/livingston.html"))
+        self.assertIn('id="btn-forecast" href="index.html#forecast"', page(self.out, "about.html"))   # the top bar's Forecast
+        self.assertIn('id="btn-forecast" href="../index.html#forecast"', page(self.out, "town/livingston.html"))
+        self.assertIn('href="index.html#forecast"', page(self.out, "map.html"))           # the noscript list
+        js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn('href="index.html#forecast">All warnings and town forecasts</a>', js)
+        self.assertNotIn("Now page", js)
 
 
 class StormLayers(unittest.TestCase):
@@ -1208,8 +1374,8 @@ class StormLayers(unittest.TestCase):
 
     def test_flag_on_map_page_has_the_satellite_radio_and_the_same_words_in_the_panel_and_the_list(self):
         html = page(self.on, "map.html")
-        self.assertEqual(html.count('<input type="radio" name="layer" value="satellite">'), 1)
-        self.assertIn('<span class="choice-text">Satellite</span>', html)
+        self.assertEqual(html.count('data-group="live" data-key="satellite"'), 1)
+        self.assertIn('<span class="mo-label">Satellite</span>', html)
         description = (self.on_result.get("content") or {}).get("satellite")
         self.assertTrue(description, "the build result has no satellite paragraph")
         words = self.env.from_string("{{ t }}").render(t=description)
@@ -1297,18 +1463,17 @@ class ImageryBaseMap(unittest.TestCase):
         # The card's own page (map.html?card=1) is checked at run time by tools/smoke_map.py
         # (check_card_ignores_imagery); here the pages that embed the card carry no imagery.
         html = page(self.out, "map.html")
-        self.assertIn('<legend>Base map</legend>', html)
-        self.assertIn('<input type="radio" name="base" value="map" checked>', html)
-        self.assertNotIn('value="imagery" checked', html)
+        self.assertIn('<h3 class="mo-h" id="mo-base-h">Base map</h3>', html)
+        self.assertIn('data-group="base" data-key="map" aria-pressed="true"', html)
+        self.assertNotIn('data-key="imagery" aria-pressed="true"', html)
         for name in ("index.html", "reports.html"):
             self.assertNotIn("data-imagery", page(self.out, name), name)
-            self.assertNotIn('name="base"', page(self.out, name), name)
+            self.assertNotIn('data-group="base"', page(self.out, name), name)
 
     def test_the_switch_has_its_privacy_line_and_the_about_page_says_it_is_off_by_default(self):
         html = " ".join(page(self.out, "map.html").split())
-        self.assertIn('<input type="radio" name="base" value="imagery"><span class="choice-text">Imagery<small>'
-                      "Aerial imagery with roads and names from USGS. Your IP address and the map area you view go to "
-                      "USGS while it is on.</small>", html)
+        self.assertIn('data-group="base" data-key="imagery" aria-pressed="false" data-legend="Imagery: USDA, USGS, The National '
+                      'Map. Your IP address and the map area you view go to USGS while it is on."', html)
         about = " ".join(page(self.out, "about.html").split())
         self.assertIn("Base map imagery", about)
         self.assertIn("in the public domain", about)
@@ -1332,7 +1497,7 @@ class ImageryBaseMap(unittest.TestCase):
         out = Path(tempfile.mkdtemp(prefix="hailwatch-imagery-on-"))
         self.addCleanup(shutil.rmtree, out, True)
         site.build(out, None, NOW, sample=True, storm_layers=True)
-        self.assertIn('<input type="radio" name="base" value="imagery">', page(out, "map.html"))
+        self.assertIn('data-group="base" data-key="imagery"', page(out, "map.html"))
         self.assertEqual(json.loads(page(out, "data/map.json"))["imagery"], site.IMAGERY)
 
 
@@ -1354,14 +1519,13 @@ class ImageryPages(unittest.TestCase):
         off = [t for t in tags if re.search(r"""\b(?:src|href|srcset)\s*=\s*["']?\s*(?:https?:)?//""", t, re.IGNORECASE)]
         self.assertEqual(off, [])
 
-    def test_the_base_map_choice_is_in_the_layers_menu_after_the_weather_layers(self):
+    def test_the_base_map_cards_come_first_in_the_options_sheet_and_the_live_chips_after_them(self):
         html = page(self.out, "map.html")
-        menu = html[html.index('id="layers"'):]
-        menu = menu[:menu.index("</section>")]
-        weather_end = menu.index("</fieldset>")           # the weather layers' fieldset closes first
-        self.assertLess(menu.index('name="layer"'), weather_end)
-        self.assertGreater(menu.index('name="base"'), weather_end)
-        self.assertLess(menu.index("<legend>Base map</legend>"), menu.index('name="base"'))
+        sheet = html[html.index('id="map-options"'):]
+        sheet = sheet[:sheet.index("\n  <noscript>")]
+        self.assertLess(sheet.index("Base map"), sheet.index('data-group="base"'))
+        self.assertLess(sheet.index('data-group="base"'), sheet.index('data-group="live"'))
+        self.assertLess(sheet.index('data-group="live"'), sheet.index('data-group="history"'))
 
     def test_the_tile_address_is_on_the_element_that_holds_the_map(self):
         tag = re.search(r'<main id="app"[^>]*>', page(self.out, "map.html"))
@@ -1583,10 +1747,11 @@ class HailHistory(unittest.TestCase):
         self.assertIn("Radar days by size class in these five seasons: 4 days pea to mothball", visible(town))
         as_of = hs.fmt_date(date.fromisoformat(fixture["as_of"]))
         self.assertIn(f"1,826 storm-report days (each from 12:00 to 12:00 UTC) ending {as_of}", visible(town))   # the as-of date
+        self.assertIn('<section id="history" class="history hail-history" aria-labelledby="hist-h">', town)   # the Veor hail styles (veor.css)
         about = " ".join(page(self.on, "about.html").split())      # the template wraps the sentences across lines
         self.assertIn("<h2>Hail history</h2>", page(self.on, "about.html"))
         self.assertIn("An estimate is not a measurement at the ground and not an inspection.", about)
-        self.assertIn("(6.35 mm)", about)
+        self.assertIn("(6.35&nbsp;mm)", about)              # one unbreakable unit: no break between 6.35 and mm
         self.assertIn("12:43 UTC", about)
         self.assertIn(src.CONTRACTS["hail_history"]["name"], about)
         for sentence in (self.DAY_SENTENCE, self.CELL_SENTENCE, self.NEXT_DAY_SENTENCE, self.DISPLAY_SENTENCE):
@@ -1920,10 +2085,11 @@ class HailHistory(unittest.TestCase):
         self.assertEqual(len(args), 2)
         self.assertIn('if [ "$GITHUB_REF" != "refs/heads/main" ]', args[0])
         self.assertIn("--require-live --storm-layers --hail-history", args[0])
-        # main passes the flag on its own (at the owner's decision of 2026-10-21) and never --require-live: a failed
-        # store download leaves the pages saying the history is unavailable while the rest of the site publishes.
+        # main passes every layer flag on its own (--hail-history at the owner's decision of 2026-10-21; --hail-addresses
+        # and --storm-layers at the owner's approval of 2026-10-28, D146) and never --require-live: a failed store
+        # download leaves the pages saying the history is unavailable while the rest of the site publishes.
         self.assertIn('if [ "$GITHUB_REF" = "refs/heads/main" ]', args[1])
-        self.assertIn("args+=(--hail-history)", args[1])
+        self.assertIn("args+=(--hail-history --hail-addresses --storm-layers)", args[1])
         self.assertNotIn("--require-live", args[1])
         # every build reads its own branch's asset, named as the store job names it
         self.assertIn('export HAIL_STORE_ASSET="hail-store-$(echo "$GITHUB_REF_NAME" | tr \'/\' \'-\').tar.gz"', text)
@@ -3344,7 +3510,7 @@ class HailAddresses(unittest.TestCase):
         self.assertNotIn('data-layer="shapes"', card)
         self.assertNotIn('data-layer="dots"', card)
         self.assertIn("Tap or click the map for the five-year hail history", card)
-        menu = html[html.index('id="b3-keys"'):html.index('id="btn-list"')]
+        menu = html[html.index('id="b3-keys"'):html.index('id="mo-reset"')]          # the keys sit in the sheet, before Reset
         self.assertIn('data-layer="shapes"', menu)
         self.assertIn('data-layer="dots"', menu)                  # the sample has no outlines, so the dots line stays
         self.assertIn('data-layer="streets"', menu)
@@ -3427,9 +3593,9 @@ class HailAddresses(unittest.TestCase):
     def test_the_workflow_previews_pass_the_addresses_flag_and_the_tests_and_smoke_run(self):
         text = (ROOT / ".github" / "workflows" / "website.yml").read_text(encoding="utf-8")
         args = [line for line in text.splitlines() if "args+=(" in line and "--hail-history" in line]
-        self.assertEqual(len(args), 2, "the branch line and main's own line (D59: main passes --hail-history alone)")
+        self.assertEqual(len(args), 2, "the branch line and main's own line (D146: main passes every layer flag)")
         self.assertIn("--require-live --storm-layers --hail-history --hail-addresses", args[0])
-        self.assertIn("args+=(--hail-history)", args[1])
+        self.assertIn("args+=(--hail-history --hail-addresses --storm-layers)", args[1])
         unit = [line for line in text.splitlines() if "python -m unittest" in line]
         self.assertEqual(len(unit), 2, "the offline unit step and the real-store parity step (D88(a))")
         self.assertIn("tests.test_streets", unit[0])
@@ -3669,6 +3835,100 @@ class B3Completion(unittest.TestCase):
             self.assertIn(module, unit[0].split())
 
 
+class B3SplitMaps(unittest.TestCase):
+    """The B3 blocks' compact split maps (D40; docs/ROADMAP.md engineering follow-up A, D66, D82(b)): build.py b3_map_blocks
+    turns each block's tile list into tile_split, so no block lists every tile name. The browser reads the split maps
+    (map.js b3Listed and b3ListedCount). The every-flag sample build (--sample --hail-history --hail-addresses
+    --storm-layers) holds the addresses; the sample store has no roads or outlines, so the outlines' split map is checked on
+    a loaded block the test writes."""
+
+    NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-b3-split-"))
+        cls.addClassCleanup(shutil.rmtree, cls.out, True)      # only the folder this class made
+        site.build(cls.out, None, cls.NOW, sample=True, hail_history=True, hail_addresses=True, storm_layers=True)
+        cls.hail = json.loads(page(cls.out, "data/map.json"))["hail"]
+
+    def test_no_b3_block_lists_every_tile_name_and_the_split_maps_say_which_have_a_file(self):
+        # D40: each block has tile_split and no tiles list; the split map lists the store's tiles of that block
+        index = json.loads((hs.FIXTURE_DIR / "hail" / "index.json").read_text(encoding="utf-8"))
+        for key in ("addresses", "roads", "buildings"):
+            block = self.hail[key]
+            self.assertNotIn("tiles", block, key)
+            self.assertIn("tile_split", block, key)
+            # the sample store has no roads or outlines block, so their split maps are empty (the state says unavailable)
+            self.assertEqual(tile_names_of(block), sorted(index.get(key, {}).get("tiles", [])), key)
+        self.assertTrue(index["addresses"]["tiles"])
+        self.assertEqual(self.hail["addresses"]["state"], "sample")
+        self.assertEqual((self.hail["roads"]["state"], self.hail["buildings"]["state"]), ("unavailable", "unavailable"))
+        self.assertEqual((self.hail["roads"]["tile_split"], self.hail["buildings"]["tile_split"]), ({}, {}))
+
+    def test_the_buildings_split_map_lists_leaf_names_only(self):
+        # D40 and D34: the outlines' split map lists each tile's leaf names; each leaf's box is derived in the browser from
+        # its quadtree digits (map.js b3NameBox). The block is written here, as a loaded outlines block, so the test has leaves
+        tiles = [f"r{r:04d}_c{c:04d}" for r in (79, 80) for c in range(198, 208)]     # 2 rows of 10 tiles: 20 tiles
+        box = [-108.5, 45.7, -108.49, 45.71]
+        split_boxes = {tile: [[tile + "0", box], [tile + "1", box]] for tile in tiles}   # two leaves per tile
+        counts = {"footprints": 40, "multipart": 0, "with_addresses": 30, "without_address": 10, "matched_rows": 30,
+                  "unmatched_rows": 5, "unmatched_by_class": {}}
+        block = {"state": "loaded", "addresses": "loaded", "tiles": tiles, "split_boxes": split_boxes, "counts": counts,
+                 "overhang_deg": 0.0, "counties": {"state": "unavailable"}, "source": {"file_date": "2026-09-13"}}
+        blocks = site.b3_map_blocks({bd.INDEX_KEY: block}, "on")
+        outlines = blocks["buildings"]
+        self.assertEqual(outlines["state"], "loaded")
+        self.assertNotIn("tiles", outlines)
+        self.assertEqual(outlines["tile_split"], {"79": [[198, 207]], "80": [[198, 207]]})     # the same 20 tiles, compactly
+        split = outlines["split"]
+        self.assertIsInstance(split, dict)
+        self.assertEqual(split, {tile: [name for name, leaf_box in leaves] for tile, leaves in split_boxes.items()})
+        for tile, names in split.items():
+            self.assertIsInstance(names, list, tile)
+            self.assertTrue(names, tile)
+            for name in names:
+                self.assertIsInstance(name, str)
+                self.assertTrue(name.startswith(tile) and len(name) > len(tile), name)
+        # the three B3 blocks together name a tile in a key or a leaf and no tile list: the matches are the keys and the leaves
+        raw = json.dumps({key: blocks[key] for key in ("addresses", "roads", "buildings")})
+        leaves = sum(len(names) for names in split.values())
+        self.assertLess(len(re.findall(r"r\d{4}_c\d{4}", raw)), len(split) + leaves + 20)
+
+    def test_the_browser_reads_the_split_maps(self):
+        # D40: map.js reads each block's tile_split through b3Listed (membership) and b3ListedCount (the test hook's counts)
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn("function b3Listed(", js)
+        self.assertIn("function b3ListedCount(", js)
+        for block in ("roads", "adr", "bld"):
+            self.assertIn(f"b3Listed(B.tiles.{block}, t)", js)
+        self.assertIn("b3ListedCount(B3.tiles.roads)", js)
+        self.assertIn("own(split, String(t.r))", js)             # the row key is the number's decimal form, as str(r) writes it
+        for old in ("tiles.roads[t.name]", "tiles.adr[t.name]", "tiles.bld[t.name]"):
+            self.assertNotIn(old, js)                          # the old set lookups are gone
+        self.assertEqual(js.count(".tiles[t.name]"), 1, "only the counts document (doc.tiles) keeps a name lookup")
+
+    def test_the_address_text_off_mode_keeps_the_split_map_and_drops_the_search_names(self):
+        # D35: --address-text off leaves out the search index's names and the form's words; the split map stays (D40)
+        index = json.loads((hs.FIXTURE_DIR / "hail" / "index.json").read_text(encoding="utf-8"))
+        blocks = site.b3_map_blocks({"addresses": index["addresses"]}, "off")       # the key is addresses.INDEX_KEY
+        addresses = blocks["addresses"]
+        self.assertEqual(addresses["text"], "off")
+        self.assertNotIn("tiles", addresses)
+        self.assertEqual(tile_names_of(addresses), sorted(index["addresses"]["tiles"]))
+        for name in site.ADDRESS_SEARCH_KEYS:
+            self.assertNotIn(name, addresses, name)
+        for name in site.ADDRESS_FORM_WORDS:
+            self.assertNotIn(name, addresses["templates"], name)
+
+    def test_tile_split_round_trips(self):
+        # D40: build.tile_split writes runs of columns per row, and tile_names_of reads them back as sorted names
+        names = ["r0092_c0214", "r0092_c0215", "r0092_c0217", "r0079_c0199"]
+        split = site.tile_split(names)
+        self.assertEqual(split, {"79": [[199, 199]], "92": [[214, 215], [217, 217]]})
+        self.assertEqual(tile_names_of({"tile_split": split}), sorted(names))
+        self.assertEqual(site.tile_split([]), {})
+
+
 # ---------------------------------------------------------------- the five-season history (B5, --hail-history)
 
 def jesc(text: str) -> str:
@@ -3792,29 +4052,6 @@ def on_purpose_problems(name: str, data: bytes, changes, base_digest: str) -> li
     return problems
 
 
-# B6 (D125(d)): the files and keys the base-map build adds to the default build, and the one named change of an existing
-# line (D110(d): the imagery credit row carries the privacy words "while it is on"). Nothing else in the default build changes.
-B6_FILES = ("data/base.json",)
-B6_MAP_KEYS = ("base", "history_layers", "recent", "labels")      # data/map.json's pointer and first-paint states, last keys
-B6_IMAGERY = ("D110(d)", "go to USGS.", "go to USGS while it is on.", 1)
-
-
-def b6_map_problems(data: bytes, base_digest: str) -> list:
-    """The problems with the default build's data/map.json: it has exactly the B6 keys as its last keys, and without them and
-    with the named imagery change written back it has the base build's digest (byte for byte)."""
-    doc = json.loads(data)
-    problems = []
-    if list(doc)[-len(B6_MAP_KEYS):] != list(B6_MAP_KEYS):
-        problems.append(f"data/map.json does not end with the B6 keys {list(B6_MAP_KEYS)} (its keys end with {list(doc)[-4:]})")
-    for key in B6_MAP_KEYS:
-        doc.pop(key, None)
-    restored, changes_problems = restore_base(json.dumps(doc, separators=(",", ":")).encode("utf-8"), (B6_IMAGERY,))
-    problems += changes_problems
-    if hashlib.sha256(restored).hexdigest() != base_digest:
-        problems.append("data/map.json differs from the base build on a line that no named ruling accounts for")
-    return problems
-
-
 class HailSwathLayers(unittest.TestCase):
     """The live hail swath layers (B4; website/swath.py) behind --storm-layers, sample builds only (the live feed is
     checked by the Website workflow and tools/smoke_map.py): the two Map layers and their status line, the List and the
@@ -3933,17 +4170,16 @@ class HailSwathLayers(unittest.TestCase):
                 self.assertIn(f"<p>{self.phrase(row)}</p>", template, row)
         self.assertIn("SAMPLE: invented radar estimate, not NOAA data.", " ".join(lines["Hail, last hour"]))
 
-    def test_the_map_page_has_the_two_radios_after_the_weather_layers_and_only_with_the_flag(self):
+    def test_the_map_page_has_the_two_hail_chips_after_the_weather_layers_and_only_with_the_flag(self):
         from website import swath as sw
         on, off = page(self.on, "map.html"), page(self.off, "map.html")
         self.assertEqual([p.title for p in sw.PRODUCTS], list(self.HAIL_TITLES))
         for value, title in (("hail_60", self.HAIL_TITLES[0]), ("hail_1440", self.HAIL_TITLES[1])):
-            self.assertEqual(on.count(f'<input type="radio" name="layer" value="{value}">'), 1)
-            self.assertIn(f'<span class="choice-text">{title}</span>', on)
-            self.assertIn(f"sw-{value}", on)                       # the swatch is painted from the layer's legend
+            self.assertEqual(on.count(f'data-group="live" data-key="{value}"'), 1)
+            self.assertIn(f'<span class="mo-label">{title}</span>', on)
             self.assertNotIn(value, off)
-        self.assertLess(on.index('value="satellite"'), on.index('value="hail_60"'))
-        self.assertLess(on.index('value="hail_1440"'), on.index("<legend>Base map</legend>"))
+        self.assertLess(on.index('data-key="satellite"'), on.index('data-key="hail_60"'))
+        self.assertLess(on.index('data-key="hail_1440"'), on.index('id="mo-hist-h"'))
 
     def test_the_about_page_has_the_bullet_with_the_contract_words_and_only_with_the_flag(self):
         about = page(self.on, "about.html")
@@ -3967,7 +4203,7 @@ class HailSwathLayers(unittest.TestCase):
         on_map = page(self.on, "map.html")
         self.assertNotIn('id="hail-sheet"', on_map)           # the live line is part of the history sheet (--hail-history)
         self.assertNotIn("data-live", on_map)                 # made by the script, and only when a hail layer is on
-        self.assertIn('value="hail_60"', on_map)
+        self.assertIn('data-key="hail_60"', on_map)
 
     def test_a_layer_that_cannot_be_read_still_builds_with_its_words_and_says_so(self):
         out = Path(tempfile.mkdtemp(prefix="hailwatch-swath-down-"))
@@ -4056,7 +4292,8 @@ class HailSwathLayers(unittest.TestCase):
         def plain(html: str) -> str:
             return " ".join(re.sub(r"<[^>]+>", " ", html).split())
         map_html, about_html = page(out, "map.html"), page(out, "about.html")
-        labels = [plain(m) for m in re.findall(r"<label[^>]*>.*?</label>", map_html, re.S) if "Hail, last" in m]
+        labels = [plain(m) for m in re.findall(r'<button type="button" class="mo-chip"[^>]*>.*?</button>', map_html, re.S)
+                  if "Hail, last" in m]
         self.assertEqual(len(labels), 2)
         block = re.search(r'<section class="storm-sec" data-storm="hail".*?</section>', map_html, re.S)
         bullet = re.search(r"<li><strong>Hail swath \(radar estimate\)</strong>.*?</li>", about_html, re.S)
@@ -4300,38 +4537,13 @@ class HailSwathLayers(unittest.TestCase):
     # D93(a): map.js and map.css are not digested (SHARED_STATIC; the browser code is one file for every build), and the
     # ?v= hashes that map.html carries for them are normalised, so map.html differs from the base only in those hashes.
     MANIFEST = ROOT / "tests" / "fixtures" / "default-build-manifest.json"
-    # The default build's other differences from the base, each named with its ruling. A change is (ruling, the base's
-    # text, the text the build has now, how many times the build has it). The test writes each text back to the base's and
-    # the page must then have the base's digest, so a line this table does not name fails the test. D74's rows (the hail
-    # swath row and the address rows) and D85's hail history and NOHRSC rows are flag-gated: the default build has none.
-    ON_PURPOSE = {
-        "about.html": (
-            # D53: the radar paragraph's satellite and radar sentence
-            ("D53", "a blank area is not proof of dry weather", "a blank area is not a statement about the weather", 1),
-            ("D85", "never clears one.", "never removes one.", 1),
-            ("D85, D86(c), D88(d)", "that work is safe.", "that work can go ahead.", 1),
-            ("D85, D86(c)", "When something fails</h2>", "When something goes wrong</h2>", 1),
-            # the source table's rows: the alerts row, the forecast and station rows and the radar row
-            ("D85", "Test messages and replaced updates are left out.",
-             "Test messages and updates that a later message has changed are left out.", 1),
-            ("D85", "the last good lookup is reused if it fails.", "if a lookup does not work, the last good lookup is reused.", 1),
-            ("D80(b), D82(d)", "distance from the town is worked out here", "distance from this spot is worked out here", 1),
-            ("D85", "the last good list is reused if it fails.", "if a list does not load, the last good list is reused.", 1),
-            ("D85", "A file that fails is listed as a problem", "A file that does not pass its check is listed as a problem", 1),
-            ("D85, D86(c)", "never drawn as dry.", "never drawn as a zero reading.", 1),
-        ),
-        "reports.html": (
-            # D91(c): the SPC reports page's lead and its two empty-day lines (the words gate's own sentences)
-            ("D91(c)", "No report is not evidence that no hail fell.", "No report is not the same as no hail.", 1),
-            ("D91(c)", "No hail or wind reports in or near Montana for this day.",
-             "No reports of hail or wind in or near Montana for this day; that is not the same as no hail.", 2),
-        ),
-        "map.html": (
-            # D110(d) (B6): the imagery object the page carries (data-imagery) gets the privacy words "while it is on", as the
-            # credit row does; the page's Imagery description already had them. One occurrence, inside the attribute.
-            ("D110(d)", 'go to USGS.", "failed_line"', 'go to USGS while it is on.", "failed_line"', 1),
-        ),
-    }
+    # The base is the commit the manifest names ("base"): the Veor shell on every page (D145) and the compact tile sets
+    # (D144) changed the default build on purpose, so the manifest was written from that commit's own build and no ruling
+    # is open. The rulings of the earlier base f96f5c7 (D53, D85, D91(c), D110(d) and D108, with the fixture
+    # default-build-s1-rulings.json they read) are in git history at 1f9068e. A later change to the default build names
+    # its ruling here, as (ruling, the base's text, the text the build has now, how many times the build has it), or
+    # regenerates the manifest with write_default_manifest and says so in its pull request.
+    ON_PURPOSE: dict = {}
 
     def test_the_default_build_matches_the_manifest_of_its_base_commit(self):
         expected = json.loads(self.MANIFEST.read_text(encoding="utf-8"))
@@ -4342,14 +4554,8 @@ class HailSwathLayers(unittest.TestCase):
                                "--now", "2026-10-19T12:00:00Z"], cwd=ROOT, capture_output=True, text=True, timeout=900)
         self.assertEqual(done.returncode, 0, done.stderr[-800:])
         now = default_digests(out)
-        # B6 (D125(d)): the default build adds data/base.json, and data/map.json gains the B6 keys and one named imagery change.
-        # Both are checked on their own below; every other file must match the base build.
-        self.assertEqual(sorted(set(now) - set(expected["files"])), list(B6_FILES), f"base {expected['base']}: files added")
+        self.assertEqual(sorted(set(now) - set(expected["files"])), [], f"base {expected['base']}: files added")
         self.assertEqual(sorted(set(expected["files"]) - set(now)), [], f"base {expected['base']}: files removed")
-        self.assertEqual(b6_map_problems((out / "data" / "map.json").read_bytes(), expected["files"]["data/map.json"]), [],
-                         f"base {expected['base']}: data/map.json differs from the base build apart from the B6 keys")
-        for name in B6_FILES + ("data/map.json",):
-            now.pop(name)
         # every file the table does not name has the base's digest
         changed = sorted(name for name in now if now[name] != expected["files"][name] and name not in self.ON_PURPOSE)
         self.assertEqual(changed, [], f"base {expected['base']}: these files differ from the base build")
@@ -4359,18 +4565,22 @@ class HailSwathLayers(unittest.TestCase):
             self.assertEqual(problems, [], f"base {expected['base']}: {'; '.join(problems)}")
 
     def test_a_line_the_table_does_not_name_fails_the_identity(self):
-        """The check is exact: one more word in a named page, not in the table, makes the page differ from the base."""
+        """The check is exact: one more word in a page, not in the table, makes the page differ from the base, and a
+        ruling names a change the page must carry exactly as often as it says."""
         expected = json.loads(self.MANIFEST.read_text(encoding="utf-8"))
         real = (self.off / "about.html").read_bytes()
-        self.assertEqual(on_purpose_problems("about.html", real, self.ON_PURPOSE["about.html"],
-                                             expected["files"]["about.html"]), [])
-        mutated = real.replace(b"that work can go ahead.", b"that work can go ahead now.", 1)
+        digest = expected["files"]["about.html"]
+        self.assertEqual(on_purpose_problems("about.html", real, (), digest), [])
+        mutated = real.replace(b"About this site and its sources", b"About this site and all its sources", 1)   # the footer link
         self.assertNotEqual(mutated, real)
-        self.assertTrue(on_purpose_problems("about.html", mutated, self.ON_PURPOSE["about.html"],
-                                            expected["files"]["about.html"]))
-        missing = real.replace(b"a blank area is not a statement about the weather", b"a blank area says nothing about the weather", 1)
-        self.assertTrue(on_purpose_problems("about.html", missing, self.ON_PURPOSE["about.html"],
-                                            expected["files"]["about.html"]))
+        self.assertTrue(on_purpose_problems("about.html", mutated, (), digest))
+        ruling = (("a test ruling", "<h1>About this site</h1>", "<h1>About this page</h1>", 1),)
+        renamed = real.replace(b"<h1>About this site</h1>", b"<h1>About this page</h1>", 1)
+        self.assertNotEqual(renamed, real)
+        self.assertEqual(on_purpose_problems("about.html", renamed, ruling, digest), [])   # the named change, once
+        self.assertTrue(on_purpose_problems("about.html", real, ruling, digest))            # the page lacks the change
+
+
 class FiveSeasonHistory(unittest.TestCase):
     """The town page's five-season table and sections, the About words and the copies (B5, --hail-history), on the
     synthetic store that tests/test_summary.py writes (a spot at Billings with every part present). Nothing here is real."""
@@ -5954,15 +6164,16 @@ class B6BaseMapData(unittest.TestCase):
         self.assertEqual(budget["landmark_shard"], {"limit_gzip": 20000, "largest_gzip": 90})
 
     def test_the_sheet_words_are_the_d110_sub_lines_the_switch_name_and_the_b6_lines(self):
-        self.assertEqual(site.SHEET_WORDS, {
-            "points_of_interest": "Landmark dots and names, for the kinds chosen above",
-            "five_year_history": "Past records from the last five years. Not a forecast.",
-            "highlight_recent_hail": "Highlight recent radar hail",
-            # F3: the water line for an area with no band D shard, imported from the vector module (not retyped here)
-            "water_line_unavailable": b2.WORDS["water_line_unavailable"],
-            # F3: the Landmarks sub-line the sheet shows under its heading (DESIGN section 13.6, item 5)
-            "landmarks_sub_line": ("Schools, parks, hospitals, airports, and fire and EMS stations, from the public lists named "
-                                   "under About.")})
+        self.assertEqual(site.SHEET_WORDS["points_of_interest"], "Landmark dots and names, for the kinds chosen above")     # D110(a)
+        self.assertEqual(site.SHEET_WORDS["five_year_history"], "Past records from the last five years. Not a forecast.")   # D110(b)
+        self.assertEqual(site.SHEET_WORDS["highlight_recent_hail"], "Highlight recent radar hail")                          # D110(g)
+        # F3: the water line for an area with no band D shard, imported from the vector module (not retyped here)
+        self.assertIs(site.SHEET_WORDS["water_line_unavailable"], b2.WORDS["water_line_unavailable"])
+        # F3 (DESIGN section 13.6, item 5): the Landmarks sub-line the sheet shows under its heading
+        self.assertEqual(site.SHEET_WORDS["landmarks_sub_line"],
+                         "Schools, parks, hospitals, airports, and fire and EMS stations, from the public lists named under About.")
+        # B6 stage S1 (DESIGN 13.6): every word the options sheet shows, and nothing else (tests/test_site.py OptionsSheet)
+        self.assertEqual(sorted(site.SHEET_WORDS), sorted(["airport", "base_failed", "base_heading", "church", "close_label", "coming", "coming_fire", "coming_smoke", "fire_ems", "fire_smoke", "five_year_history", "flood_history", "hail_history", "hail_last_day", "hail_last_hour", "heat_history", "held", "held_church", "highlight_recent_hail", "history_heading", "hospital", "imagery_card", "landmark_line", "landmarks_heading", "landmarks_sub_line", "legend_hail_last_day", "legend_hail_last_hour", "legend_imagery", "legend_precipitation", "legend_recent", "legend_reports", "legend_temperature", "legend_wind", "list_and", "list_comma", "list_last", "live_heading", "map_card", "name_airport", "name_fire_ems", "name_hospital", "name_park", "name_school", "options_title", "park", "points_of_interest", "points_of_interest_name", "precipitation", "recent_description", "reset", "reset_line", "school", "storm_reports", "storm_reports_description", "temperature", "unavailable", "waiting", "warnings", "warnings_description", "water_line_unavailable", "wind_gusts", "wind_history", "partial_history"]))
         self.assertEqual(self.data(self.loaded)["sheet"], site.SHEET_WORDS)
         self.assertEqual(site.BUBBLE_LEGEND, hl.WORDS["label_legend"])              # D135(a): the printed legend is the module's text
 
@@ -6742,6 +6953,328 @@ class B6LandmarkCredits(unittest.TestCase):
                                                      "shown": {"state": "loaded", "as_of": "2026-09-28"},
                                                      "fetched_only": {"state": "loaded", "as_of": site.NO_DATE}})
         self.assertEqual(site._source_dates(None), {})
+
+
+
+def attr(text):
+    """A sentence as the template writes it inside an attribute (Jinja escapes the quote and the ampersand)."""
+    from markupsafe import escape
+    return str(escape(text))
+
+
+class OptionsSheet(unittest.TestCase):
+    """The map options sheet (DESIGN 13.6, D108, D110; B6 stage S1): the markup the browser drives (templates/map.html), the words
+    it prints (build.SHEET_WORDS, rendered by Python and carried in data/base.json), the roles its colours come from (map.css
+    and style.css), and the map script that holds none of its sentences (AGENTS.md rule 4). Browser behaviour is checked by
+    tools/smoke_map.py (check_options_sheet)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.full = Path(tempfile.mkdtemp(prefix="hailwatch-sheet-full-"))
+        cls.addClassCleanup(shutil.rmtree, cls.full, True)
+        cls.result = site.build(cls.full, None, NOW, sample=True, storm_layers=True, hail_history=True, hail_addresses=True)
+        cls.plain = Path(tempfile.mkdtemp(prefix="hailwatch-sheet-plain-"))
+        cls.addClassCleanup(shutil.rmtree, cls.plain, True)
+        site.build(cls.plain, None, NOW, sample=True)
+        cls.html = page(cls.full, "map.html")
+        cls.sheet = cls.html[cls.html.index('<section class="sheet map-options" id="map-options"'):]
+        cls.sheet = cls.sheet[:cls.sheet.index("\n  <noscript>")]
+
+    def test_the_sheet_is_a_hidden_dialog_section_and_the_button_names_it(self):
+        self.assertIn('<section class="sheet map-options" id="map-options" role="dialog" aria-modal="true" '
+                      'aria-labelledby="mo-title" hidden>', self.html)
+        self.assertIn('aria-controls="map-options"', self.html)
+        self.assertEqual(self.html.count('id="map-options"'), 1)
+        for gone in ('id="layers"', 'name="layer"', 'name="base"', "popover", "<legend>Base map</legend>", "fieldset"):
+            self.assertNotIn(gone, self.html, gone)
+
+    def test_the_header_title_and_the_close_button_are_python_words_of_44_px_or_more(self):
+        self.assertIn('<h2 class="mo-title" id="mo-title" tabindex="-1">Map options</h2>', self.sheet)
+        self.assertIn('<button type="button" class="mo-close" id="mo-close" aria-label="Close map options">', self.sheet)
+
+    def test_the_groups_come_in_the_design_order(self):
+        order = ["Base map", "Live weather", "Five-year history", "Landmarks", 'id="tg-poi"', 'id="tg-hail-recent"',
+                 'id="tg-warnings"', 'id="tg-reports"', 'id="mo-reset"']
+        at = [self.sheet.index(part) for part in order]
+        self.assertEqual(at, sorted(at))
+        self.assertLess(self.sheet.index("Addresses, streets and building outlines"), self.sheet.index('id="mo-reset"'))
+        self.assertLess(self.sheet.index('id="tg-reports"'), self.sheet.index('id="b3-keys"'))
+
+    def test_the_base_map_cards_are_buttons_with_the_map_and_imagery_values(self):
+        self.assertEqual(self.sheet.count('data-group="base"'), 2)
+        self.assertIn('data-group="base" data-key="map" aria-pressed="true"', self.sheet)
+        self.assertIn('data-group="base" data-key="imagery" aria-pressed="false" data-legend="'
+                      "Imagery: USDA, USGS, The National Map. Your IP address and the map area you view go to USGS while it "
+                      'is on."', self.sheet)
+        self.assertEqual(self.sheet.count('data-legend="' + site.IMAGERY["credit_line"] + '"'), 1)
+
+    def test_the_live_chips_are_the_layers_with_their_legend_words(self):
+        for key in ("precip", "temp", "wind", "satellite", "hail_60", "hail_1440"):
+            self.assertEqual(self.sheet.count(f'data-group="live" data-key="{key}"'), 1, key)
+        self.assertIn('data-legend="' + attr(site.SHEET_WORDS["legend_precipitation"]) + '"', self.sheet)
+        self.assertIn('data-legend="' + attr(site.SHEET_WORDS["legend_temperature"]) + '"', self.sheet)
+        self.assertIn('data-legend="' + attr(site.SHEET_WORDS["legend_wind"]) + '"', self.sheet)
+        self.assertIn('data-legend="' + attr(site.SHEET_WORDS["legend_hail_last_hour"]) + '"', self.sheet)
+        plain = self.plain_sheet()
+        self.assertNotIn('data-key="hail_60"', plain)                    # the swath layers exist only in --storm-layers builds
+        self.assertNotIn('data-key="satellite"', plain)
+        self.assertIn('data-group="live" data-key="precip" aria-pressed="true"', plain)
+
+    def plain_sheet(self):
+        html = page(self.plain, "map.html")
+        start = html.index('<section class="sheet map-options" id="map-options"')
+        return html[start:html.index("\n  <noscript>", start)]
+
+    def test_the_five_year_chips_and_the_fire_and_smoke_coming_words(self):
+        for key in ("hail", "heat", "wind", "flood", "fire_smoke"):
+            self.assertEqual(self.sheet.count(f'data-group="history" data-key="{key}"'), 1, key)
+        self.assertIn("Past records from the last five years. Not a forecast.", self.sheet)
+        fire = self.sheet[self.sheet.index('data-key="fire_smoke"'):]
+        fire = fire[:fire.index("</button>")]
+        self.assertIn('data-reason="Coming later: fire is not in the map yet. Coming later: smoke is not in the map yet."', fire)
+        self.assertIn('<span class="mo-note">Coming</span>', fire)
+
+    def test_the_landmark_chips_carry_the_codes_of_the_landmark_module_and_the_held_church_reason(self):
+        self.assertEqual(lm.KIND_CODE, {"school": "s", "hospital": "h", "airport": "a", "fire": "f", "park": "p", "church": "c"})
+        for code in ("s", "p", "h", "a", "f", "c"):
+            self.assertEqual(self.sheet.count(f'data-group="landmark" data-key="{code}"'), 1, code)
+        church = self.sheet[self.sheet.index('data-key="c"'):]
+        church = church[:church.index("</button>")]
+        self.assertIn('data-reason="' + attr(lm.CHURCH_HELD) + '"', church)
+        self.assertIn('<span class="mo-note">Held</span>', church)
+        self.assertIn('data-name="schools"', self.sheet)
+        self.assertIn('data-name="fire and EMS stations"', self.sheet)
+
+    def test_the_landmark_line_reads_its_template_and_the_sub_line_is_the_sheet_words(self):
+        self.assertIn('id="mo-land-line" data-template="' + attr(site.SHEET_WORDS["landmark_line"]) + '"', self.sheet)
+        self.assertIn('<p class="mo-sub">' + attr(site.SHEET_WORDS["landmarks_sub_line"]) + "</p>", self.sheet)
+        self.assertEqual(site.SHEET_WORDS["landmark_line"],
+                         "{kinds} from the public lists named under About, shown as dots with their names.")
+        self.assertIn('data-waiting="Turn on Points of interest to show these."', self.sheet)
+
+    def test_the_switches_are_role_switch_checkboxes_with_their_descriptions(self):
+        for id_ in ("tg-poi", "tg-hail-recent", "tg-warnings", "tg-reports"):
+            self.assertEqual(self.sheet.count(f'id="{id_}"'), 1, id_)
+            self.assertRegex(self.sheet, rf'<input type="checkbox" role="switch" id="{id_}"', id_)
+        self.assertIn('<input type="checkbox" role="switch" id="tg-poi" checked>', self.sheet)
+        self.assertIn('<input type="checkbox" role="switch" id="tg-warnings" checked>', self.sheet)
+        self.assertIn('<input type="checkbox" role="switch" id="tg-reports"', self.sheet)
+        self.assertNotIn('id="tg-reports" checked', self.sheet)
+        for words in ("Landmark dots and names, for the kinds chosen above", "Radar estimate of 1 in or more, last 30 days",
+                      "NWS outlines", "Storm Prediction Center (SPC), last 3 days", "Points of interest",
+                      "Highlight recent radar hail", "Warnings", "Storm reports"):
+            self.assertIn(words, self.sheet, words)
+
+    def test_reset_has_its_button_and_its_line(self):
+        self.assertIn('<button type="button" class="mo-reset-btn" id="mo-reset">Reset</button>', self.sheet)
+        self.assertIn("Back to Map and Precipitation, with Points of interest and Warnings on. Everything else off.", self.sheet)
+
+    def test_the_address_legend_sits_inside_the_sheet_under_its_heading_only_with_the_flag(self):
+        self.assertIn('<div class="b3-keys" id="b3-keys">', self.sheet)
+        self.assertIn('<p class="legend-tap b3-head">Addresses, streets and building outlines</p>', self.sheet)
+        self.assertIn('data-layer="shapes"', self.sheet)
+        self.assertNotIn('id="b3-keys"', self.plain_sheet())
+
+    def test_the_hail_legends_are_the_swath_module_sentences_written_once(self):
+        from website import swath as sw
+        note = sw.WORDS_SWATH["legend_note"].format(window="hour")
+        self.assertIn(note, site.SHEET_WORDS["legend_hail_last_hour"])
+        self.assertIn(sw.WORDS_SWATH["uncoloured"].format(window="24 hours"), site.SHEET_WORDS["legend_hail_last_day"])
+        self.assertIn('data-legend="' + attr(site.SHEET_WORDS["legend_hail_last_hour"]) + '"', self.html)
+
+    def test_the_sheet_words_hold_the_13_6_lines_verbatim_and_reuse_the_module_sentences(self):
+        words = site.SHEET_WORDS
+        self.assertEqual(words["legend_precipitation"], "Rate as liquid water. Radar estimate up to now, High-Resolution Rapid "
+                                                        "Refresh (HRRR) model forecast after.")
+        self.assertEqual(words["legend_temperature"], "HRRR model temperature, in °F. Town numbers are the National Weather "
+                                                      "Service (NWS) forecast.")
+        self.assertEqual(words["legend_wind"], "HRRR model. Roofing limit 25 mph.")
+        self.assertEqual(words["legend_recent"], "Buildings in cells where radar estimated 1 in or more in the last 30 days are "
+                                                 "highlighted. Buildings in other cells are not; that is not the same as no hail. "
+                                                 "Radar estimate, not a measurement at the ground.")
+        self.assertEqual(words["legend_reports"], "No report is not “no hail”.")
+        self.assertEqual(words["waiting"], "Turn on Points of interest to show these.")
+        self.assertIs(words["held_church"], lm.CHURCH_HELD)
+        self.assertIs(words["legend_imagery"], site.IMAGERY["credit_line"])
+        self.assertEqual(words["coming_fire"], "Coming later: fire is not in the map yet.")
+        self.assertEqual(words["coming_smoke"], "Coming later: smoke is not in the map yet.")
+        self.assertIs(words["unavailable"], lb.UNAVAILABLE_TEXT)
+        self.assertTrue(words["base_failed"].startswith("Data unavailable. "))
+        self.assertTrue(words["base_failed"].endswith(" This is not an all-clear."))
+
+    def test_the_sheet_words_are_all_in_base_json_and_none_is_an_em_or_en_dash(self):
+        base_sheet = json.loads(page(self.full, "data/base.json"))["sheet"]
+        self.assertEqual(base_sheet, site.SHEET_WORDS)
+        for key, text in site.SHEET_WORDS.items():
+            self.assertNotIn("\u2014", text, key)
+            self.assertNotIn("\u2013", text, key)
+
+    def test_the_map_script_holds_none_of_the_sheet_sentences(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        js = re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)), js)   # the script's own escapes, read as text
+        for key, text in site.SHEET_WORDS.items():
+            if len(text) < 25:
+                continue
+            for part in re.split(r"\{\w+\}", text):
+                if len(part) >= 25:
+                    self.assertNotIn(part.strip(), js, key)
+        from website import swath as sw
+        for words in (sw.WORDS_SWATH["legend_note"], sw.WORDS_SWATH["uncoloured"]):     # the two the sheet reuses (the all-clear
+            for part in re.split(r"\{\w+\}", words):                                # sentence is shared by every module)
+                if len(part) >= 25:
+                    self.assertNotIn(part.strip(), js)
+
+    def test_the_map_script_names_no_word_of_the_sheet_by_hand(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        for needle in ("toggleLayers", "fitLayersMenu", "paintSwatches", "LAYER_WORD", 'input[name=', "#layers"):
+            self.assertNotIn(needle, js, needle)
+        for needle in ('"Map options', '"Live weather', '"Five-year history', '"Points of interest', '"Coming later',
+                       '"Turn on Points', '"Reset', '"Base map'):
+            self.assertNotIn(needle, js, needle)
+        for name in ("toggleOptions", "renderOptions", "setLive", "setHistory", "setLandmark", "setPoi", "landmarkLine",
+                     "setHailRecent", "resetOptions", "readOptionParams", "optionParams", "loadBase", "trapOptionsFocus"):
+            self.assertRegex(js, rf"function {name}\(", name)
+        self.assertIn('getAttribute("data-legend")', js)
+        self.assertIn('getAttribute("data-template")', js)
+
+    def test_the_address_keeps_the_sheet_choices_under_their_own_names(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        for name in ('"poi"', '"hail_recent"', '"history"', '"landmarks"', '"layer"', '"none"'):
+            self.assertIn(name, js, name)
+
+    def test_the_sheet_css_uses_the_roles_and_no_glass_blur_or_shadow(self):
+        css = (ROOT / "website" / "static" / "map" / "map.css").read_text(encoding="utf-8")
+        start = css.index("/* ---------------------------------------------------------------- the options sheet")
+        block = css[start:css.index("/* ---------------------------------------------------------------- bottom:", start)]
+        self.assertEqual(re.findall(r"#[0-9a-fA-F]{3,8}\b", block), [], "a hex value in a sheet rule")
+        for word in ("--glass", "backdrop-filter: blur", "drop-shadow"):
+            self.assertNotIn(word, block, word)
+        self.assertIn("box-shadow: none", block)
+        self.assertIn("border-radius: var(--radius)", block)
+        self.assertIn("min-height: 44px", block)
+        self.assertIn("outline: 3px solid var(--color-focus)", block)
+
+    def test_the_map_css_roles_are_the_style_css_roles_in_both_schemes(self):
+        style = (ROOT / "website" / "static" / "style.css").read_text(encoding="utf-8")
+        mapcss = (ROOT / "website" / "static" / "map" / "map.css").read_text(encoding="utf-8")
+        roles = ("color-surface", "color-surface-muted", "color-line", "color-text", "color-text-muted", "color-focus",
+                 "color-on-chip")
+
+        def blocks(text):
+            light = text[text.index(":root {"):]
+            light = light[:light.index("\n}")]
+            dark_at = text.index("@media (prefers-color-scheme: dark) {")
+            dark = text[dark_at:]
+            dark = dark[dark.index(":root {"):]
+            dark = dark[:dark.index("\n  }")]
+            decl = lambda s: {k: v.strip() for k, v in re.findall(r"--([\w-]+):\s*([^;]+);", s)}
+            return decl(light), decl(dark)
+
+        def resolve(name, *scopes, depth=0):
+            for scope in scopes:
+                if name in scope:
+                    value = scope[name]
+                    m = re.fullmatch(r"var\(--([\w-]+)\)", value)
+                    return resolve(m.group(1), *scopes, depth=depth + 1) if m else value
+            raise AssertionError(name)
+
+        style_light, style_dark = blocks(style)
+        map_light, map_dark = blocks(mapcss)
+        for role in roles:
+            want_light = resolve(role, style_light)
+            want_dark = resolve(role, style_dark, style_light)
+            self.assertEqual(resolve(role, map_light).lower(), want_light.lower(), f"light {role}")
+            self.assertEqual(resolve(role, map_dark, map_light).lower(), want_dark.lower(), f"dark {role}")
+
+    def test_the_sheet_markup_takes_its_words_from_python(self):
+        template = (ROOT / "website" / "templates" / "map.html").read_text(encoding="utf-8")
+        start = template.index('<section class="sheet map-options"')
+        sheet_src = template[start:template.index("\n  <noscript>", start)]
+        for words in ("Map options", "Live weather", "Five-year history", "Landmarks", "Base map", "Reset", "Coming later"):
+            self.assertNotIn(words, sheet_src, words)
+        self.assertGreaterEqual(sheet_src.count("{{ chip("), 15)
+        self.assertGreaterEqual(sheet_src.count("{{ card("), 2)
+
+    def test_the_default_build_has_the_sheet_without_the_storm_chips_or_the_address_block(self):
+        html = page(self.plain, "map.html")
+        self.assertIn('id="map-options"', html)
+        self.assertNotIn("data-key=\"hail_1440\"", html)
+        self.assertNotIn('id="b3-keys"', html)
+
+
+    def test_the_first_paint_words_travel_as_json_in_the_map_page(self):
+        start = self.html.index('<script type="application/json" id="map-words">')
+        block = self.html[start:self.html.index("</script>", start)]
+        words = json.loads(block[block.index(">") + 1:])
+        self.assertEqual(words, site.MAP_WORDS)
+        for key in ("reports_failed", "reports_none", "no_reports", "nothing_to_show", "no_layer_pictures", "no_layer_picture",
+                    "radar_reason", "satellite_reason", "forecast_reason", "base_failed", "unavailable", "held", "waiting",
+                    "partial_history", "list_and", "list_comma", "list_last"):
+            self.assertIn(key, words, key)
+        self.assertLess(start, self.html.index('id="map-options"'))
+
+    def test_the_page_words_are_pinned_by_value_and_no_interim_sentence_is_invented(self):
+        pinned = site.PAGE_WORDS
+        self.assertEqual(pinned["reports_failed"], "<strong>Storm reports didn't all load</strong> ({detail}). ")
+        self.assertEqual(pinned["reports_none"], "No SPC storm reports in or near Montana in the last 3 days. ")
+        self.assertEqual(pinned["no_reports"], "No reports. ")
+        self.assertEqual(pinned["nothing_to_show"], "Nothing to show for {layer}")
+        self.assertEqual(pinned["no_layer_pictures"], "No {layer} pictures in this update{why}. This is not an all-clear.")
+        self.assertEqual(pinned["no_layer_picture"], "No {layer} picture in this update. This is not an all-clear.")
+        self.assertEqual(pinned["radar_reason"], "radar: {detail}")
+        self.assertEqual(site.SHEET_WORDS["fire_smoke"], "Fire and smoke")
+        # supervisor ruling (S1 legends): nothing is published before S5, so no interim words are invented for the layers
+        # that are not drawn yet; their chips and lines keep their 13.6 words
+        self.assertNotIn("not_drawn", site.SHEET_WORDS)
+        self.assertNotIn("Not drawn on the map", self.html)
+        self.assertTrue(site.SHEET_WORDS["partial_history"].startswith("Data unavailable. "))
+        self.assertTrue(site.SHEET_WORDS["partial_history"].endswith(" This is not an all-clear."))
+        self.assertIn("a zero may mean a count is missing", site.SHEET_WORDS["partial_history"])
+
+    def test_the_map_script_reads_the_page_words_and_holds_none_of_the_moved_sentences(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        for literal in ("didn't all load</strong> (", "No SPC storm reports in or near Montana", '"Nothing to show for ',
+                        '" picture in this update. This is not an all-clear."', '"<p>No reports. "', '"radar: "', '"satellite: "',
+                        '"model forecast: "', '" pictures in this update" + (why'):
+            self.assertNotIn(literal, js, literal)
+        for key in ("reports_failed", "nothing_to_show", "no_layer_pictures", "no_layer_picture", "radar_reason",
+                    "satellite_reason", "forecast_reason"):
+            self.assertIn(f'wordFill("{key}"', js, key)
+        self.assertIn("PW.reports_none", js)
+        self.assertIn("PW.no_reports", js)
+        self.assertIn('getElementById("map-words")', js)
+
+    def test_the_legends_of_the_layers_not_drawn_yet_keep_their_spec_words(self):
+        # the chips and lines of the five-year, landmark and recent layers keep the words of DESIGN 13.6 until their layers
+        # are drawn (S2 to S4); no sentence on the page says a layer is not drawn yet
+        self.assertNotIn("data-not-drawn", self.sheet)
+        recent = self.sheet[self.sheet.index('id="tg-hail-recent"'):]
+        tag = recent[:recent.index(">")]
+        self.assertIn('data-legend="' + attr(site.SHEET_WORDS["legend_recent"]) + '"', tag)   # the 13.6 legend
+
+    def test_the_history_reason_line_sits_under_the_history_line(self):
+        self.assertLess(self.sheet.index('id="mo-hist-line"'), self.sheet.index('id="mo-hist-reason"'))
+        self.assertLess(self.sheet.index('id="mo-hist-reason"'), self.sheet.index('id="mo-land-h"'))
+
+    def test_the_landmark_chips_carry_the_unavailable_words_on_their_faces(self):
+        for code in ("s", "p", "h", "a", "f"):
+            chip = self.sheet[self.sheet.index(f'data-group="landmark" data-key="{code}"'):]
+            chip = chip[:chip.index("</button>")]
+            self.assertIn('<span class="mo-note">Data unavailable</span>', chip, code)
+
+    def test_the_pending_chips_are_solid_and_the_switch_input_is_a_44_px_target(self):
+        css = (ROOT / "website" / "static" / "map" / "map.css").read_text(encoding="utf-8")
+        pending = css[css.index("#map-options .mo-chip.is-pending {"):]
+        self.assertNotIn("dashed", pending[:pending.index("}")])
+        switch = css[css.index('#map-options .mo-switch input[type="checkbox"] {'):]
+        self.assertIn("height: 44px", switch[:switch.index("}")])
+        track = css[css.index('#map-options .mo-switch input[type="checkbox"]::before {'):]
+        self.assertIn("height: 28px", track[:track.index("}")])
+
+    def test_a_chip_still_loading_is_not_disabled_and_a_tap_on_it_changes_nothing(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn('look === "plain" || look === "pending"', js)           # aria-disabled is for the other looks
+        self.assertIn('item.classList.contains("is-pending")', js)           # a tap on a chip still loading returns
 
 
 if __name__ == "__main__":

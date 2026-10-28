@@ -1733,7 +1733,7 @@ def describe_addresses(index: dict | None = None, sample: bool = False) -> dict:
 
 def map_data_addresses(index: dict) -> dict:
     """The map.json["hail"]["addresses"] block (D7): the state, the counts, the shard URL pattern, the tiles that hold
-    addresses, the split map (a tile with more than one shard names its shards; a tile not listed has one shard of its
+    addresses (build.b3_map_blocks turns the list into the compact tile_split, D40), the split map (a tile with more than one shard names its shards; a tile not listed has one shard of its
     own name), the letter file pattern, the words, the limits and every template. Positions and the search text
     never leave the browser; the requests carry only shard and key names. The zoom rules (zoom: dots 15, choose 17) and
     the dot radius rule are carried in every state (D47), so the browser never reads an absent rule."""

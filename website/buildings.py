@@ -1809,8 +1809,9 @@ def describe_buildings(index: dict | None = None) -> dict:
 
 
 def map_data_buildings(index: dict) -> dict:
-    """The map.json["hail"]["buildings"] block (D7, D27): the state, the counts the words need, the shard names, the
-    split map with the bounds of each leaf, the count file, the zoom thresholds, the dot and tap radii and every
+    """The map.json["hail"]["buildings"] block (D7, D27): the state, the counts the words need, the tile names (build.b3_map_blocks
+    turns the list into the compact tile_split, D40), the split map (each tile's leaf names; the browser derives each leaf's bounds from its quadtree digits, as it does for
+    the roads and the addresses: map.js b3NameBox), the count file, the zoom thresholds, the dot and tap radii and every
     template. Positions, text and the search never leave the browser; a request names a shard and nothing else."""
     block = index.get(INDEX_KEY) if isinstance(index, dict) else None
     templates = {**WORDS_BUILDINGS, "placed_how": dict(addresses.PLACEMENT_HOW)}
@@ -1827,7 +1828,7 @@ def map_data_buildings(index: dict) -> dict:
         "addresses": block.get("addresses", "loaded"),
         "shard": "hail/b/{name}.json",
         "tiles": list(block.get("tiles", [])),
-        "split": {tile: [[name, box] for name, box in leaves] for tile, leaves in block.get("split_boxes", {}).items()},
+        "split": {tile: [name for name, box in leaves] for tile, leaves in block.get("split_boxes", {}).items()},
         "unmatched": "hail/a/{name}.json",
         "counts_file": "hail/counts.json",
         "zoom": {"counts": list(ZOOM["counts"]), "dots": ZOOM["dots"], "fills": ZOOM["fills"],
