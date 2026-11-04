@@ -136,3 +136,9 @@ Claude Code and ChatGPT both work here. Work on a branch and open a pull request
 say what changed and how it was verified (tests, the branch's live Website build, browser check). Record decisions in
 `docs/DECISIONS.md` and status changes in `docs/ROADMAP.md`. Don't rewrite the other agent's work
 without explaining why in the PR. Check `docs/ROADMAP.md` before starting so work isn't duplicated.
+
+## Cursor Cloud specific instructions
+- `python` and `pip` are wrappers to `/home/ubuntu/.local/roofing-venv` (Python 3.12). `/usr/bin/python3` does not have the website packages. Use `python` for the commands above.
+- `requirements.txt` and `tzdata` are installed. Playwright Chromium is installed, so `python -m playwright` launches Chromium without another download.
+- The sample site is `_site`, from `python -m website.build --out _site --sample`. On boot it is served at http://127.0.0.1:8000. Pages are files, not directories: `index.html`, `map.html`, `town/billings.html`, `reports.html`, `about.html`. The server reads `_site` on each request, so a rebuild shows up without a restart.
+- The offline suite is `python -m unittest discover -s tests`. The sample build and that suite need no secrets and no live feeds.
